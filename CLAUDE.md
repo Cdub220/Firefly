@@ -2,7 +2,7 @@
 
 Hackathon project (East v. West AllStar Hack, Defense track, Sept 12–14 2026). Team: Dean and Chase.
 
-**Before doing any work in this repo, read `docs/00-README.md`.** It is the shared context for both of us and for every coding agent. It links to the full pitch/plan, the track brief, and the event playbook.
+**Before doing any work in this repo, read `docs/00-README.md` and then `docs/04-who-does-what.md`.** The first is what we are building and why. The second is who owns which directory, how to build each piece, and how the halves fit together.
 
 Key rules that apply to all code:
 
