@@ -11,3 +11,5 @@ Key rules that apply to all code:
 - Method freeze is at hour 36 (Mon Sept 14, 12:00 AM ET, i.e. Sunday midnight). After the freeze, do not change estimator logic. Eval cases are chosen after the freeze.
 - Nothing in the final demo may depend on a live API call.
 - Never cut: estimator, corruption model, Kalman baseline, eval harness (false certainty, estimation error, time to recovery, compute cost), one identifiability result, checkpoint videos.
+
+Automation: hooks enforce ownership, contract edits, and the freeze; the stop gate runs test/lint/typecheck. Skills: `/dean`, `/chase`, `/build`, `/checkpoint`. Subagent: `verifier`. See `docs/automation.md`. If a hook denies an edit, do not work around it; the message says what to do instead.

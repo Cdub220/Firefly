@@ -10,6 +10,7 @@ This folder is the single source of truth for what we are building and the rules
 | `04-who-does-what.md` | Ownership, how to do each piece, how the halves meet, rules of engagement | Before starting any task. Tells you which files are yours. |
 | `04b-checkpoint-deliverables.md` | What the product, video, and repo look like at each checkpoint, with a definition of done | Deciding what to build next, or making a checkpoint video |
 | `decisions.md` | Log of choices made during the event and why | Before changing something that looks arbitrary. It probably is not. |
+| `automation.md` | Hooks, skills, the verifier agent, CI, role detection | When a hook blocks you or you want to know what `/build` does |
 | `05` to `09` | Produced during the event: identifiability, freeze record, what surprised us, writeup, generality | When the prompts tell you to write or read them |
 | `prompts/` | Copy-pasteable Claude Code prompts per person per checkpoint | Starting a work session. Pick your file, run the prompts in order. |
 | `source/*.pdf` | The original PDFs the markdown was transcribed from | Only if you suspect a transcription error |

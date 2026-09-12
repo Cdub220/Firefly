@@ -1,5 +1,7 @@
 # Firefly
 
+[![ci](https://github.com/Cdub220/Firefly/actions/workflows/ci.yml/badge.svg)](https://github.com/Cdub220/Firefly/actions/workflows/ci.yml)
+
 **When a structure catches fire, nobody knows where the fire is. We build the system that figures it out and sends the drones.**
 
 Firefly is the decision brain for a firefighting drone swarm inside large enclosed structures: ships, high-rises, warehouses, hangars, data centers. The hard part is that the fire destroys the sensors that report it, and destroys them in *correlated* ways: smoke blinds thermal cameras so they read cold, heat saturates sensors, comms drop and readings freeze while looking current, and a space that flashes over kills every sensor inside it in the same instant. That is corruption, not noise. Estimators that assume independent noise converge confidently on the wrong answer and send drones to the wrong floor. Firefly estimates fire state under that failure model, reports honest ambiguity as a set of candidate states rather than a point, and allocates drones as both suppression assets and sensors.
@@ -52,6 +54,10 @@ brain.step(obs')     -> { belief, commands }
 ```
 
 `truth` goes to the eval harness and the UI only. It never reaches the brain.
+
+## Working here with Claude Code
+
+Hooks, skills, and a verifier agent are committed under `.claude/`. Start a session with `/dean` or `/chase`, do work with `/build <prompt>`, submit with `/checkpoint N`. Ownership, contract edits, and the freeze are enforced by hooks. Details in [docs/automation.md](docs/automation.md).
 
 ## Failure model
 
