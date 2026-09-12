@@ -8,6 +8,9 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "sim": "tsx src/loop.ts --ticks 50",
+    "sim:freeze": "tsx src/loop.ts --ticks 60 --mode freeze --k 1 --target S3 --onset 5",
+    "sim:blind": "tsx src/loop.ts --ticks 60 --mode blind --k 1 --target S3 --onset 5",
+    "evidence": "tsx src/eval/evidence.ts",
     "test": "vitest run",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit"
