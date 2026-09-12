@@ -170,6 +170,44 @@ describe('createBrain v1', () => {
     expect(wingMentioned).toBe(true); // a wing is suspected at some point
   });
 
+  it('slow-edge unsensed-space fire (rate 0.05): no wrong-set tick ever reaches conf 0.9', () => {
+    // The round-4 verifier repro: with slow edges the wrong "no fire" belief is STABLE,
+    // and a single well-fitting tick used to spike confidence to 1.00.
+    const slow: StructurePlan = {
+      name: 'butterfly-slow',
+      ambient: 20,
+      spaces: [
+        { id: 'W1', level: 1 },
+        { id: 'M', level: 1 },
+        { id: 'W2', level: 1 },
+      ],
+      edges: [
+        { a: 'W1', b: 'M', kind: 'bulkhead', rate: 0.05 },
+        { a: 'M', b: 'W2', kind: 'bulkhead', rate: 0.05 },
+      ],
+      sensors: [{ id: 'FM', spaceId: 'M' }],
+      resupply: ['M'],
+      ignition: ['W1'],
+    };
+    const brain = createBrain({ plan: slow, seed: 42 });
+    let temps: Record<SpaceId, number> = { W1: 450, M: 20, W2: 20 };
+    for (let t = 1; t <= 80; t++) {
+      const out = brain.step(obs(t, [reading('FM', 'M', temps['M']!, t)]));
+      if (!out.belief.burningSet.includes('W1')) {
+        expect(out.belief.confidence).toBeLessThan(0.9);
+      }
+      temps = forward(slow, temps, new Set(['W1']));
+    }
+  });
+
+  it('zero readings from the first tick: confidence stays at the floor forever', () => {
+    const brain = createBrain({ plan, seed: 42 });
+    for (let t = 1; t <= 20; t++) {
+      const out = brain.step(obs(t, []));
+      expect(out.belief.confidence).toBeLessThanOrEqual(0.05);
+    }
+  });
+
   it('a NaN reading is ignored rather than poisoning every hypothesis score', () => {
     const brain = createBrain({ plan, seed: 42 });
     const out = brain.step(

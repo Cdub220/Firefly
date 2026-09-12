@@ -154,11 +154,17 @@ export function createBrain(config: BrainConfig): Brain {
       const contested = new Set<SpaceId>([...union].filter((id) => !burning.has(id)));
       const ambiguous = kept.length > 1 ? components(contested) : [];
 
-      // Stability accounting: an uncontested race with an unchanged answer earns a
-      // stable tick; a contested race or a changed answer resets the counter.
+      // Stability accounting: an uncontested race with an unchanged, WELL-FITTING answer
+      // earns a stable tick; a contested race, a changed answer, or a misfit resets the
+      // counter. Fit must be part of stability: a wrong-but-stable belief whose misfit
+      // dips under the allowance for a single tick would otherwise spike to 1.00
+      // (verified on slow-edge plans with an unsensed burning space).
       const burningKey = [...burning].sort().join(',');
-      if (kept.length === 1 && burningKey === lastBurningKey) stableTicks += 1;
-      else stableTicks = 0;
+      if (kept.length === 1 && burningKey === lastBurningKey && best.s <= FIT_ALLOWANCE_C) {
+        stableTicks += 1;
+      } else {
+        stableTicks = 0;
+      }
       lastBurningKey = burningKey;
 
       const fit = best.s <= FIT_ALLOWANCE_C ? 1 : FIT_ALLOWANCE_C / best.s;
