@@ -59,7 +59,7 @@ export function runLoop(cfg: LoopConfig): TickRecord[] {
   return trace;
 }
 
-export type MultiLoopConfig = LoopConfig & {
+export type MultiLoopConfig = Omit<LoopConfig, 'brain'> & {
   brains: Record<string, BrainFactory>;
   /** Whose commands drive the world. Default: the first key of `brains`. */
   primary?: string;
@@ -89,8 +89,11 @@ export function runLoopMulti(cfg: MultiLoopConfig): Record<string, TickRecord[]>
     const { truth, obs } = world.tick(commands);
     const seen = corruptor.apply(obs);
     for (const { name, brain } of brains) {
-      const out = brain.step(seen);
-      const rec: TickRecord = { t: truth.t, truth, obs: seen, belief: out.belief, commands: out.commands };
+      // Each brain gets its own deep copy: byte-identical inputs as a guarantee, and a
+      // brain that mutates its observation cannot contaminate the others or the traces.
+      const own = structuredClone(seen);
+      const out = brain.step(own);
+      const rec: TickRecord = { t: truth.t, truth, obs: own, belief: out.belief, commands: out.commands };
       traces[name]!.push(rec);
       if (name === primary) {
         commands = out.commands;
@@ -154,9 +157,12 @@ function parseArgs(argv: string[]): CliArgs {
     const i = argv.indexOf(flag);
     return i >= 0 ? argv[i + 1] : undefined;
   };
-  const corruption: Omit<CorruptionConfig, 'seed'> = {
-    mode: (getStr('--mode') ?? 'none') as CorruptionMode,
-  };
+  const modes: CorruptionMode[] = ['none', 'freeze', 'blind', 'saturate', 'flashover', 'mixed'];
+  const rawMode = getStr('--mode') ?? 'none';
+  if (!(modes as string[]).includes(rawMode)) {
+    throw new Error(`--mode ${rawMode}: expected one of ${modes.join(', ')}`);
+  }
+  const corruption: Omit<CorruptionConfig, 'seed'> = { mode: rawMode as CorruptionMode };
   const k = getNum('--k');
   if (k !== undefined) corruption.k = k;
   const onset = getNum('--onset');

@@ -40,6 +40,8 @@ describe('runLoop', () => {
     for (let i = 0; i < 25; i++) {
       expect(JSON.stringify(traces['ours']![i]!.obs)).toBe(JSON.stringify(traces['kalman']![i]!.obs));
       expect(traces['ours']![i]!.t).toBe(traces['kalman']![i]!.t);
+      // Distinct copies, not one shared object: a mutating brain cannot contaminate others.
+      expect(traces['ours']![i]!.obs).not.toBe(traces['kalman']![i]!.obs);
     }
   });
 
