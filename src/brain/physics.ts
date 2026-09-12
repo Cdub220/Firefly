@@ -4,7 +4,7 @@
  * the steel is not.
  *
  * The constants below are ASSUMED PROPERTIES OF THE STRUCTURE (how fast fires here
- * generate heat, what temperature they plateau at, how the hull sheds heat). They are
+ * generate heat, what temperature they plateau at, how the structure sheds heat). They are
  * copied, not imported, from the world's tuning: the brain models the building, it does
  * not read the simulator, and a small mismatch with the real sim is realistic.
  */
@@ -22,6 +22,7 @@ export const MAX_TETHERS = 2; // most units that plausibly work one space at onc
 export const SIGMA_C = 2; // sensor noise the brain assumes (conservative)
 
 const STEADY_EPS_C = 0.5;
+const MAX_OUTGOING_RATE = 0.9; // stability clamp on a space's summed edge rates (as the world)
 
 /** One tick of the linear heat model: transfer along edges, generation, ambient loss. */
 export function forward(
@@ -35,8 +36,11 @@ export function forward(
   for (const s of plan.spaces) {
     const t = temps[s.id] ?? plan.ambient;
     let dT = COOL * (plan.ambient - t);
-    for (const e of edges.get(s.id) ?? []) {
-      dT += e.rate * ((temps[e.b] ?? plan.ambient) - t);
+    const myEdges = edges.get(s.id) ?? [];
+    const rateSum = myEdges.reduce((a, e) => a + e.rate, 0);
+    const scale = rateSum > MAX_OUTGOING_RATE ? MAX_OUTGOING_RATE / rateSum : 1;
+    for (const e of myEdges) {
+      dT += scale * e.rate * ((temps[e.b] ?? plan.ambient) - t);
     }
     if (burning.has(s.id)) {
       const gen = hazard.get(s.id) === 'fuel' ? GEN_RATE * FUEL_HAZARD_MULT : GEN_RATE;
@@ -73,6 +77,7 @@ export function steadyState(
     temps = next;
     if (maxChange < STEADY_EPS_C) break;
   }
+  Object.freeze(temps); // callers share the cached object; mutation would poison it
   byKey.set(key, temps);
   return temps;
 }
@@ -90,7 +95,8 @@ export function maxRise(plan: StructurePlan, spaceId: SpaceId, temps: Record<Spa
   let cookoff = 0;
   for (const e of edgeMap(plan).get(spaceId) ?? []) {
     rise += e.rate * Math.max(0, (temps[e.b] ?? plan.ambient) - t);
-    if (plan.spaces.find((s) => s.id === e.b)?.hazard === 'ordnance') cookoff = ORDNANCE_COOKOFF_HEAT;
+    // Every ordnance neighbor could cook off in the same tick; allow one jump per each.
+    if (plan.spaces.find((s) => s.id === e.b)?.hazard === 'ordnance') cookoff += ORDNANCE_COOKOFF_HEAT;
   }
   const gen = space?.hazard === 'fuel' ? GEN_RATE * FUEL_HAZARD_MULT : GEN_RATE;
   rise += gen * Math.max(0, FLAME_TEMP - t);

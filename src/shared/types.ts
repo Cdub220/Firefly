@@ -169,4 +169,6 @@ export type CorruptionConfig = {
 export type BrainConfig = {
   plan: StructurePlan; // static blueprint. Not fire state. Not truth.
   seed: number;
+  /** Sensors that may be lying undetected; the estimator tolerates this many. Default 2. */
+  k?: number;
 };

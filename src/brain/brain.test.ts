@@ -1,10 +1,12 @@
 /**
- * v0.2 estimator tests: predictor-corrector behavior. Observations built by hand; the
- * brain sees only Observation.
+ * v1 estimator tests: hypothesis-set behavior end to end. Reading streams are generated
+ * by the brain's own physics (the guard pattern) so scenarios are self-consistent; the
+ * brain still sees only Observation objects.
  */
 import { describe, expect, it } from 'vitest';
 import { createBrain } from './index';
-import type { Observation, Reading, StructurePlan } from '../shared/types';
+import { forward } from './physics';
+import type { Observation, Reading, SpaceId, StructurePlan } from '../shared/types';
 
 const plan: StructurePlan = {
   name: 'test-3',
@@ -37,51 +39,61 @@ const reading = (sensorId: string, spaceId: string, temp: number, t: number): Re
 
 const obs = (t: number, readings: Reading[]): Observation => ({ t, readings, drones: [] });
 
-describe('createBrain v0.2', () => {
-  it('clean readings: full confidence, correct burning set, no suspects', () => {
+/** Physics-consistent temp stream: S1 ignites at 450 and burns. */
+const stream = (ticks: number): Record<SpaceId, number>[] => {
+  let temps: Record<SpaceId, number> = { S1: 450, S2: 20, S3: 20 };
+  const out: Record<SpaceId, number>[] = [];
+  for (let t = 0; t < ticks; t++) {
+    out.push(temps);
+    temps = forward(plan, temps, new Set(['S1']));
+  }
+  return out;
+};
+
+describe('createBrain v1', () => {
+  it('clean physics-consistent readings: correct burning set, no suspects, high confidence', () => {
     const brain = createBrain({ plan, seed: 42 });
-    let out = brain.step(obs(1, [reading('F1', 'S1', 450, 1), reading('F2', 'S2', 30, 1), reading('F3', 'S3', 20, 1)]));
-    out = brain.step(obs(2, [reading('F1', 'S1', 455, 2), reading('F2', 'S2', 34, 2), reading('F3', 'S3', 21, 2)]));
+    const temps = stream(8);
+    let out!: ReturnType<typeof brain.step>;
+    for (let t = 1; t <= 8; t++) {
+      const T = temps[t - 1]!;
+      out = brain.step(
+        obs(t, [reading('F1', 'S1', T['S1']!, t), reading('F2', 'S2', T['S2']!, t), reading('F3', 'S3', T['S3']!, t)]),
+      );
+    }
     expect(out.belief.burningSet).toEqual(['S1']);
     expect(out.belief.suspectSensors).toEqual([]);
-    expect(out.belief.confidence).toBe(1);
+    expect(out.belief.confidence).toBeGreaterThan(0.9);
   });
 
-  it('a stale sensor is excluded and the fire persists via physics prediction', () => {
+  it('F1 freezes (stale t): suspect, and physics keeps the fire in the belief', () => {
     const brain = createBrain({ plan, seed: 42 });
-    // Honest ticks establish S1 burning, then F1 freezes (t stops advancing).
-    for (let t = 1; t <= 4; t++) {
-      brain.step(
-        obs(t, [reading('F1', 'S1', 450 + t, t), reading('F2', 'S2', 30 + 4 * t, t), reading('F3', 'S3', 20 + t, t)]),
-      );
-    }
+    const temps = stream(12);
     let out!: ReturnType<typeof brain.step>;
-    for (let t = 5; t <= 10; t++) {
-      out = brain.step(
-        obs(t, [reading('F1', 'S1', 454, 4), reading('F2', 'S2', 30 + 4 * t, t), reading('F3', 'S3', 20 + t, t)]),
-      );
+    for (let t = 1; t <= 12; t++) {
+      const T = temps[t - 1]!;
+      const f1 = t <= 4 ? reading('F1', 'S1', T['S1']!, t) : reading('F1', 'S1', temps[3]!['S1']!, 4);
+      out = brain.step(obs(t, [f1, reading('F2', 'S2', T['S2']!, t), reading('F3', 'S3', T['S3']!, t)]));
     }
     expect(out.belief.suspectSensors).toEqual(['F1']);
-    // The sensor died; the fire did not. Physics keeps S1 burning in the belief.
-    expect(out.belief.burningSet).toContain('S1');
-    expect(out.belief.estimate['S1']!).toBeGreaterThan(400);
-    // One suspect costs a 0.8 factor; S1 is still backed via its S2 neighbor.
-    expect(out.belief.confidence).toBeCloseTo(0.8, 5);
+    expect(out.belief.burningSet).toContain('S1'); // the sensor died; the fire did not
+    expect(out.belief.estimate['S1']!).toBeGreaterThan(300);
+    expect(out.belief.confidence).toBeLessThan(0.9); // one distrusted sensor costs certainty
   });
 
-  it('a blinded sensor (impossible one-tick drop) is excluded immediately', () => {
+  it('F1 blinded (impossible one-tick drop): suspect immediately, fire kept', () => {
     const brain = createBrain({ plan, seed: 42 });
-    for (let t = 1; t <= 4; t++) {
-      brain.step(
-        obs(t, [reading('F1', 'S1', 450 + t, t), reading('F2', 'S2', 30 + 0.3 * t, t), reading('F3', 'S3', 20, t)]),
-      );
+    const temps = stream(8);
+    let out!: ReturnType<typeof brain.step>;
+    for (let t = 1; t <= 8; t++) {
+      const T = temps[t - 1]!;
+      const f1 = t < 5 ? reading('F1', 'S1', T['S1']!, t) : reading('F1', 'S1', 22, t);
+      out = brain.step(obs(t, [f1, reading('F2', 'S2', T['S2']!, t), reading('F3', 'S3', T['S3']!, t)]));
+      if (t === 5) expect(out.belief.suspectSensors).toEqual(['F1']); // caught on the drop tick
     }
-    const out = brain.step(
-      obs(5, [reading('F1', 'S1', 22, 5), reading('F2', 'S2', 31.5, 5), reading('F3', 'S3', 20, 5)]),
-    );
     expect(out.belief.suspectSensors).toEqual(['F1']);
-    expect(out.belief.burningSet).toContain('S1'); // physics says it is still burning
-    expect(out.belief.confidence).toBeLessThan(0.9); // never confidently wrong here
+    expect(out.belief.burningSet).toContain('S1');
+    expect(out.belief.confidence).toBeLessThan(0.9);
   });
 
   it('a drone sensor flying from a hot space to a cool one is NOT suspect', () => {
@@ -94,30 +106,45 @@ describe('createBrain v0.2', () => {
       temp,
       t,
     });
-    for (let t = 1; t <= 5; t++) {
-      brain.step(obs(t, [droneReading('S1', 450 + t, t), reading('F2', 'S2', 30 + 0.3 * t, t)]));
+    const temps = stream(7);
+    for (let t = 1; t <= 6; t++) {
+      const T = temps[t - 1]!;
+      brain.step(obs(t, [droneReading('S1', T['S1']!, t), reading('F2', 'S2', T['S2']!, t)]));
     }
     // D1 relocates two doors down: an enormous drop for the sensor, but a normal move.
-    const out = brain.step(obs(6, [droneReading('S3', 21, 6), reading('F2', 'S2', 32, 6)]));
+    const out = brain.step(obs(7, [droneReading('S3', temps[6]!['S3']!, 7), reading('F2', 'S2', temps[6]!['S2']!, 7)]));
     expect(out.belief.suspectSensors).toEqual([]);
   });
 
-  it('no readings at all: zero confidence, physics carries the estimate', () => {
+  it('total sensor blackout: minimal confidence, ambiguity reported, warmth not forgotten', () => {
     const brain = createBrain({ plan, seed: 42 });
-    brain.step(obs(1, [reading('F1', 'S1', 450, 1), reading('F2', 'S2', 30, 1), reading('F3', 'S3', 20, 1)]));
-    const out = brain.step(obs(2, []));
-    expect(out.belief.confidence).toBe(0);
-    expect(out.belief.estimate['S1']!).toBeGreaterThan(400); // predicted, not forgotten
-    expect(out.belief.burningSet).toContain('S1');
+    const temps = stream(4);
+    for (let t = 1; t <= 4; t++) {
+      const T = temps[t - 1]!;
+      brain.step(
+        obs(t, [reading('F1', 'S1', T['S1']!, t), reading('F2', 'S2', T['S2']!, t), reading('F3', 'S3', T['S3']!, t)]),
+      );
+    }
+    const out = brain.step(obs(5, []));
+    // Three explanations survive a blackout on this plan; 1/3 is the honest number.
+    expect(out.belief.confidence).toBeLessThan(0.5);
+    // With zero data every hypothesis fits; the doubt must be visible somewhere.
+    const mentioned = new Set([...out.belief.burningSet, ...out.belief.ambiguous.flat()]);
+    expect(mentioned.has('S1')).toBe(true);
+    expect(out.belief.estimate['S1']!).toBeGreaterThan(250); // physics carries the warmth
   });
 
   it('reset() clears history and estimates deterministically', () => {
     const brain = createBrain({ plan, seed: 42 });
+    const temps = stream(6);
     const run = (): string => {
       const outs = [];
       for (let t = 1; t <= 6; t++) {
+        const T = temps[t - 1]!;
         outs.push(
-          brain.step(obs(t, [reading('F1', 'S1', 450, 4), reading('F2', 'S2', 30 + t, t), reading('F3', 'S3', 20, t)])),
+          brain.step(
+            obs(t, [reading('F1', 'S1', T['S1']!, t), reading('F2', 'S2', T['S2']!, t), reading('F3', 'S3', T['S3']!, t)]),
+          ),
         );
       }
       return JSON.stringify(outs);
