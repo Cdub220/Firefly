@@ -39,7 +39,7 @@ export function createBrain(config: BrainConfig): Brain {
   );
 
   // Per-sensor and per-space memory across ticks. reset() clears it.
-  let lastValue = new Map<SensorId, number>();
+  let lastValue = new Map<SensorId, { temp: number; spaceId: SpaceId }>();
   let lastChangeTick = new Map<SensorId, number>();
   let spaceHistory = new Map<SpaceId, Array<{ t: number; temp: number }>>();
   let implausible = new Set<SensorId>(); // once a sensor did the impossible, distrust it
@@ -56,13 +56,15 @@ export function createBrain(config: BrainConfig): Brain {
       // Update per-sensor change tracking.
       for (const r of obs.readings) {
         const prev = lastValue.get(r.sensorId);
-        if (prev === undefined || Math.abs(r.temp - prev) > CHANGE_EPS_C) {
+        if (prev === undefined || Math.abs(r.temp - prev.temp) > CHANGE_EPS_C) {
           lastChangeTick.set(r.sensorId, obs.t);
         }
-        if (prev !== undefined && prev - r.temp > MAX_CREDIBLE_DROP_C) {
+        // A drone sensor that moved to another space may legitimately read far colder;
+        // the implausible-drop rule only applies to a sensor still in the same space.
+        if (prev !== undefined && prev.spaceId === r.spaceId && prev.temp - r.temp > MAX_CREDIBLE_DROP_C) {
           implausible.add(r.sensorId);
         }
-        lastValue.set(r.sensorId, r.temp);
+        lastValue.set(r.sensorId, { temp: r.temp, spaceId: r.spaceId });
       }
 
       // Per-space temp history (mean of this tick's readings per space), for the

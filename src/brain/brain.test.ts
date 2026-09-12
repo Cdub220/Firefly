@@ -108,6 +108,24 @@ describe('createBrain v0.1', () => {
     expect(out.belief.confidence).toBeLessThan(0.9); // never confidently wrong again
   });
 
+  it('a drone sensor flying from a hot space to a cool one is NOT implausible', () => {
+    const brain = createBrain({ plan, seed: 42 });
+    const droneReading = (spaceId: string, temp: number, t: number): Reading => ({
+      sensorId: 'D1:temp',
+      source: 'drone',
+      droneId: 'D1',
+      spaceId,
+      temp,
+      t,
+    });
+    // D1 hovers in burning S1, then relocates to cool S3: a 429C drop, but across spaces.
+    for (let t = 1; t <= 5; t++) {
+      brain.step(obs(t, [droneReading('S1', 450, t), reading('F2', 'S2', 30 + 0.2 * (t % 2), t)]));
+    }
+    const out = brain.step(obs(6, [droneReading('S3', 21, 6), reading('F2', 'S2', 30, 6)]));
+    expect(out.belief.suspectSensors).toEqual([]);
+  });
+
   it('halves confidence when a believed-burning space has no trusted reading', () => {
     const brain = createBrain({ plan, seed: 42 });
     // S2 has no sensor reading at all; its neighbors S1 and S3 read 450 -> S2 estimated
