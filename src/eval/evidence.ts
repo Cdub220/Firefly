@@ -1,88 +1,122 @@
 /**
- * The checkpoint-1 evidence run: both brains on identical corrupted observations, and the
- * count of ticks where the baseline is confidently wrong. `npm run evidence`.
+ * The checkpoint-2 number: both brains on identical corrupted observations across the
+ * three headline corruption modes, five seeds each. `npm run evidence [--verbose]`.
  *
- * Runs the sim:freeze configuration (freeze the ignition space's sensor at onset 5). If
- * that produces no confidently-wrong Kalman ticks — which happens while the world's
- * physics is still the constant-temp stub, because a frozen reading of an unchanging
- * truth is indistinguishable from an honest one — it says so plainly and falls back to
- * the blind configuration, which diverges even with constant truth (the blinded sensor
- * says ambient while the space burns at 450).
+ * Prints mode | brain | falseCertainty | ambiguityCoverage | meanAbsErr, writes
+ * results/evidence-cp2.json, and ends with the one sentence for the video.
+ * --verbose additionally prints, per tick of the first seed of each mode, our brain's
+ * suspect sensors and both burning sets against truth — the diagnosis view.
  */
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { createBrain } from '../brain';
 import { createKalmanBrain } from '../brain/kalman';
 import { DEMO_PLAN, runLoopMulti, type TickRecord } from '../loop';
-import type { CorruptionConfig } from '../shared/types';
+import { computeMetrics } from './metrics';
+import type { CorruptionConfig, CorruptionMode, SpaceId } from '../shared/types';
 
-const SEED = 42;
 const TICKS = 60;
-const CONFIDENT = 0.9;
+const ONSET = 5;
+const SEEDS = [1, 2, 3, 4, 5];
+const MODES: CorruptionMode[] = ['freeze', 'blind', 'flashover'];
+const VERBOSE = process.argv.includes('--verbose');
 
-type BrainStats = {
-  confidentlyWrongTicks: number;
-  firstConfidentlyWrongTick: number | null;
-  meanAbsErrC: number;
+// Target: the ignition space and its hottest neighbor (highest-rate edge).
+const ignition = DEMO_PLAN.ignition[0]!;
+const hottestNeighbor = DEMO_PLAN.edges
+  .filter((e) => e.a === ignition || e.b === ignition)
+  .sort((a, b) => b.rate - a.rate)
+  .map((e) => (e.a === ignition ? e.b : e.a))[0]!;
+const TARGET: SpaceId[] = [ignition, hottestNeighbor];
+
+type Row = {
+  mode: CorruptionMode;
+  brain: string;
+  falseCertainty: number;
+  ambiguityCoverage: number;
+  meanAbsErr: number;
 };
 
-const sameSet = (a: string[], b: string[]): boolean =>
-  a.length === b.length && [...a].sort().join(',') === [...b].sort().join(',');
+const mean = (xs: number[]): number => xs.reduce((a, b) => a + b, 0) / xs.length;
 
-function stats(trace: TickRecord[]): BrainStats {
-  let wrong = 0;
-  let first: number | null = null;
-  let errSum = 0;
-  let errN = 0;
-  for (const rec of trace) {
-    const truthBurning = rec.truth.spaces.filter((s) => s.burning).map((s) => s.id);
-    if (!sameSet(rec.belief.burningSet, truthBurning) && rec.belief.confidence > CONFIDENT) {
-      wrong++;
-      first ??= rec.t;
+function runMode(mode: CorruptionMode): Row[] {
+  const corruption: Omit<CorruptionConfig, 'seed'> = {
+    mode,
+    k: 1,
+    target: TARGET,
+    onset: ONSET,
+    ambient: DEMO_PLAN.ambient,
+  };
+  const perBrain = new Map<string, { fc: number[]; cov: number[]; err: number[] }>();
+  for (const seed of SEEDS) {
+    const traces = runLoopMulti({
+      plan: DEMO_PLAN,
+      seed,
+      ticks: TICKS,
+      corruption,
+      brains: { ours: createBrain, kalman: createKalmanBrain },
+      primary: 'ours',
+    });
+    for (const [name, trace] of Object.entries(traces)) {
+      const m = computeMetrics(trace, 0.9, ONSET);
+      const acc = perBrain.get(name) ?? { fc: [], cov: [], err: [] };
+      acc.fc.push(m.falseCertainty);
+      acc.cov.push(m.ambiguityCoverage);
+      acc.err.push(m.estimationError);
+      perBrain.set(name, acc);
     }
-    for (const s of rec.truth.spaces) {
-      errSum += Math.abs((rec.belief.estimate[s.id] ?? 0) - s.temp);
-      errN++;
-    }
+    if (VERBOSE && seed === SEEDS[0]) printVerbose(mode, traces);
   }
-  return { confidentlyWrongTicks: wrong, firstConfidentlyWrongTick: first, meanAbsErrC: errSum / errN };
+  return [...perBrain.entries()].map(([brain, a]) => ({
+    mode,
+    brain,
+    falseCertainty: mean(a.fc),
+    ambiguityCoverage: mean(a.cov),
+    meanAbsErr: mean(a.err),
+  }));
 }
 
-function run(corruption: Omit<CorruptionConfig, 'seed'>): Record<string, BrainStats> {
-  const traces = runLoopMulti({
-    plan: DEMO_PLAN,
-    seed: SEED,
-    ticks: TICKS,
-    corruption: { ...corruption, ambient: DEMO_PLAN.ambient },
-    brains: { ours: createBrain, kalman: createKalmanBrain },
-    primary: 'ours',
-  });
-  return Object.fromEntries(Object.entries(traces).map(([name, trace]) => [name, stats(trace)]));
+function printVerbose(mode: CorruptionMode, traces: Record<string, TickRecord[]>): void {
+  console.log(`\n--- verbose: ${mode}, seed ${SEEDS[0]} ---`);
+  const ours = traces['ours']!;
+  const kalman = traces['kalman']!;
+  for (let i = 0; i < ours.length; i++) {
+    const o = ours[i]!;
+    const truth = o.truth.spaces.filter((s) => s.burning).map((s) => s.id).join(',') || '-';
+    const susp = o.belief.suspectSensors.join(',') || '-';
+    const amb = o.belief.ambiguous.map((g) => g.join('|')).join(';') || '-';
+    console.log(
+      `t=${String(o.t).padStart(3)} truth=[${truth}] ours=[${o.belief.burningSet.join(',') || '-'}]` +
+        ` c=${o.belief.confidence.toFixed(2)} susp=${susp} amb=${amb}` +
+        ` kalman=[${kalman[i]!.belief.burningSet.join(',') || '-'}] c=${kalman[i]!.belief.confidence.toFixed(2)}`,
+    );
+  }
 }
 
-function printTable(label: string, results: Record<string, BrainStats>): void {
-  const names = Object.keys(results);
-  const row = (metric: string, get: (s: BrainStats) => string): string =>
-    `  ${metric.padEnd(42)}${names.map((n) => get(results[n]!).padStart(10)).join('')}`;
-  console.log(`\n${label}`);
-  console.log(`  ${''.padEnd(42)}${names.map((n) => n.padStart(10)).join('')}`);
-  console.log(row(`confidently wrong ticks (conf > ${CONFIDENT})`, (s) => String(s.confidentlyWrongTicks)));
-  console.log(row('first confidently wrong tick', (s) => (s.firstConfidentlyWrongTick === null ? '-' : String(s.firstConfidentlyWrongTick))));
-  console.log(row('mean abs temp error (C)', (s) => s.meanAbsErrC.toFixed(1)));
-}
+const pct = (x: number): string => `${(100 * x).toFixed(0)}%`;
 
-const ignition = DEMO_PLAN.ignition;
-const freezeCfg: Omit<CorruptionConfig, 'seed'> = { mode: 'freeze', k: 1, target: ignition, onset: 5 };
-const blindCfg: Omit<CorruptionConfig, 'seed'> = { mode: 'blind', k: 1, target: ignition, onset: 5 };
+console.log(
+  `evidence-cp2  plan=${DEMO_PLAN.name}  ticks=${TICKS}  onset=${ONSET}  k=1  target=${TARGET.join(',')}  seeds=${SEEDS.join(',')}`,
+);
+const rows = MODES.flatMap(runMode);
 
-console.log(`evidence  plan=${DEMO_PLAN.name}  seed=${SEED}  ticks=${TICKS}  target=${ignition.join(',')}`);
-
-const freeze = run(freezeCfg);
-printTable(`freeze k=1 onset=5 (sim:freeze)`, freeze);
-
-if (freeze['kalman']!.confidentlyWrongTicks === 0) {
+console.log(`\n  ${'mode'.padEnd(11)}${'brain'.padEnd(9)}${'falseCert'.padStart(10)}${'coverage'.padStart(10)}${'meanErr C'.padStart(11)}`);
+for (const r of rows) {
   console.log(
-    '\n  NOTE: freeze produced no confidently-wrong Kalman ticks. The world physics is\n' +
-      '  still the constant-temp stub, so a frozen reading equals the unchanging truth.\n' +
-      '  Falling back to blind corruption, which diverges even with constant truth:',
+    `  ${r.mode.padEnd(11)}${r.brain.padEnd(9)}${pct(r.falseCertainty).padStart(10)}${pct(r.ambiguityCoverage).padStart(10)}${r.meanAbsErr.toFixed(1).padStart(11)}`,
   );
-  printTable(`blind k=1 onset=5 (sim:blind fallback)`, run(blindCfg));
+}
+
+mkdirSync('results', { recursive: true });
+writeFileSync(
+  'results/evidence-cp2.json',
+  JSON.stringify({ plan: DEMO_PLAN.name, ticks: TICKS, onset: ONSET, k: 1, target: TARGET, seeds: SEEDS, rows }, null, 2),
+);
+console.log('\nwrote results/evidence-cp2.json');
+
+for (const mode of MODES) {
+  const ours = rows.find((r) => r.mode === mode && r.brain === 'ours')!;
+  const kal = rows.find((r) => r.mode === mode && r.brain === 'kalman')!;
+  console.log(
+    `${mode}: kalman false-certain ${pct(kal.falseCertainty)} of ticks, ours ${pct(ours.falseCertainty)}, coverage ${pct(ours.ambiguityCoverage)}.`,
+  );
 }

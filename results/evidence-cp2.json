@@ -1,0 +1,61 @@
+{
+  "plan": "demo-6",
+  "ticks": 60,
+  "onset": 5,
+  "k": 1,
+  "target": [
+    "S3",
+    "S2"
+  ],
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "rows": [
+    {
+      "mode": "freeze",
+      "brain": "ours",
+      "falseCertainty": 0,
+      "ambiguityCoverage": 0.9142857142857143,
+      "meanAbsErr": 3.556129953326053
+    },
+    {
+      "mode": "freeze",
+      "brain": "kalman",
+      "falseCertainty": 0.65,
+      "ambiguityCoverage": 1,
+      "meanAbsErr": 41.97721995197852
+    },
+    {
+      "mode": "blind",
+      "brain": "ours",
+      "falseCertainty": 0,
+      "ambiguityCoverage": 0.9142857142857143,
+      "meanAbsErr": 3.7033262652945864
+    },
+    {
+      "mode": "blind",
+      "brain": "kalman",
+      "falseCertainty": 0.7214285714285713,
+      "ambiguityCoverage": 0.3321428571428572,
+      "meanAbsErr": 114.69251333521977
+    },
+    {
+      "mode": "flashover",
+      "brain": "ours",
+      "falseCertainty": 0.02857142857142857,
+      "ambiguityCoverage": 0.9499999999999998,
+      "meanAbsErr": 22.111454059862364
+    },
+    {
+      "mode": "flashover",
+      "brain": "kalman",
+      "falseCertainty": 0.6321428571428571,
+      "ambiguityCoverage": 0.9642857142857142,
+      "meanAbsErr": 53.91245528050284
+    }
+  ]
+}
