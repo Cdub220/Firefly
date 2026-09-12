@@ -1,0 +1,31 @@
+{
+  "name": "demo-6",
+  "ambient": 22,
+  "spaces": [
+    { "id": "S1", "level": 1, "occupants": 0 },
+    { "id": "S2", "level": 1, "occupants": 2 },
+    { "id": "S3", "level": 1, "occupants": 0, "hazard": "fuel" },
+    { "id": "S4", "level": 1, "occupants": 4 },
+    { "id": "S5", "level": 1, "occupants": 0 },
+    { "id": "S6", "level": 1, "occupants": 1 }
+  ],
+  "edges": [
+    { "a": "S1", "b": "S2", "kind": "door", "rate": 0.15 },
+    { "a": "S2", "b": "S3", "kind": "door", "rate": 0.15 },
+    { "a": "S3", "b": "S4", "kind": "bulkhead", "rate": 0.05 },
+    { "a": "S4", "b": "S5", "kind": "door", "rate": 0.15 },
+    { "a": "S5", "b": "S6", "kind": "passage", "rate": 0.2 },
+    { "a": "S6", "b": "S1", "kind": "bulkhead", "rate": 0.05 },
+    { "a": "S2", "b": "S5", "kind": "passage", "rate": 0.2 }
+  ],
+  "sensors": [
+    { "id": "F1", "spaceId": "S1" },
+    { "id": "F2", "spaceId": "S2" },
+    { "id": "F3", "spaceId": "S3" },
+    { "id": "F4", "spaceId": "S4" },
+    { "id": "F5", "spaceId": "S5" },
+    { "id": "F6", "spaceId": "S6" }
+  ],
+  "resupply": ["S1"],
+  "ignition": ["S3"]
+}
