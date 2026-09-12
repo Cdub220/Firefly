@@ -6,8 +6,10 @@ describe('runLoop', () => {
     const trace = runLoop({ plan: DEMO_PLAN, seed: 42, ticks: 10 });
     expect(trace).toHaveLength(10);
     const last = trace[trace.length - 1]!;
-    expect(last.truth.spaces.filter((s) => s.burning).map((s) => s.id)).toEqual(DEMO_PLAN.ignition);
-    expect(last.belief.burningSet).toEqual(DEMO_PLAN.ignition);
+    // The fire spreads and the v0 brain thresholds on temperature, so neither set is
+    // exactly the ignition set; both must still contain it.
+    expect(last.truth.spaces.filter((s) => s.burning).map((s) => s.id)).toEqual(expect.arrayContaining(DEMO_PLAN.ignition));
+    expect(last.belief.burningSet).toEqual(expect.arrayContaining(DEMO_PLAN.ignition));
     expect(last.obs.readings.length).toBeGreaterThan(0);
   });
 

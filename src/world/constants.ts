@@ -1,6 +1,7 @@
 /**
  * World physics constants. Every number the fire model uses is named here so Dean can
- * copy the ones his brain's linear heat model needs (GEN, COOL, IGNITE, CLOSED_DOOR_LEAK).
+ * copy the ones his brain's linear heat model needs (GEN_RATE, FLAME_TEMP, COOL, IGNITE,
+ * CLOSED_DOOR_LEAK).
  *
  * The per-tick model in src/world/physics.ts is, per space i:
  *
@@ -16,6 +17,13 @@
  * degrees on small ones). The model is still linear in T; the generation term is just
  * a diagonal entry (1 - GEN_RATE) plus a constant GEN_RATE * FLAME_TEMP. Everything else
  * (hazards, spontaneous ignition, door failure) is realism layered on top of that core.
+ *
+ * Two places the world is not exactly that linear model, for anyone matching it:
+ *  - The MAX_OUTGOING_RATE clamp scales only the over-limit space's own outgoing sum;
+ *    receivers still take the full rate. It only triggers when a space's degree-weighted
+ *    rates exceed 0.9 (none of the current plans come close).
+ *  - Ordnance cook-off is decided on the temperature after transfer and cooling within
+ *    the tick, not the start-of-tick temperature.
  */
 
 /** Initial temperature (C) of every space listed in plan.ignition. */
@@ -26,10 +34,11 @@ export const FLAME_TEMP = 900;
 
 /**
  * Fraction of (FLAME_TEMP - temp) a burning space with fuel closes per tick. At 450 C this
- * is +67 C/tick. Chosen by sweep: 0.1 never spreads on a two-level plan or a 5x3 grid
- * (neighbors dilute the heat); 0.15 spreads on both and peaks near 800 C.
+ * is +112 C/tick. Chosen by sweep over demo-6, a two-level demo-6, 5x3 and 8x8 grids and
+ * a 5x3 two-level grid: 0.15 leaves a burning space at ~400 C on the grids (neighbors
+ * dilute the heat) and it never spreads; 0.25 spreads on every plan with peaks near 850 C.
  */
-export const GEN_RATE = 0.15;
+export const GEN_RATE = 0.25;
 
 /** Fuel (fraction of 1) a burning space consumes per tick. */
 export const BURN = 0.02;

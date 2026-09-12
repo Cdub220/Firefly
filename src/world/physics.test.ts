@@ -187,6 +187,10 @@ describe('generation, hazards, effects', () => {
     const afterTransfer = 300 - 0.2 * 278;
     const gap = FLAME_TEMP - afterTransfer;
     expect(plain.temp - damped.temp).toBeCloseTo(GEN_RATE * 0.7 * gap * (1 - COOL), 6);
+    // Suppression above 1 cannot amplify the fire.
+    const over = stepPhysics(base, TRI, makeRng(1), { A: { suppression: 5, fuelDelta: 0 } })
+      .spaces.find((s) => s.id === 'A')!;
+    expect(over.temp).toBeCloseTo(plain.temp, 9);
   });
 
   it('a fuelDelta effect removes fuel and keeps it in [0, 1]', () => {
@@ -208,17 +212,31 @@ describe('generation, hazards, effects', () => {
     const a1 = one.spaces.find((s) => s.id === 'A')!;
     const c1 = one.spaces.find((s) => s.id === 'C')!;
     expect(a1.hazard).toBe('none');
-    // Plan order does not change the outcome: reversing the space list gives the same temps.
-    const rev: StructurePlan = { ...TRI, spaces: [...TRI.spaces].reverse() };
-    const st2 = { ...st, spaces: [...st.spaces].reverse() };
-    const oneRev = stepPhysics(st2, rev, makeRng(1));
-    expect(oneRev.spaces.find((s) => s.id === 'C')!.temp).toBeCloseTo(c1.temp, 9);
     // C: bulkhead 0.05 * 498 transfer, cooling, then +150 from the cook-off.
     const pre = 22 + 0.05 * 498;
     expect(c1.temp).toBeCloseTo(pre + COOL * (22 - pre) + ORDNANCE_COOKOFF_HEAT, 6);
     const two = stepPhysics(one, TRI, makeRng(1));
     const c2 = two.spaces.find((s) => s.id === 'C')!;
     expect(c2.temp).toBeLessThan(c1.temp + ORDNANCE_COOKOFF_HEAT);
+  });
+
+  it('cook-off is decided on step-entry temps, so plan order and chaining cannot change it', () => {
+    // A cooks off this tick. B is ordnance too and enters step 5 at ~353 C; A's +150 pushes
+    // it past 400 but it must not cook until next tick, whichever order the plan lists them.
+    const base = { A: { temp: 520, burning: false, fuel: 0, hazard: 'ordnance' as const },
+      B: { temp: 300, burning: false, fuel: 0, hazard: 'ordnance' as const } };
+    const fwd = stepPhysics(stateOf(TRI, base), TRI, makeRng(1));
+    const revPlan: StructurePlan = { ...TRI, spaces: [...TRI.spaces].reverse() };
+    const rev = stepPhysics(stateOf(revPlan, base), revPlan, makeRng(1));
+    for (const id of ['A', 'B', 'C']) {
+      expect(rev.spaces.find((s) => s.id === id)!.temp).toBeCloseTo(fwd.spaces.find((s) => s.id === id)!.temp, 9);
+    }
+    expect(fwd.spaces.find((s) => s.id === 'A')!.hazard).toBe('none');
+    expect(fwd.spaces.find((s) => s.id === 'B')!.hazard).toBe('ordnance');
+    expect(fwd.spaces.find((s) => s.id === 'B')!.temp).toBeGreaterThan(400);
+    // C received exactly one cook-off.
+    const preC = 22 + 0.05 * 498;
+    expect(fwd.spaces.find((s) => s.id === 'C')!.temp).toBeCloseTo(preC + COOL * (22 - preC) + ORDNANCE_COOKOFF_HEAT, 6);
   });
 
   it('a fuel hazard burns fuel FUEL_HAZARD_MULT times faster', () => {

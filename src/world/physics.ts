@@ -21,7 +21,7 @@ import {
 
 /** Per-space drone influence for one tick. Built by drones.ts, consumed here. */
 export type SpaceEffects = {
-  /** Multiplier on GEN_RATE this tick. 1 = no effect. Two tethers give 0.3 * 0.3. */
+  /** Multiplier on GEN_RATE this tick, clamped to [0, 1]. 1 = no effect. Two tethers give 0.3 * 0.3. */
   suppression: number;
   /** Added to fuel this tick (negative for retardant coating). */
   fuelDelta: number;
@@ -105,7 +105,8 @@ export function stepPhysics(
       continue;
     }
     const hazardMult = s.hazard === 'fuel' ? FUEL_HAZARD_MULT : 1;
-    s.temp += GEN_RATE * hazardMult * fx.suppression * (FLAME_TEMP - s.temp);
+    const suppression = Math.min(1, Math.max(0, fx.suppression));
+    s.temp += GEN_RATE * hazardMult * suppression * (FLAME_TEMP - s.temp);
     s.fuel = Math.max(0, s.fuel - BURN * hazardMult);
     if (s.fuel <= 0) s.burning = false;
   }
