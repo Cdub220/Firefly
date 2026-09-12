@@ -61,7 +61,23 @@ Hooks, skills, and a verifier agent are committed under `.claude/`. Start a sess
 
 ## Failure model
 
-TODO(Dean). Must specify, per the Defense brief: what can fail (blinded / saturated / frozen / dead), whether the corrupted subset is fixed or changing, whether magnitude is bounded, how failures correlate (per-space flashover kills all sensors in that space), and what stays trusted (structure plan, conservation physics).
+Every way a reading can be wrong lives in `src/corruption`, configured by `CorruptionConfig` (the chaos panel's API). The corruptor sees the clean observation and may key failures off true temperatures; it never imports the world, and the brain never learns the pattern except through the observations themselves.
+
+**What can fail.** Four modes plus their combination:
+
+- **freeze** — at `onset`, up to `k` sensors stick at their last value. The timestamp freezes too, but the temperature looks plausible: a stale reading masquerading as a live one.
+- **blind** — at `onset`, up to `k` sensors report ambient regardless of truth, with a *current* timestamp. Smoke blinds the thermal camera exactly where it is hottest.
+- **saturate** — every sensor whose true temp exceeds `saturateAt` pins at exactly that value. Physics, so no `k` limit.
+- **flashover** — a space whose true temp exceeds `flashoverTemp` loses every sensor in it, fixed and drone-borne, permanently; drones caught inside report dead. Not bounded by `k`.
+- **mixed** — all four at once (freeze and blind share the `k` budget), plus a 2% per-tick per-drone chance of comms loss that drops the drone's readings and self-report for that tick.
+
+**Fixed or changing subset.** Freeze and blind pick their victims once at onset and hold them: a fixed subset. Saturate and flashover follow the fire: the corrupted subset grows as the fire spreads — and it is exactly the sensors nearest the truth.
+
+**Magnitude.** Unbounded. A frozen or blinded sensor can be arbitrarily far from truth.
+
+**Correlation.** Flashover is the correlated failure: one event silences every sensor in a space in the same instant. Independent-noise assumptions break here by design.
+
+**What stays trusted.** The structure plan — geometry, edges, heat-transfer rates — and conservation physics on those edges. That trusted reference is what the estimator leans on when the sensors lie.
 
 ## Method freeze
 

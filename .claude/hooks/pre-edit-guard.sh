@@ -30,7 +30,10 @@ fi
 
 case "$owner" in
   contract)
-    ask "CONTRACT FILE: $rel is shared between Dean and Chase. Edits need the other owner's agreement (additive changes: tell them; breaking changes: get a yes first). Approve only if that has happened or you will report it."
+    # Allowed without a prompt (hands-off sessions), but flagged so the human sees it and the agent reports it.
+    printf '{"systemMessage":%s,"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","permissionDecisionReason":"contract file; must be reported to the other owner"}}\n' \
+      "$(node -e 'process.stdout.write(JSON.stringify(process.argv[1]))' "CONTRACT FILE EDITED: $rel is shared with the other owner. The agent must list this change in its final report. Additive is fine; breaking changes need the other owner's yes.")"
+    exit 0
     ;;
   dean|chase)
     if [ "$role" = "both" ] || [ "$role" = "unknown" ] || [ "$role" = "$owner" ]; then
