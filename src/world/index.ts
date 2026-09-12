@@ -4,8 +4,9 @@
  * Simulation of the structure and the fire. Produces ground truth and clean observations.
  * Must not import src/brain or src/corruption (lint-enforced).
  *
- * Fire physics live in physics.ts, drone behaviour in drones.ts (both pure on the state
- * they are handed). This file owns the live state, the tick order, and sensing.
+ * Fire physics live in physics.ts (pure: returns a new state). Drone behaviour lives in
+ * drones.ts (edits the drones and doors it is handed in place, and builds the Effects map
+ * physics consumes). This file owns the live state, the tick order, and sensing.
  *
  * Tick order: commands -> drones move -> drone effects -> physics -> drones die -> sense.
  *

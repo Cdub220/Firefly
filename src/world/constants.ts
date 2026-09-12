@@ -84,15 +84,24 @@ export const DRONE_DEATH = 400;
 
 /**
  * A tethered unit is water-cooled from the standpipe and survives anything below flame
- * temperature. At the prompt's 500 C it could never enter a burning space (every burning
- * space passes 500 within three ticks of ignition) and the class would be useless.
+ * temperature. At the prompt's 500 C it could never enter a burning space (a burning
+ * space is past 500 one tick after ignition and a drone will not step into a lethal
+ * space). In practice nothing in the current plans reaches 900, so a tether can only be
+ * silenced by the corruptor, never by the fire. That is a deliberate call: tethers and
+ * fixed sensors are the durable references.
  */
 export const DRONE_DEATH_TETHER = FLAME_TEMP;
 
-/** 'suppress' (tether): GEN_RATE in that space is multiplied by this, per tether. */
+/** 'suppress' (tether): GEN_RATE in that space is multiplied by this, per tether (two stack to 0.09). */
 export const TETHER_SUPPRESSION = 0.3;
 
-/** 'suppress' (tether): extra fraction of (ambient - temp) applied per tick, per tether. Water cools. */
+/**
+ * 'suppress' (tether): extra fraction of (ambient - temp) applied per tick, per tether
+ * (two stack to 0.2). Water cools. Tuning choice: the multiplier alone holds a burning
+ * space near 410-450 C for 20 ticks and lets it creep back toward 700; with cooling one
+ * tether holds it near 300-360 C and stops all spread, two hold it near 100 C. Note it
+ * also makes 'suppress' on a warm unburned space a strong action.
+ */
 export const TETHER_COOL = 0.1;
 
 /** 'coat' (retardant): fuel and drone resource removed per tick while coating. */

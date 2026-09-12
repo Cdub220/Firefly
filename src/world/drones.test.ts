@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { Command, StructurePlan, WorldConfig, WorldState } from '../shared/types';
 import demo from '../../data/structures/demo-6.json';
-import { DEFAULT_DRONES, bfsPath, createWorld } from './index';
-import { COAT_RATE, DRONE_DEATH, DRONE_DEATH_TETHER } from './constants';
+import { makeRng } from '../shared/rng';
+import { DEFAULT_DRONES, bfsPath, createWorld, stepPhysics } from './index';
+import { COAT_RATE, DRONE_DEATH, DRONE_DEATH_TETHER, TETHER_COOL, TETHER_SUPPRESSION } from './constants';
 
 const DEMO = demo as StructurePlan;
 
@@ -87,6 +88,52 @@ describe('effects', () => {
       20,
     );
     expect(space(two[19]!, 'S3').temp).toBeLessThan(space(one[19]!, 'S3').temp - 100);
+  });
+
+  it('two tethers give exactly 0.3 * 0.3 suppression and 2 * TETHER_COOL cooling', () => {
+    // The world's first tick with two tethers in S3 must equal stepPhysics with that map.
+    const w = createWorld({ plan: DEMO, seed: 1, drones: [{ id: 'T', class: 'tether', at: 'S3' }, { id: 'U', class: 'tether', at: 'S3' }] });
+    const world = w.tick([{ droneId: 'T', goTo: 'S3', task: 'suppress' }, { droneId: 'U', goTo: 'S3', task: 'suppress' }]).truth;
+    // The start-of-run state by hand: ignition space at 450, everything else at ambient.
+    // The world's physics draws come first on its 'world' fork, so a fresh fork matches.
+    const initial = { t: 0, spaces: world.spaces.map((s) => ({ ...s, doorsOpen: [...s.doorsOpen] })), drones: [] };
+    for (const s of initial.spaces) { s.burning = s.id === 'S3'; s.temp = s.burning ? 450 : DEMO.ambient; s.fuel = 1; }
+    const expected = stepPhysics(initial, DEMO, makeRng(1).fork('world'), {
+      S3: { suppression: TETHER_SUPPRESSION * TETHER_SUPPRESSION, fuelDelta: 0, cooling: 2 * TETHER_COOL },
+    });
+    expect(space(world, 'S3').temp).toBeCloseTo(expected.spaces.find((s) => s.id === 'S3')!.temp, 9);
+    // And a wrong stacking rule gives a different number.
+    const wrong = stepPhysics(initial, DEMO, makeRng(1).fork('world'), {
+      S3: { suppression: TETHER_SUPPRESSION, fuelDelta: 0, cooling: TETHER_COOL },
+    });
+    expect(space(world, 'S3').temp).not.toBeCloseTo(wrong.spaces.find((s) => s.id === 'S3')!.temp, 3);
+  });
+
+  it('effects are class-gated and apply only at goTo, not en route', () => {
+    const control = run(DEMO, 1, [], [], 1);
+    // A scout told to coat, a scout told to close doors: nothing changes.
+    const fakeCoat = run(DEMO, 1, [{ id: 'X', class: 'scout', at: 'S1' }], [{ droneId: 'X', goTo: 'S1', task: 'coat' }], 1);
+    const fakeHatch = run(DEMO, 1, [{ id: 'X', class: 'scout', at: 'S1' }], [{ droneId: 'X', goTo: 'S2', task: 'close-door' }], 1);
+    expect(space(fakeCoat[0]!, 'S1').fuel).toBe(1);
+    expect(drone(fakeCoat[0]!, 'X').resource).toBe(1);
+    expect(space(fakeHatch[0]!, 'S2').doorsOpen).toEqual(space(control[0]!, 'S2').doorsOpen);
+    // A retardant passing through S2 on its way to S5 does not coat S2.
+    const enRoute = run(DEMO, 1, [{ id: 'R', class: 'retardant', at: 'S1' }], [{ droneId: 'R', goTo: 'S5', task: 'coat' }], 1);
+    expect(drone(enRoute[0]!, 'R').at).toBe('S2');
+    expect(space(enRoute[0]!, 'S2').fuel).toBe(1);
+    expect(drone(enRoute[0]!, 'R').resource).toBe(1);
+  });
+
+  it('floor edges are traversable', () => {
+    const two: StructurePlan = {
+      name: 'two', ambient: 22,
+      spaces: [{ id: 'A', level: 1 }, { id: 'B', level: 2 }, { id: 'C', level: 2 }],
+      edges: [{ a: 'A', b: 'B', kind: 'floor', rate: 0.05 }, { a: 'B', b: 'C', kind: 'door', rate: 0.15 }],
+      sensors: [], resupply: ['A'], ignition: [],
+    };
+    const trace = run(two, 1, [{ id: 'D', class: 'scout', at: 'A' }], [{ droneId: 'D', goTo: 'C', task: 'observe' }], 2);
+    expect(drone(trace[0]!, 'D').at).toBe('B');
+    expect(drone(trace[1]!, 'D').at).toBe('C');
   });
 
   it('suppress from a non-tether does nothing', () => {
