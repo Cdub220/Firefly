@@ -14,14 +14,14 @@
 import type { Rng } from '../shared/rng';
 import type { Edge, Space, SpaceId, StructurePlan, WorldState } from '../shared/types';
 import {
-  BURN, CHEMICAL_COOL_MULT, CLOSED_DOOR_LEAK, COOL, DOOR_FAIL_P, FUEL_HAZARD_MULT, GEN, IGNITE,
-  MAX_OUTGOING_RATE, MIN_IGNITION_FUEL, ORDNANCE_COOKOFF_HEAT, ORDNANCE_COOKOFF_TEMP,
-  SPONTANEOUS_IGNITE_P,
+  BURN, CHEMICAL_COOL_MULT, CLOSED_DOOR_LEAK, COOL, DOOR_FAIL_P, FLAME_TEMP, FUEL_HAZARD_MULT,
+  GEN_RATE, IGNITE, MAX_OUTGOING_RATE, MIN_IGNITION_FUEL, ORDNANCE_COOKOFF_HEAT,
+  ORDNANCE_COOKOFF_TEMP, SPONTANEOUS_IGNITE_P,
 } from './constants';
 
 /** Per-space drone influence for one tick. Built by drones.ts, consumed here. */
 export type SpaceEffects = {
-  /** Multiplier on GEN this tick. 1 = no effect. Two tethers give 0.3 * 0.3. */
+  /** Multiplier on GEN_RATE this tick. 1 = no effect. Two tethers give 0.3 * 0.3. */
   suppression: number;
   /** Added to fuel this tick (negative for retardant coating). */
   fuelDelta: number;
@@ -30,7 +30,7 @@ export type Effects = Partial<Record<SpaceId, SpaceEffects>>;
 
 const NO_EFFECT: SpaceEffects = { suppression: 1, fuelDelta: 0 };
 
-/** Edges as seen from one endpoint. Cached per plan; plans are immutable. */
+/** Edges as seen from one endpoint (copies, both directions). Cached per plan object. */
 type Compiled = { out: Map<SpaceId, Edge[]> };
 const compiledCache = new WeakMap<StructurePlan, Compiled>();
 
@@ -40,7 +40,7 @@ function compile(plan: StructurePlan): Compiled {
   const out = new Map<SpaceId, Edge[]>();
   for (const s of plan.spaces) out.set(s.id, []);
   for (const e of plan.edges) {
-    out.get(e.a)?.push(e);
+    out.get(e.a)?.push({ ...e });
     out.get(e.b)?.push({ ...e, a: e.b, b: e.a });
   }
   const c = { out };
@@ -105,7 +105,7 @@ export function stepPhysics(
       continue;
     }
     const hazardMult = s.hazard === 'fuel' ? FUEL_HAZARD_MULT : 1;
-    s.temp += GEN * hazardMult * fx.suppression;
+    s.temp += GEN_RATE * hazardMult * fx.suppression * (FLAME_TEMP - s.temp);
     s.fuel = Math.max(0, s.fuel - BURN * hazardMult);
     if (s.fuel <= 0) s.burning = false;
   }
@@ -126,9 +126,10 @@ export function stepPhysics(
     else if (rng.next() < SPONTANEOUS_IGNITE_P) s.burning = true;
   }
 
-  // 5. Ordnance cook-off: one-shot heat dump into every neighbor.
-  for (const s of spaces) {
-    if (s.hazard !== 'ordnance' || s.temp < ORDNANCE_COOKOFF_TEMP) continue;
+  // 5. Ordnance cook-off: one-shot heat dump into every neighbor. Decided on the temps
+  //    entering this step, so two adjacent ordnance spaces do not depend on plan order.
+  const cooking = spaces.filter((s) => s.hazard === 'ordnance' && s.temp >= ORDNANCE_COOKOFF_TEMP);
+  for (const s of cooking) {
     for (const e of out.get(s.id) ?? []) {
       const n = byId.get(e.b);
       if (n) n.temp += ORDNANCE_COOKOFF_HEAT;
@@ -136,11 +137,14 @@ export function stepPhysics(
     s.hazard = 'none';
   }
 
-  // 6. Doors: each open door of a burning space may fail shut. Closing removes the pair
-  //    from both sides so effectiveRate agrees whichever end asks.
+  // 6. Doors: each open door of a burning space may fail shut, one draw per door. When
+  //    both sides burn, the lower id draws. Closing removes the pair from both sides so
+  //    effectiveRate agrees whichever end asks.
   for (const s of spaces) {
     if (!s.burning) continue;
     for (const nId of [...s.doorsOpen]) {
+      const other = byId.get(nId);
+      if (other?.burning && nId < s.id) continue;
       if (rng.next() >= DOOR_FAIL_P) continue;
       s.doorsOpen = s.doorsOpen.filter((x) => x !== nId);
       const n = byId.get(nId);

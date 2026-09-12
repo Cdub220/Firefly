@@ -6,7 +6,8 @@ import demo from '../../data/structures/demo-6.json';
 import { createWorld } from './index';
 import { stepPhysics } from './physics';
 import {
-  CLOSED_DOOR_LEAK, COOL, GEN, IGNITE, MAX_OUTGOING_RATE, ORDNANCE_COOKOFF_HEAT,
+  BURN, CHEMICAL_COOL_MULT, CLOSED_DOOR_LEAK, COOL, FLAME_TEMP, FUEL_HAZARD_MULT, GEN_RATE, IGNITE,
+  MAX_OUTGOING_RATE, ORDNANCE_COOKOFF_HEAT,
 } from './constants';
 
 const DEMO = demo as StructurePlan;
@@ -134,6 +135,28 @@ describe('heat paths', () => {
     expect(b.temp).toBeCloseTo(expectOpen + COOL * (22 - expectOpen), 6);
   });
 
+  it('fire climbs a floor edge to a second level and spreads there', () => {
+    // demo-6 twice, each space joined to its twin above by a floor edge. This is the
+    // checkpoint-2 plan shape; a model that only spreads on a sparse single level is useless.
+    const two: StructurePlan = {
+      name: 'two-level',
+      ambient: DEMO.ambient,
+      spaces: [...DEMO.spaces, ...DEMO.spaces.map((s) => ({ ...s, id: `${s.id}U`, level: 2 }))],
+      edges: [
+        ...DEMO.edges,
+        ...DEMO.edges.map((e) => ({ ...e, a: `${e.a}U`, b: `${e.b}U` })),
+        ...DEMO.spaces.map((s) => ({ a: s.id, b: `${s.id}U`, kind: 'floor' as const, rate: 0.08 })),
+      ],
+      sensors: [],
+      resupply: ['S1'],
+      ignition: ['S3'],
+    };
+    const trace = run(two, 1, 120);
+    const upperEverBurned = DEMO.spaces.filter((s) => firstBurn(trace, `${s.id}U`) < Infinity);
+    expect(firstBurn(trace, 'S3U')).toBeLessThan(Infinity);
+    expect(upperEverBurned.length).toBeGreaterThanOrEqual(3);
+  });
+
   it('clamps the sum of outgoing rates to MAX_OUTGOING_RATE so a hub never overshoots', () => {
     const n = 10;
     const hub: StructurePlan = {
@@ -155,12 +178,15 @@ describe('heat paths', () => {
 });
 
 describe('generation, hazards, effects', () => {
-  it('a burning space adds GEN per tick and a suppression effect scales it', () => {
+  it('a burning space is pulled toward FLAME_TEMP and a suppression effect scales the pull', () => {
     const base = stateOf(TRI, { A: { temp: 300 } });
     const plain = stepPhysics(base, TRI, makeRng(1)).spaces.find((s) => s.id === 'A')!;
     const damped = stepPhysics(base, TRI, makeRng(1), { A: { suppression: 0.3, fuelDelta: 0 } })
       .spaces.find((s) => s.id === 'A')!;
-    expect(plain.temp - damped.temp).toBeCloseTo(GEN * 0.7 * (1 - COOL), 6);
+    // A after transfer: 300 - 0.15*278 - 0.05*278 = 244.4. Generation gap = FLAME_TEMP - 244.4.
+    const afterTransfer = 300 - 0.2 * 278;
+    const gap = FLAME_TEMP - afterTransfer;
+    expect(plain.temp - damped.temp).toBeCloseTo(GEN_RATE * 0.7 * gap * (1 - COOL), 6);
   });
 
   it('a fuelDelta effect removes fuel and keeps it in [0, 1]', () => {
@@ -182,12 +208,49 @@ describe('generation, hazards, effects', () => {
     const a1 = one.spaces.find((s) => s.id === 'A')!;
     const c1 = one.spaces.find((s) => s.id === 'C')!;
     expect(a1.hazard).toBe('none');
+    // Plan order does not change the outcome: reversing the space list gives the same temps.
+    const rev: StructurePlan = { ...TRI, spaces: [...TRI.spaces].reverse() };
+    const st2 = { ...st, spaces: [...st.spaces].reverse() };
+    const oneRev = stepPhysics(st2, rev, makeRng(1));
+    expect(oneRev.spaces.find((s) => s.id === 'C')!.temp).toBeCloseTo(c1.temp, 9);
     // C: bulkhead 0.05 * 498 transfer, cooling, then +150 from the cook-off.
     const pre = 22 + 0.05 * 498;
     expect(c1.temp).toBeCloseTo(pre + COOL * (22 - pre) + ORDNANCE_COOKOFF_HEAT, 6);
     const two = stepPhysics(one, TRI, makeRng(1));
     const c2 = two.spaces.find((s) => s.id === 'C')!;
     expect(c2.temp).toBeLessThan(c1.temp + ORDNANCE_COOKOFF_HEAT);
+  });
+
+  it('a fuel hazard burns fuel FUEL_HAZARD_MULT times faster', () => {
+    const plain = stepPhysics(stateOf(TRI), TRI, makeRng(1)).spaces.find((s) => s.id === 'A')!;
+    const fuelHaz = stepPhysics(stateOf(TRI, { A: { hazard: 'fuel' } }), TRI, makeRng(1))
+      .spaces.find((s) => s.id === 'A')!;
+    expect(1 - plain.fuel).toBeCloseTo(BURN, 9);
+    expect(1 - fuelHaz.fuel).toBeCloseTo(BURN * FUEL_HAZARD_MULT, 9);
+    expect(fuelHaz.temp).toBeGreaterThan(plain.temp);
+  });
+
+  it('a chemical hazard cools at CHEMICAL_COOL_MULT of the normal rate', () => {
+    const lone: StructurePlan = {
+      name: 'lone', ambient: 22, spaces: [{ id: 'X', level: 1 }], edges: [], sensors: [], resupply: ['X'], ignition: [],
+    };
+    const plain = stepPhysics(stateOf(lone, { X: { temp: 222, fuel: 0 } }), lone, makeRng(1)).spaces[0]!;
+    const chem = stepPhysics(stateOf(lone, { X: { temp: 222, fuel: 0, hazard: 'chemical' } }), lone, makeRng(1)).spaces[0]!;
+    expect(plain.temp).toBeCloseTo(222 - COOL * 200, 9);
+    expect(chem.temp).toBeCloseTo(222 - COOL * CHEMICAL_COOL_MULT * 200, 9);
+  });
+
+  it('open doors in burning spaces eventually fail shut, symmetrically', () => {
+    const trace = run(DEMO, 42, 200);
+    const doorsAt = (s: WorldState): number => s.spaces.reduce((n, sp) => n + sp.doorsOpen.length, 0);
+    expect(doorsAt(trace[trace.length - 1]!)).toBeLessThan(doorsAt(trace[0]!));
+    for (const s of trace) {
+      for (const sp of s.spaces) {
+        for (const other of sp.doorsOpen) {
+          expect(s.spaces.find((x) => x.id === other)!.doorsOpen).toContain(sp.id);
+        }
+      }
+    }
   });
 
   it('a hot isolated space ignites spontaneously with no burning neighbor', () => {
