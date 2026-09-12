@@ -52,7 +52,12 @@ export function candidates(
   }
   for (const h of trustedHot) {
     add(new Set([h]));
-    for (const n of neighborsOf(h)) add(new Set([h, n]));
+    for (const n of neighborsOf(h)) {
+      add(new Set([h, n]));
+      // The warmth at h may be LEAKAGE from a fire next door — possibly in a space with
+      // no sensor at all. The neighbor alone must be a candidate.
+      add(new Set([n]));
+    }
   }
 
   const prevSize = prevBurning.size;

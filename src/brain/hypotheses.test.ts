@@ -111,7 +111,7 @@ describe('estimator with hypothesis sets (A-B-C line, fire in B)', () => {
   const obs = (t: number, readings: Reading[]): Observation => ({ t, readings, drones: [] });
 
   it("B's sensor flashed over: burningSet still contains B, confidence < 1 on symmetric readings", () => {
-    const brain = createBrain({ plan: line3, seed: 42 }); // default k=2: 2 sensors may lie
+    const brain = createBrain({ plan: line3, seed: 42 }); // default k=1: one sensor may lie
     let out!: ReturnType<typeof brain.step>;
     for (let t = 1; t <= 6; t++) {
       // Only A and C report, symmetrically; B is silent (flashed over).
@@ -185,7 +185,7 @@ describe('estimator with hypothesis sets (A-B-C line, fire in B)', () => {
 });
 
 describe('predict / hotSpaces', () => {
-  it('predict blends steady state with one forward step', () => {
+  it('predict rolls forward from the prior, staying below the steady state early', () => {
     const prev = ambient(line3);
     const p = predict(line3, new Set(['B']), prev);
     const steady = steadyState(line3, new Set(['B']));

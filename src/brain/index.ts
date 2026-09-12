@@ -33,6 +33,13 @@ const SUSPECT_PENALTY = 0.8; // confidence multiplier per distrusted sensor
 const TOLERANCE_FLOOR_C = 8; // hypotheses within max(8, 15% of best) of the best survive
 const TOLERANCE_FRAC = 0.15;
 const MIN_CONFIDENCE = 0.05;
+// Confidence must also reflect FIT: 1/kept measures hypothesis-set collapse, and a pool
+// whose every member misfits the data (e.g. a fire in a space no candidate names) would
+// otherwise collapse to one bad hypothesis reported at confidence 1.00 — the exact false
+// certainty this project exists to kill. Residuals up to the allowance are free (noise +
+// model error); beyond it confidence decays as allowance/misfit.
+const FIT_ALLOWANCE_C = 6;
+const WARM_SEED_MARGIN_C = 30; // a reading this far above ambient seeds candidates too
 
 export function createBrain(config: BrainConfig): Brain {
   let rng: Rng = makeRng(config.seed).fork('brain');
@@ -90,8 +97,18 @@ export function createBrain(config: BrainConfig): Brain {
 
       // Seed candidates from hot READINGS and hot ESTIMATES: a fire whose sensors died
       // must stay in the pool — the estimate remembers it even when no reading does.
+      // Also seed from the warmest merely-warm reading: an unsensed space's fire shows
+      // up first as unexplained warmth next door, below any burning threshold.
+      const warmest = trusted.reduce(
+        (a, r) => (r.temp > (a?.temp ?? config.plan.ambient + WARM_SEED_MARGIN_C) ? r : a),
+        undefined as { temp: number; spaceId: SpaceId } | undefined,
+      );
       const hotSeeds = [
-        ...new Set([...hotSpaces(trusted), ...spaceIds.filter((id) => prevEstimate[id]! > 200)]),
+        ...new Set([
+          ...hotSpaces(trusted),
+          ...spaceIds.filter((id) => prevEstimate[id]! > 200),
+          ...(warmest ? [warmest.spaceId] : []),
+        ]),
       ];
       // Score each candidate by rolling physics from the estimate of ROLLOUT ticks ago
       // to the present and comparing against the current readings. Ties resolve toward
@@ -120,9 +137,13 @@ export function createBrain(config: BrainConfig): Brain {
       const contested = new Set<SpaceId>([...union].filter((id) => !burning.has(id)));
       const ambiguous = kept.length > 1 ? components(contested) : [];
 
+      const fit = best.s <= FIT_ALLOWANCE_C ? 1 : FIT_ALLOWANCE_C / best.s;
       const confidence = Math.min(
         1,
-        Math.max(MIN_CONFIDENCE, (1 / kept.length) * Math.pow(SUSPECT_PENALTY, suspect.length)),
+        Math.max(
+          MIN_CONFIDENCE,
+          (1 / kept.length) * Math.pow(SUSPECT_PENALTY, suspect.length) * fit,
+        ),
       );
 
       // Estimate: trusted readings where present; the best hypothesis's physics

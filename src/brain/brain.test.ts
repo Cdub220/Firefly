@@ -134,6 +134,39 @@ describe('createBrain v1', () => {
     expect(out.belief.estimate['S1']!).toBeGreaterThan(250); // physics carries the warmth
   });
 
+  it('an unnamed fire (all readings below 200C but misfitting) cannot get confidence 1.00', () => {
+    // Butterfly: a sensed middle space between two unsensed wings; fire in a wing. The
+    // middle sensor climbs while every sub-200C reading keeps "no fire" the only obvious
+    // candidate — confidence must fall with the misfit, and the warm seed must
+    // eventually name a wing.
+    const butterfly: StructurePlan = {
+      name: 'butterfly',
+      ambient: 20,
+      spaces: [
+        { id: 'W1', level: 1 },
+        { id: 'M', level: 1 },
+        { id: 'W2', level: 1 },
+      ],
+      edges: [
+        { a: 'W1', b: 'M', kind: 'door', rate: 0.1 },
+        { a: 'M', b: 'W2', kind: 'door', rate: 0.1 },
+      ],
+      sensors: [{ id: 'FM', spaceId: 'M' }],
+      resupply: ['M'],
+      ignition: ['W1'],
+    };
+    const brain = createBrain({ plan: butterfly, seed: 42 });
+    let temps: Record<SpaceId, number> = { W1: 450, M: 20, W2: 20 };
+    let out!: ReturnType<typeof brain.step>;
+    for (let t = 1; t <= 15; t++) {
+      out = brain.step(obs(t, [reading('FM', 'M', temps['M']!, t)]));
+      temps = forward(butterfly, temps, new Set(['W1']));
+    }
+    expect(out.belief.confidence).toBeLessThan(0.9); // never certain while misfitting
+    const mentioned = new Set([...out.belief.burningSet, ...out.belief.ambiguous.flat()]);
+    expect(mentioned.has('W1') || mentioned.has('W2')).toBe(true); // a wing is suspected
+  });
+
   it('reset() clears history and estimates deterministically', () => {
     const brain = createBrain({ plan, seed: 42 });
     const temps = stream(6);

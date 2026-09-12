@@ -169,6 +169,10 @@ export type CorruptionConfig = {
 export type BrainConfig = {
   plan: StructurePlan; // static blueprint. Not fire state. Not truth.
   seed: number;
-  /** Sensors that may be lying undetected; the estimator tolerates this many. Default 2. */
+  /**
+   * Sensors that may be lying undetected; the estimator tolerates this many. Default 1.
+   * Keep it below the per-space sensor redundancy of the plan (with one sensor per
+   * space, k=2 would let "no fire" discard both witnesses of a small fire).
+   */
   k?: number;
 };

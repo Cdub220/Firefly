@@ -18,6 +18,8 @@
  *   flashover: a space whose clean temp exceeds flashoverTemp loses EVERY sensor in it,
  *              permanently, and drones caught in it report alive:false, linked:false.
  *              The correlated failure. Not bounded by k.
+ *   (All modes respect `onset` — the contract says failures may begin at that tick — so
+ *   an eval window measured from onset actually measures the corruption.)
  *   mixed:     freeze + blind (sharing the k budget) + saturate + flashover, plus a 0.02
  *              per-tick per-drone chance of comms loss (that tick's readings and
  *              self-report dropped).
@@ -91,7 +93,7 @@ export function createCorruptor(config: CorruptionConfig): Corruptor {
 
   /** Spaces whose clean temp crosses flashoverTemp lose every sensor in them, for good. */
   const updateFlashovers = (obs: Observation): void => {
-    if (!wantFlashover) return;
+    if (!wantFlashover || obs.t < onset) return;
     const hottest = new Map<SpaceId, number>();
     for (const r of obs.readings) {
       hottest.set(r.spaceId, Math.max(hottest.get(r.spaceId) ?? -Infinity, r.temp));
@@ -137,7 +139,7 @@ export function createCorruptor(config: CorruptionConfig): Corruptor {
           readings.push({ ...held });
         } else if (kind === 'blind') {
           readings.push({ ...r, temp: ambient + rng.gauss() * BLIND_NOISE_C });
-        } else if (wantSaturate && r.temp > saturateAt && inTarget(r.spaceId)) {
+        } else if (wantSaturate && obs.t >= onset && r.temp > saturateAt && inTarget(r.spaceId)) {
           readings.push({ ...r, temp: saturateAt });
         } else {
           readings.push({ ...r });
