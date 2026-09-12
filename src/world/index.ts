@@ -4,19 +4,22 @@
  * Simulation of the structure and the fire. Produces ground truth and clean observations.
  * Must not import src/brain or src/corruption (lint-enforced).
  *
- * NULL IMPLEMENTATION (v0): spaces come from the plan, temps are constant, the ignition
- * space is hot and burning, drones move wherever they are told. Fixed sensors carry a tiny
- * deterministic noise so the RNG path is exercised. Fire spread, fuel burn-down, vertical
- * conduction and drone effects are TODO(Chase).
+ * Fire physics live in physics.ts (pure, tested in isolation). This file owns the live
+ * state, the tick order, and sensing. Drones move wherever they are told; drone effects,
+ * death and resupply are TODO(Chase) in drones.ts.
+ *
+ * The world never lies: readings are true temps plus SENSOR_NOISE_C Gaussian noise.
  */
 import { makeRng, type Rng } from '../shared/rng';
 import { instantiateSpaces, validatePlan } from '../shared/plan';
 import type {
   Command, Drone, Observation, Reading, Space, World, WorldConfig, WorldState,
 } from '../shared/types';
+import { IGNITION_TEMP, SENSOR_NOISE_C } from './constants';
+import { stepPhysics, type Effects } from './physics';
 
-const BURNING_TEMP = 450;
-const SENSOR_NOISE_C = 0.5;
+export { constants } from './constants';
+export { stepPhysics, effectiveRate, type Effects, type SpaceEffects } from './physics';
 
 const DEFAULT_DRONES: NonNullable<WorldConfig['drones']> = [
   { id: 'D1', class: 'scout', at: '' },
@@ -36,7 +39,7 @@ export function createWorld(config: WorldConfig): World {
     t = 0;
     rng = makeRng(seed).fork('world');
     spaces = instantiateSpaces(config.plan);
-    for (const s of spaces) if (s.burning) s.temp = BURNING_TEMP;
+    for (const s of spaces) if (s.burning) s.temp = IGNITION_TEMP;
     drones = (config.drones ?? DEFAULT_DRONES).map((d) => ({
       id: d.id,
       class: d.class,
@@ -58,9 +61,8 @@ export function createWorld(config: WorldConfig): World {
     }
   };
 
-  const advancePhysics = (): void => {
-    // TODO(Chase): fire spread along edges by rate, fuel consumption, vertical conduction,
-    // drone suppression effects, door state changes, sensor destruction.
+  const advancePhysics = (effects: Effects): void => {
+    spaces = stepPhysics({ t, spaces, drones }, config.plan, rng, effects).spaces;
   };
 
   const sense = (): Reading[] => {
@@ -101,7 +103,9 @@ export function createWorld(config: WorldConfig): World {
   return {
     tick(commands: Command[]): { truth: WorldState; obs: Observation } {
       applyCommands(commands);
-      advancePhysics();
+      // TODO(Chase): drones.ts builds the effects map (suppression, coating) in Prompt 2.
+      const effects: Effects = {};
+      advancePhysics(effects);
       t += 1;
       const truth = snapshot();
       const obs: Observation = {
