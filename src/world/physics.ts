@@ -25,10 +25,12 @@ export type SpaceEffects = {
   suppression: number;
   /** Added to fuel this tick (negative for retardant coating). */
   fuelDelta: number;
+  /** Extra fraction of (ambient - temp) applied this tick (water from tethers). Default 0. */
+  cooling?: number;
 };
 export type Effects = Partial<Record<SpaceId, SpaceEffects>>;
 
-const NO_EFFECT: SpaceEffects = { suppression: 1, fuelDelta: 0 };
+const NO_EFFECT: SpaceEffects = { suppression: 1, fuelDelta: 0, cooling: 0 };
 
 /** Edges as seen from one endpoint (copies, both directions). Cached per plan object. */
 type Compiled = { out: Map<SpaceId, Edge[]> };
@@ -111,9 +113,12 @@ export function stepPhysics(
     if (s.fuel <= 0) s.burning = false;
   }
 
-  // 3. Cooling toward ambient. Chemical spaces hold heat.
+  // 3. Cooling toward ambient. Chemical spaces hold heat. Tethers add water cooling;
+  //    the total is capped so the update cannot overshoot ambient.
   for (const s of spaces) {
-    const cool = s.hazard === 'chemical' ? COOL * CHEMICAL_COOL_MULT : COOL;
+    const extra = effects[s.id]?.cooling ?? 0;
+    const base = s.hazard === 'chemical' ? COOL * CHEMICAL_COOL_MULT : COOL;
+    const cool = Math.min(MAX_OUTGOING_RATE, base + (Number.isFinite(extra) ? Math.max(0, extra) : 0));
     s.temp += cool * (plan.ambient - s.temp);
   }
 

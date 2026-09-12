@@ -79,6 +79,25 @@ export const DOOR_FAIL_P = 0.01;
 /** Std dev (C) of the Gaussian noise on every clean sensor reading. The world never lies; this is all it adds. */
 export const SENSOR_NOISE_C = 0.5;
 
+/** A free-flying drone (scout, retardant, hatch, relay) dies at the end of a tick in a space at or above this. */
+export const DRONE_DEATH = 400;
+
+/**
+ * A tethered unit is water-cooled from the standpipe and survives anything below flame
+ * temperature. At the prompt's 500 C it could never enter a burning space (every burning
+ * space passes 500 within three ticks of ignition) and the class would be useless.
+ */
+export const DRONE_DEATH_TETHER = FLAME_TEMP;
+
+/** 'suppress' (tether): GEN_RATE in that space is multiplied by this, per tether. */
+export const TETHER_SUPPRESSION = 0.3;
+
+/** 'suppress' (tether): extra fraction of (ambient - temp) applied per tick, per tether. Water cools. */
+export const TETHER_COOL = 0.1;
+
+/** 'coat' (retardant): fuel and drone resource removed per tick while coating. */
+export const COAT_RATE = 0.15;
+
 /** All constants in one frozen object, for `import { constants } from '../world'`. */
 export const constants = Object.freeze({
   IGNITION_TEMP,
@@ -97,4 +116,9 @@ export const constants = Object.freeze({
   CHEMICAL_COOL_MULT,
   DOOR_FAIL_P,
   SENSOR_NOISE_C,
+  DRONE_DEATH,
+  DRONE_DEATH_TETHER,
+  TETHER_SUPPRESSION,
+  TETHER_COOL,
+  COAT_RATE,
 });

@@ -4,11 +4,13 @@
  * Simulation of the structure and the fire. Produces ground truth and clean observations.
  * Must not import src/brain or src/corruption (lint-enforced).
  *
- * Fire physics live in physics.ts (pure, tested in isolation). This file owns the live
- * state, the tick order, and sensing. Drones move wherever they are told; drone effects,
- * death and resupply are TODO(Chase) in drones.ts.
+ * Fire physics live in physics.ts, drone behaviour in drones.ts (both pure on the state
+ * they are handed). This file owns the live state, the tick order, and sensing.
  *
- * The world never lies: readings are true temps plus SENSOR_NOISE_C Gaussian noise.
+ * Tick order: commands -> drones move -> drone effects -> physics -> drones die -> sense.
+ *
+ * The world never lies: readings are true temps plus SENSOR_NOISE_C Gaussian noise, and
+ * obs.drones is every live drone's true state. Comms loss is Dean's corruptor.
  */
 import { makeRng, type Rng } from '../shared/rng';
 import { instantiateSpaces, validatePlan } from '../shared/plan';
@@ -16,23 +18,32 @@ import type {
   Command, Drone, Observation, Reading, Space, World, WorldConfig, WorldState,
 } from '../shared/types';
 import { IGNITION_TEMP, SENSOR_NOISE_C } from './constants';
-import { stepPhysics, type Effects } from './physics';
+import { stepPhysics } from './physics';
+import { applyCommands, applyEffects, killDrones, moveDrones, type Assignment } from './drones';
 
 export { constants } from './constants';
 export { stepPhysics, effectiveRate, type Effects, type SpaceEffects } from './physics';
+export { bfsPath, deathTemp } from './drones';
 
-const DEFAULT_DRONES: NonNullable<WorldConfig['drones']> = [
+/** Two scouts, two tethers, one retardant, one hatch, all at the first resupply space. */
+export const DEFAULT_DRONES: NonNullable<WorldConfig['drones']> = [
   { id: 'D1', class: 'scout', at: '' },
-  { id: 'D2', class: 'tether', at: '' },
+  { id: 'D2', class: 'scout', at: '' },
+  { id: 'D3', class: 'tether', at: '' },
+  { id: 'D4', class: 'tether', at: '' },
+  { id: 'D5', class: 'retardant', at: '' },
+  { id: 'D6', class: 'hatch', at: '' },
 ];
 
 export function createWorld(config: WorldConfig): World {
   validatePlan(config.plan);
   const home = config.plan.resupply[0] ?? config.plan.spaces[0]?.id ?? '';
+  const spaceIds = new Set(config.plan.spaces.map((s) => s.id));
 
   let t = 0;
   let spaces: Space[] = [];
   let drones: Drone[] = [];
+  let assignments = new Map<string, Assignment>();
   let rng: Rng = makeRng(config.seed);
 
   const reset = (seed: number): void => {
@@ -43,27 +54,16 @@ export function createWorld(config: WorldConfig): World {
     drones = (config.drones ?? DEFAULT_DRONES).map((d) => ({
       id: d.id,
       class: d.class,
-      at: d.at || home,
+      at: spaceIds.has(d.at) ? d.at : home,
       resource: 1,
       alive: true,
       linked: true,
     }));
+    assignments = new Map();
   };
   reset(config.seed);
 
   const spaceById = (id: string): Space | undefined => spaces.find((s) => s.id === id);
-
-  const applyCommands = (commands: Command[]): void => {
-    for (const c of commands) {
-      const d = drones.find((x) => x.id === c.droneId);
-      if (!d || !d.alive) continue;
-      if (spaceById(c.goTo)) d.at = c.goTo;
-    }
-  };
-
-  const advancePhysics = (effects: Effects): void => {
-    spaces = stepPhysics({ t, spaces, drones }, config.plan, rng, effects).spaces;
-  };
 
   const sense = (): Reading[] => {
     const out: Reading[] = [];
@@ -79,7 +79,7 @@ export function createWorld(config: WorldConfig): World {
       });
     }
     for (const d of drones) {
-      if (!d.alive || !d.linked) continue;
+      if (!d.alive) continue;
       const s = spaceById(d.at);
       if (!s) continue;
       out.push({
@@ -102,16 +102,17 @@ export function createWorld(config: WorldConfig): World {
 
   return {
     tick(commands: Command[]): { truth: WorldState; obs: Observation } {
-      applyCommands(commands);
-      // TODO(Chase): drones.ts builds the effects map (suppression, coating) in Prompt 2.
-      const effects: Effects = {};
-      advancePhysics(effects);
+      applyCommands(commands, drones, spaceIds, assignments);
+      moveDrones(drones, spaces, config.plan, assignments);
+      const effects = applyEffects(drones, spaces, config.plan, assignments);
+      spaces = stepPhysics({ t, spaces, drones }, config.plan, rng, effects).spaces;
+      killDrones(drones, spaces);
       t += 1;
       const truth = snapshot();
       const obs: Observation = {
         t,
         readings: sense(),
-        drones: truth.drones.filter((d) => d.linked).map((d) => ({ ...d })),
+        drones: truth.drones.filter((d) => d.alive).map((d) => ({ ...d })),
       };
       return { truth, obs };
     },
