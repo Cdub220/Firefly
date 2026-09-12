@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { DEMO_PLAN, runLoop } from './loop';
+import { DEMO_PLAN, runLoop, runLoopMulti } from './loop';
+import { createBrain } from './brain';
+import { createKalmanBrain } from './brain/kalman';
 
 describe('runLoop', () => {
   it('runs end to end and the brain sees the ignition space as burning', () => {
@@ -21,6 +23,24 @@ describe('runLoop', () => {
     const a = runLoop({ plan: DEMO_PLAN, seed: 42, ticks: 5 });
     const b = runLoop({ plan: DEMO_PLAN, seed: 43, ticks: 5 });
     expect(JSON.stringify(a)).not.toBe(JSON.stringify(b));
+  });
+
+  it('runLoopMulti feeds every brain JSON-identical observations tick for tick', () => {
+    const traces = runLoopMulti({
+      plan: DEMO_PLAN,
+      seed: 42,
+      ticks: 25,
+      corruption: { mode: 'freeze', k: 1, onset: 3 },
+      brains: { ours: createBrain, kalman: createKalmanBrain },
+      primary: 'ours',
+    });
+    expect(Object.keys(traces).sort()).toEqual(['kalman', 'ours']);
+    expect(traces['ours']).toHaveLength(25);
+    expect(traces['kalman']).toHaveLength(25);
+    for (let i = 0; i < 25; i++) {
+      expect(JSON.stringify(traces['ours']![i]!.obs)).toBe(JSON.stringify(traces['kalman']![i]!.obs));
+      expect(traces['ours']![i]!.t).toBe(traces['kalman']![i]!.t);
+    }
   });
 
   it('the brain never receives ground truth', () => {
