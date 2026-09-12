@@ -124,9 +124,10 @@ describe('estimator with hypothesis sets (A-B-C line, fire in B)', () => {
 
   it('a trusted 450C reading at B collapses the set to one hypothesis, confidence > 0.9', () => {
     // k=0: all three sensors trusted to be honest, so the data can fully separate.
+    // 12 ticks: certainty is earned by stability, not granted on the collapse tick.
     const brain = createBrain({ plan: line3, seed: 42, k: 0 });
     let out!: ReturnType<typeof brain.step>;
-    for (let t = 1; t <= 6; t++) {
+    for (let t = 1; t <= 12; t++) {
       out = brain.step(
         obs(t, [
           reading('FA', 'A', steady['A']!, t),

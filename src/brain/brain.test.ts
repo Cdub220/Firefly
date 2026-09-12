@@ -157,14 +157,26 @@ describe('createBrain v1', () => {
     };
     const brain = createBrain({ plan: butterfly, seed: 42 });
     let temps: Record<SpaceId, number> = { W1: 450, M: 20, W2: 20 };
-    let out!: ReturnType<typeof brain.step>;
-    for (let t = 1; t <= 15; t++) {
-      out = brain.step(obs(t, [reading('FM', 'M', temps['M']!, t)]));
+    // The whole run, not one tick: NO tick may pair a wrong burning set with conf >= 0.9.
+    let wingMentioned = false;
+    for (let t = 1; t <= 40; t++) {
+      const out = brain.step(obs(t, [reading('FM', 'M', temps['M']!, t)]));
+      const wrong = !out.belief.burningSet.includes('W1');
+      if (wrong) expect(out.belief.confidence).toBeLessThan(0.9);
+      const mentioned = new Set([...out.belief.burningSet, ...out.belief.ambiguous.flat()]);
+      if (mentioned.has('W1') || mentioned.has('W2')) wingMentioned = true;
       temps = forward(butterfly, temps, new Set(['W1']));
     }
-    expect(out.belief.confidence).toBeLessThan(0.9); // never certain while misfitting
-    const mentioned = new Set([...out.belief.burningSet, ...out.belief.ambiguous.flat()]);
-    expect(mentioned.has('W1') || mentioned.has('W2')).toBe(true); // a wing is suspected
+    expect(wingMentioned).toBe(true); // a wing is suspected at some point
+  });
+
+  it('a NaN reading is ignored rather than poisoning every hypothesis score', () => {
+    const brain = createBrain({ plan, seed: 42 });
+    const out = brain.step(
+      obs(1, [reading('F1', 'S1', NaN, 1), reading('F2', 'S2', 30, 1), reading('F3', 'S3', 20, 1)]),
+    );
+    expect(Number.isFinite(out.belief.confidence)).toBe(true);
+    for (const v of Object.values(out.belief.estimate)) expect(Number.isFinite(v)).toBe(true);
   });
 
   it('reset() clears history and estimates deterministically', () => {

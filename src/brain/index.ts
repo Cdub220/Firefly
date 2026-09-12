@@ -40,6 +40,13 @@ const MIN_CONFIDENCE = 0.05;
 // model error); beyond it confidence decays as allowance/misfit.
 const FIT_ALLOWANCE_C = 6;
 const WARM_SEED_MARGIN_C = 30; // a reading this far above ambient seeds candidates too
+// Certainty must be EARNED BY STABILITY: a belief that changed recently, or a hypothesis
+// race that was contested recently, cannot claim near-certainty — otherwise a belief
+// flip-flopping between wrong answers reports confidence 1.00 on the ticks it happens to
+// collapse (probed: 8/40 such ticks on an unsensed-wing plan). Uncertainty does not
+// vanish in one tick.
+const STABLE_TICKS_FOR_CERTAINTY = 5;
+const VOLATILE_CONF_CAP = 0.7;
 
 export function createBrain(config: BrainConfig): Brain {
   let rng: Rng = makeRng(config.seed).fork('brain');
@@ -57,12 +64,16 @@ export function createBrain(config: BrainConfig): Brain {
   let prevEstimate: Record<SpaceId, number> = {};
   let estHistory: Record<SpaceId, number>[] = []; // estimates of the last ROLLOUT ticks
   let prevBurning = new Set<SpaceId>();
+  let stableTicks = 0; // consecutive ticks with an uncontested, unchanged burning set
+  let lastBurningKey = '';
   const init = (): void => {
     history = new Map();
     prevEstimate = {};
     for (const id of spaceIds) prevEstimate[id] = config.plan.ambient;
     estHistory = [];
     prevBurning = new Set();
+    stableTicks = 0;
+    lastBurningKey = '';
   };
   init();
 
@@ -92,8 +103,14 @@ export function createBrain(config: BrainConfig): Brain {
 
   return {
     step(obs: Observation): { belief: Belief; commands: Command[] } {
-      updateHistory(history, obs);
-      const { trusted, suspect } = checkConsistency(config.plan, obs, prevEstimate, history);
+      // A sensor emitting a non-finite temperature yields no usable reading at all;
+      // letting NaN in would poison every hypothesis score.
+      const sane: Observation = {
+        ...obs,
+        readings: obs.readings.filter((r) => Number.isFinite(r.temp)),
+      };
+      updateHistory(history, sane);
+      const { trusted, suspect } = checkConsistency(config.plan, sane, prevEstimate, history);
 
       // Seed candidates from hot READINGS and hot ESTIMATES: a fire whose sensors died
       // must stay in the pool — the estimate remembers it even when no reading does.
@@ -137,14 +154,22 @@ export function createBrain(config: BrainConfig): Brain {
       const contested = new Set<SpaceId>([...union].filter((id) => !burning.has(id)));
       const ambiguous = kept.length > 1 ? components(contested) : [];
 
+      // Stability accounting: an uncontested race with an unchanged answer earns a
+      // stable tick; a contested race or a changed answer resets the counter.
+      const burningKey = [...burning].sort().join(',');
+      if (kept.length === 1 && burningKey === lastBurningKey) stableTicks += 1;
+      else stableTicks = 0;
+      lastBurningKey = burningKey;
+
       const fit = best.s <= FIT_ALLOWANCE_C ? 1 : FIT_ALLOWANCE_C / best.s;
-      const confidence = Math.min(
-        1,
-        Math.max(
-          MIN_CONFIDENCE,
-          (1 / kept.length) * Math.pow(SUSPECT_PENALTY, suspect.length) * fit,
-        ),
-      );
+      const raw = (1 / kept.length) * Math.pow(SUSPECT_PENALTY, suspect.length) * fit;
+      const capped =
+        stableTicks < STABLE_TICKS_FOR_CERTAINTY ? Math.min(raw, VOLATILE_CONF_CAP) : raw;
+      // No evidence means no confidence, however comfortable the sole hypothesis is.
+      const confidence =
+        trusted.length === 0
+          ? MIN_CONFIDENCE
+          : Math.min(1, Math.max(MIN_CONFIDENCE, capped));
 
       // Estimate: trusted readings where present; the best hypothesis's physics
       // elsewhere (one step from last tick's estimate — the current-tick prediction).
