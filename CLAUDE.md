@@ -2,7 +2,7 @@
 
 Hackathon project (East v. West AllStar Hack, Defense track, Sept 12–14 2026). Team: Dean and Chase.
 
-**Before doing any work in this repo, read `docs/00-README.md` and then `docs/04-who-does-what.md`.** The first is what we are building and why. The second is who owns which directory, how to build each piece, and how the halves fit together.
+**Before doing any work in this repo, read `docs/00-README.md`, then `docs/04-who-does-what.md`, then `docs/decisions.md`.** The first is what we are building and why. The second is who owns which directory, how to build each piece, and how the halves fit together. The third is why things are the way they are. Per-checkpoint goals are in `docs/04b-checkpoint-deliverables.md` and ready-to-run prompts are in `docs/prompts/`.
 
 Key rules that apply to all code:
 
