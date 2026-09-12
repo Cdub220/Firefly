@@ -76,7 +76,7 @@ export function createCorruptor(config: CorruptionConfig): Corruptor {
   const selectStuckSensors = (obs: Observation): void => {
     if (selectionDone || (!wantFreeze && !wantBlind) || obs.t < onset) return;
     const candidates = obs.readings
-      .filter((r) => inTarget(r.spaceId))
+      .filter((r) => inTarget(r.spaceId) && !flashedSpaces.has(r.spaceId))
       .map((r) => r.sensorId)
       .sort();
     if (candidates.length === 0) return; // try again next tick
@@ -108,8 +108,10 @@ export function createCorruptor(config: CorruptionConfig): Corruptor {
     apply(obs: Observation): Observation {
       if (config.mode === 'none') return obs;
 
-      selectStuckSensors(obs);
+      // Flashovers first: sensors destroyed this very tick are not freeze/blind candidates,
+      // so the k budget is never spent on a sensor that will produce no output.
       updateFlashovers(obs);
+      selectStuckSensors(obs);
 
       // Mixed mode comms loss: that drone contributes nothing at all this tick.
       const commsLost = new Set<DroneId>();
@@ -135,7 +137,7 @@ export function createCorruptor(config: CorruptionConfig): Corruptor {
           readings.push({ ...held });
         } else if (kind === 'blind') {
           readings.push({ ...r, temp: ambient + rng.gauss() * BLIND_NOISE_C });
-        } else if (wantSaturate && r.temp > saturateAt) {
+        } else if (wantSaturate && r.temp > saturateAt && inTarget(r.spaceId)) {
           readings.push({ ...r, temp: saturateAt });
         } else {
           readings.push({ ...r });

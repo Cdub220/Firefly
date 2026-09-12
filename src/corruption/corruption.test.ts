@@ -124,6 +124,36 @@ describe('saturate', () => {
   });
 });
 
+describe('target', () => {
+  it('saturate respects target: same temp pins in S1 but not in S2', () => {
+    const c = createCorruptor({ seed: 1, mode: 'saturate', target: ['S1'] });
+    const input = obs(1, [reading('F1', 'S1', 800, 1), reading('F2', 'S2', 800, 1)]);
+    const out = c.apply(input);
+    expect(out.readings[0]!.temp).toBe(DEFAULT_CORRUPTION.saturateAt);
+    expect(out.readings[1]).toEqual(input.readings[1]);
+  });
+
+  it('the freeze/blind budget is never spent on sensors in a flashed space', () => {
+    // S1 flashes on the selection tick itself; with k=2 and three sensors, the two
+    // survivors must both be picked — none of the budget goes to the dead F1.
+    for (let seed = 1; seed <= 10; seed++) {
+      const c = createCorruptor({ seed, mode: 'mixed', k: 2, onset: 1, ambient: 22 });
+      const tick = (t: number): Observation =>
+        obs(t, [reading('F1', 'S1', 600, t), reading('F2', 'S2', 100 + t, t), reading('F3', 'S3', 100 + t, t)]);
+      c.apply(tick(1));
+      const out = c.apply(tick(5));
+      const clean = tick(5);
+      for (const id of ['F2', 'F3']) {
+        const r = out.readings.find((x) => x.sensorId === id);
+        const cl = clean.readings.find((x) => x.sensorId === id);
+        expect(r).toBeDefined();
+        // frozen (stale t) or blinded (ambient-ish temp) — never the clean reading
+        expect(r).not.toEqual(cl);
+      }
+    }
+  });
+});
+
 describe('flashover', () => {
   it('a space at 600 loses all readings permanently and its drone reports dead', () => {
     const c = createCorruptor({ seed: 42, mode: 'flashover' });
