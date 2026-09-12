@@ -105,7 +105,7 @@ export function stepPhysics(
       continue;
     }
     const hazardMult = s.hazard === 'fuel' ? FUEL_HAZARD_MULT : 1;
-    const suppression = Math.min(1, Math.max(0, fx.suppression));
+    const suppression = Number.isFinite(fx.suppression) ? Math.min(1, Math.max(0, fx.suppression)) : 1;
     s.temp += GEN_RATE * hazardMult * suppression * (FLAME_TEMP - s.temp);
     s.fuel = Math.max(0, s.fuel - BURN * hazardMult);
     if (s.fuel <= 0) s.burning = false;

@@ -187,10 +187,26 @@ describe('generation, hazards, effects', () => {
     const afterTransfer = 300 - 0.2 * 278;
     const gap = FLAME_TEMP - afterTransfer;
     expect(plain.temp - damped.temp).toBeCloseTo(GEN_RATE * 0.7 * gap * (1 - COOL), 6);
-    // Suppression above 1 cannot amplify the fire.
-    const over = stepPhysics(base, TRI, makeRng(1), { A: { suppression: 5, fuelDelta: 0 } })
-      .spaces.find((s) => s.id === 'A')!;
-    expect(over.temp).toBeCloseTo(plain.temp, 9);
+    // Suppression above 1 cannot amplify the fire, and a NaN effect is ignored.
+    for (const bad of [5, Number.NaN]) {
+      const over = stepPhysics(base, TRI, makeRng(1), { A: { suppression: bad, fuelDelta: 0 } })
+        .spaces.find((s) => s.id === 'A')!;
+      expect(over.temp).toBeCloseTo(plain.temp, 9);
+    }
+  });
+
+  it('a space at exactly IGNITE with a burning neighbor ignites; just below it does not', () => {
+    const at = stepPhysics(stateOf(TRI, { B: { temp: IGNITE } }), TRI, makeRng(1)).spaces.find((s) => s.id === 'B')!;
+    const below = stepPhysics(stateOf(TRI, { B: { temp: IGNITE - 0.001 } }), TRI, makeRng(1)).spaces.find((s) => s.id === 'B')!;
+    expect(at.burning).toBe(true);
+    expect(below.burning).toBe(false);
+  });
+
+  it('after burnout every space cools back toward ambient', () => {
+    const trace = run(DEMO, 42, 400);
+    const last = trace[trace.length - 1]!;
+    expect(burningIds(last)).toEqual([]);
+    for (const s of last.spaces) expect(Math.abs(s.temp - DEMO.ambient)).toBeLessThan(5);
   });
 
   it('a fuelDelta effect removes fuel and keeps it in [0, 1]', () => {
@@ -221,7 +237,7 @@ describe('generation, hazards, effects', () => {
   });
 
   it('cook-off is decided on step-entry temps, so plan order and chaining cannot change it', () => {
-    // A cooks off this tick. B is ordnance too and enters step 5 at ~353 C; A's +150 pushes
+    // A cooks off this tick. B is ordnance too and enters step 5 at ~327 C; A's +150 pushes
     // it past 400 but it must not cook until next tick, whichever order the plan lists them.
     const base = { A: { temp: 520, burning: false, fuel: 0, hazard: 'ordnance' as const },
       B: { temp: 300, burning: false, fuel: 0, hazard: 'ordnance' as const } };
