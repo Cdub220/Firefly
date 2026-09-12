@@ -10,7 +10,7 @@ A Claude Code session knows whose it is from `git config user.name`: `deanyao6` 
 
 | Event | Script | What it does |
 |---|---|---|
-| PreToolUse on Edit/Write | `pre-edit-guard.sh` | Denies edits to the other owner's directories. Asks the human before any edit to `src/shared/types.ts` or `src/loop.ts`. Denies edits to frozen estimator and corruption files once `docs/06-freeze.md` exists. |
+| PreToolUse on Edit/Write | `pre-edit-guard.sh` | Denies edits to the other owner's directories. Allows edits to `src/shared/types.ts` and `src/loop.ts` but flags them in the transcript and requires the agent to report them. Denies edits to frozen estimator and corruption files once `docs/06-freeze.md` exists. |
 | PostToolUse on Edit/Write | `post-edit-check.sh` | After any `.ts`/`.tsx` edit under `src/`, runs eslint on that file and tsc on the project. Errors go straight back to the agent. |
 | Stop | `stop-gate.sh` | If `src/` or `data/` differs from HEAD, runs test, lint, typecheck. Red means the agent is told to keep working. Allows the stop after three consecutive blocks so a pre-existing failure cannot trap a session. |
 
