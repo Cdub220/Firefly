@@ -148,10 +148,22 @@ export type WorldConfig = {
   drones?: Array<Pick<Drone, 'id' | 'class' | 'at'>>;
 };
 
+export type CorruptionMode = 'none' | 'freeze' | 'blind' | 'saturate' | 'flashover' | 'mixed';
+
+/**
+ * The failure model's knobs. Every field here is rendered by Chase's chaos panel, so the
+ * type stays flat and every field except `seed` and `mode` is optional (defaults exported
+ * as DEFAULT_CORRUPTION from src/corruption).
+ */
 export type CorruptionConfig = {
   seed: number;
-  /** Failure model. 'none' is identity passthrough. TODO(Dean): define the real class. */
-  mode: 'none';
+  mode: CorruptionMode;
+  k?: number; // max number of sensors corrupted at once (freeze/blind budget). default 2.
+  onset?: number; // first tick failures may begin. default 5.
+  target?: SpaceId[]; // restrict corruption to sensors in these spaces. omit = any.
+  flashoverTemp?: number; // temp above which a space's sensors all die. default 500.
+  saturateAt?: number; // temp at which a sensor pins. default 300.
+  ambient?: number; // what a blinded sensor reads (set to plan.ambient). default 20.
 };
 
 export type BrainConfig = {
