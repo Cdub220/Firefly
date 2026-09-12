@@ -59,6 +59,6 @@ TODO(Dean). Must specify, per the Defense brief: what can fail (blinded / satura
 
 ## Method freeze
 
-Estimator logic freezes at hour 24 (Sun Sept 13, 12:00 PM ET). Record the commit hash here when it happens. Eval cases after that point are chosen post-freeze.
+Estimator logic freezes at hour 36 (Mon Sept 14, 12:00 AM ET, i.e. Sunday midnight). Record the commit hash here when it happens. Eval cases after that point are chosen post-freeze.
 
 Freeze commit: _not yet_

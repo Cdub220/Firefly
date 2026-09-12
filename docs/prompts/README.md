@@ -7,11 +7,11 @@ Usage: open a new session in the repo root and paste one prompt. Or type: `Read 
 | | Dean | Chase |
 |---|---|---|
 | Index | [dean-prompts.md](dean-prompts.md) | [chase-prompts.md](chase-prompts.md) |
-| CP1 · hour 8 · Sat 8 PM ET | [dean/checkpoint-1.md](dean/checkpoint-1.md) | [chase/checkpoint-1.md](chase/checkpoint-1.md) |
-| CP2 · hour 16 · Sun 4 AM ET | [dean/checkpoint-2.md](dean/checkpoint-2.md) | [chase/checkpoint-2.md](chase/checkpoint-2.md) |
-| CP3 · hour 24 · Sun 12 PM ET | [dean/checkpoint-3.md](dean/checkpoint-3.md) | [chase/checkpoint-3.md](chase/checkpoint-3.md) |
-| CP4 · hour 32 · Sun 8 PM ET | [dean/checkpoint-4.md](dean/checkpoint-4.md) | [chase/checkpoint-4.md](chase/checkpoint-4.md) |
-| CP5 · hour 40 · Mon 4 AM ET | [dean/checkpoint-5.md](dean/checkpoint-5.md) | [chase/checkpoint-5.md](chase/checkpoint-5.md) |
+| CP1 · hour 12 · Sun 12 AM ET | [dean/checkpoint-1.md](dean/checkpoint-1.md) | [chase/checkpoint-1.md](chase/checkpoint-1.md) |
+| CP2 · hour 24 · Sun 12 PM ET | [dean/checkpoint-2.md](dean/checkpoint-2.md) | [chase/checkpoint-2.md](chase/checkpoint-2.md) |
+| CP3 · hour 36 · Mon 12 AM ET | [dean/checkpoint-3.md](dean/checkpoint-3.md) | [chase/checkpoint-3.md](chase/checkpoint-3.md) |
+| CP4 · hour 48 · Mon 12 PM ET | [dean/checkpoint-4.md](dean/checkpoint-4.md) | [chase/checkpoint-4.md](chase/checkpoint-4.md) |
+| CP5 · hour 60 · Tue 12 AM ET | [dean/checkpoint-5.md](dean/checkpoint-5.md) | [chase/checkpoint-5.md](chase/checkpoint-5.md) |
 
 Every prompt starts with the same preamble so the agent loads context and respects boundaries. If you write a new prompt, copy it:
 

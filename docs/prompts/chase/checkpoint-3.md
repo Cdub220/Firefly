@@ -1,4 +1,4 @@
-# Chase · Checkpoint 3 · hour 24 · Sun 12:00 PM ET
+# Chase · Checkpoint 3 · hour 36 · Mon 12:00 AM ET (Sun midnight)
 
 **Goal.** A judge can pick a structure, pick a way to break the sensors, press run, and scrub. The chaos panel is generated from Dean's `CorruptionConfig` type so that every knob he adds appears without UI changes. Dean freezes his method at this hour; your panel is how he and the judges exercise it.
 

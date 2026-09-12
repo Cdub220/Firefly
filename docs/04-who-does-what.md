@@ -102,7 +102,7 @@ This is the decision most likely to cause a collision, so it is written down:
 **How.**
 1. Finish `computeMetrics` in `src/eval/metrics.ts`: time to recovery (ticks from corruption onset until `burningSet` matches truth again) and compute cost (wrap `brain.step` with `performance.now()` in the loop).
 2. `src/eval/index.ts` becomes a sweep: for each mode, k, onset, seed, run both brains and emit one row. Output a table to stdout and a JSON file to `results/`.
-3. **Freeze at hour 24.** Commit, record the hash in `README.md` under "Method freeze", and after that only *add eval cases*, never touch `src/brain`.
+3. **Freeze at hour 36 (Mon 12:00 AM ET).** Commit, record the hash in `README.md` under "Method freeze", and after that only *add eval cases*, never touch `src/brain`.
 
 **Done when** `npx tsx src/eval/index.ts` prints the head-to-head table.
 
@@ -166,12 +166,12 @@ This is the decision most likely to cause a collision, so it is written down:
 
 | Hour | Chase delivers | Dean delivers | Integration point |
 |---|---|---|---|
-| 8 | Fire spreads on one level. `npm run sim` shows growth. | Corruption modes + Kalman baseline + estimator v0. | `runLoop` runs both brains; sim prints both beliefs. |
-| 16 | Multi-level plan with vertical conduction. First render. | Consistency check, ambiguity sets. | UI shows `belief.ambiguous`. Video shows one false-certainty number vs baseline. |
-| 24 | Scenario picker, chaos panel wired to `CorruptionConfig`. | Eval harness, four metrics. **Freeze.** | Chaos panel and eval harness read the same config type. |
-| 32 | Drone rendering, truth/belief/diff split view. | Allocator with hedging. | UI shows commands splitting units across ambiguous spaces. |
-| 40 | Split-screen baseline, containment counter, polish. Stretch: high-rise plan. | Identifiability result, briefings. | Same brain, second plan file, nothing retrained. |
-| 49 | Rehearsal, backup recording. | README, writeup. | Final demo has no live API calls. |
+| 12 · Sun 12 AM | Fire spreads on one level. `npm run sim` shows growth. | Corruption modes + Kalman baseline + estimator v0. | `runLoop` runs both brains; sim prints both beliefs. |
+| 24 · Sun 12 PM | Multi-level plan with vertical conduction. First render. | Consistency check, ambiguity sets. | UI shows `belief.ambiguous`. Video shows one false-certainty number vs baseline. |
+| 36 · Mon 12 AM | Scenario picker, chaos panel wired to `CorruptionConfig`. | Eval harness, four metrics. **Freeze.** | Chaos panel and eval harness read the same config type. |
+| 48 · Mon 12 PM | Drone rendering, truth/belief/diff split view. | Allocator with hedging. | UI shows commands splitting units across ambiguous spaces. |
+| 60 · Tue 12 AM | Split-screen baseline, containment counter, polish. Stretch: high-rise plan. | Identifiability result, briefings. | Same brain, second plan file, nothing retrained. |
+| 72 · Tue 12 PM | Rehearsal, backup recording. | README, writeup. | Final demo has no live API calls. |
 
 ---
 
@@ -185,6 +185,6 @@ This is the decision most likely to cause a collision, so it is written down:
 
 **When you need something from the other side.** Ask for it in terms of the contract. "I need `Observation` to carry X" or "I need `runLoop` to accept Y," not "change your code." Stub it yourself behind the interface if you are blocked, and leave a `TODO(Chase)` or `TODO(Dean)`.
 
-**Freeze.** After hour 24 nobody touches `src/brain/index.ts` or `src/corruption/` logic. Eval cases, plans, UI, allocator wiring, and docs are fine. If a bug forces a change, record the second hash and say so in the writeup.
+**Freeze.** After hour 36 (Mon 12:00 AM ET) nobody touches `src/brain/index.ts` or `src/corruption/` logic. Eval cases, plans, UI, allocator wiring, and docs are fine. If a bug forces a change, record the second hash and say so in the writeup.
 
 **Cut list.** In `docs/00-README.md`. Cut from the top. Never cut the estimator, corruption model, baseline, eval harness, one identifiability result, or the checkpoint videos.

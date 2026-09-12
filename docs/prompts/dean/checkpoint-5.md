@@ -1,4 +1,4 @@
-# Dean · Checkpoint 5 · hour 40 · Mon 4:00 AM ET
+# Dean · Checkpoint 5 · hour 60 · Tue 12:00 AM ET (Mon midnight)
 
 **Goal.** The negative result. A specific pair of fire states that our sensor set provably cannot distinguish under the stated failure model, the operational cost of that ambiguity, and the one extra observation that resolves it. The Defense brief says this can be the strongest kind of result and almost no team will bring one. Protect the time for Prompt 1. Prompts 2 and 3 are cheaper and can be cut.
 

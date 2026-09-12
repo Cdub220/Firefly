@@ -1,4 +1,4 @@
-# Dean · Checkpoint 2 · hour 16 · Sun 4:00 AM ET
+# Dean · Checkpoint 2 · hour 24 · Sun 12:00 PM ET
 
 **Goal.** The real estimator. It uses the structure's heat physics as a trusted reference, flags sensors that contradict it, separates "hot here" from "burning here," and reports ambiguity as a set of candidate fire states with honest confidence. The video shows one number: our false certainty versus the baseline's on one corruption case.
 
@@ -157,7 +157,7 @@ TASK: turn evidence.ts into the checkpoint-2 number and make it a one-liner.
 
 If the numbers are bad, do not tune blindly. Add a --verbose flag that prints
 suspectSensors with reasons per tick, report which rule fired wrongly, and stop.
-Diagnosis is the deliverable; tuning is a human call because the freeze is at hour 24.
+Diagnosis is the deliverable; tuning is a human call because the freeze is at hour 36.
 
 DO NOT TOUCH: src/world, src/ui.
 ```

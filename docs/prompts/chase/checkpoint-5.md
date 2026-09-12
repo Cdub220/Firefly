@@ -1,4 +1,4 @@
-# Chase · Checkpoint 5 · hour 40 · Mon 4:00 AM ET
+# Chase · Checkpoint 5 · hour 60 · Tue 12:00 AM ET (Mon midnight)
 
 **Goal.** The comparison a judge remembers: baseline on the left, ours on the right, same truth, same broken sensors, a containment counter ticking up faster on the left. Then polish for recording. The stretch is the high-rise plan, which is already a file from checkpoint 2, so it is cheap: load it, run it, say "same brain, different building, nothing retrained."
 

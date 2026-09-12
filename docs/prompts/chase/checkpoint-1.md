@@ -1,6 +1,6 @@
-# Chase · Checkpoint 1 · hour 8 · Sat 8:00 PM ET
+# Chase · Checkpoint 1 · hour 12 · Sun 12:00 AM ET (Sat midnight)
 
-**Goal.** A fire that actually spreads. Heat moves along plan edges at each edge's own rate, spaces ignite, fuel burns down, drones affect the fire and can die in it. `npm run sim` shows the truth burning set growing from one space to several. No UI work today; the estimator beats the visuals through hour 24.
+**Goal.** A fire that actually spreads. Heat moves along plan edges at each edge's own rate, spaces ignite, fuel burns down, drones affect the fire and can die in it. `npm run sim` shows the truth burning set growing from one space to several. No UI work today; the estimator beats the visuals through hour 36.
 
 Prompt 1 is the physics. Prompt 2 is drones and commands. Both land in `src/world`.
 

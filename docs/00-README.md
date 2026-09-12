@@ -33,25 +33,30 @@ The Defense brief names four metrics we must report: **false certainty, estimati
 
 - **Structure is data, not code.** No ship-specific names in types or logic. Plans are JSON with per-edge transfer rates.
 - **Close the loop by hour 6.** World → corruption → estimator → output must compose before anything else gets polished.
-- **Freeze the method at hour 24 (Sun 12:00 PM ET).** After that, no tuning of the estimator. Evaluation cases are chosen after the freeze. Record the freeze commit hash.
+- **Freeze the method at hour 36 (Mon 12:00 AM ET, Sunday midnight).** After that, no tuning of the estimator. Evaluation cases are chosen after the freeze. Record the freeze commit hash.
 - **The estimator does not know the true failure pattern.** The corruption injector and the estimator must not share state.
 - **Nothing in the final demo depends on a live API call.** Cache generated plans and briefings.
-- **Through hour 24, the estimator beats the visuals.** Every time.
+- **Through hour 36, the estimator beats the visuals.** Every time.
 
 ## Division of labor
 
 - **Dean:** estimator, corruption injector, Kalman baseline, eval harness, allocator, identifiability result, briefings.
 - **Chase:** repo scaffold, world sim (fire spread, multi-deck, vertical conduction), rendering, scenario picker, chaos panel, drone rendering, truth/belief/diff split view, split-screen baseline, containment counter, polish, stretch high-rise plan.
 
-## Schedule discrepancies (resolved)
+## Schedule (confirmed Sat Sept 12)
 
-The three docs disagree on timing. Our working plan is `01-firefly-pitch-and-plan.md`:
+Checkpoints are every 12 hours from the Saturday noon ET kickoff. Each is scored on the full rubric. A missed one is a zero.
 
-- Playbook: 72 h, check-ins every 12 h.
-- Defense brief: 50 h, check-ins Sat 10 PM / Sun 10 AM / Sun 10 PM / Mon 10 AM, final Mon noon ET.
-- **Our plan (authoritative):** 49 h, Sat 12:00 PM ET → Mon 1:00 PM ET, check-ins at hours 8/16/24/32/40, final at 49.
+| CP | Hour | When (ET) | When (PT) |
+|---|---|---|---|
+| 1 | 12 | Sun Sept 13, 12:00 AM (Sat midnight) | Sat 9:00 PM |
+| 2 | 24 | Sun Sept 13, 12:00 PM | Sun 9:00 AM |
+| 3 | 36 | Mon Sept 14, 12:00 AM (Sun midnight) | Sun 9:00 PM |
+| 4 | 48 | Mon Sept 14, 12:00 PM | Mon 9:00 AM |
+| 5 | 60 | Tue Sept 15, 12:00 AM (Mon midnight) | Mon 9:00 PM |
+| Final | 72 | Tue Sept 15, 12:00 PM (assumed from the Playbook's 72 h; confirm) | Tue 9:00 AM |
 
-If the organizers publish an updated schedule, update `01-firefly-pitch-and-plan.md` and this section, and treat the earliest of any conflicting deadlines as the real one.
+The method freeze is at checkpoint 3, hour 36. The original pitch doc (`01-firefly-pitch-and-plan.md`) was written against an 8-hour cadence and a 49-hour event; its checkpoint hours are superseded by this table, but its per-checkpoint content still maps 1:1 (its "check-in 1" is our CP1, and so on).
 
 ## Cut list (cut from the top when time runs short)
 

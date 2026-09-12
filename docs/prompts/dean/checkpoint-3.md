@@ -1,4 +1,4 @@
-# Dean · Checkpoint 3 · hour 24 · Sun 12:00 PM ET
+# Dean · Checkpoint 3 · hour 36 · Mon 12:00 AM ET (Sun midnight)
 
 **Goal.** The eval harness. All four metrics from the Defense brief, swept over corruption mode, k, location, and seed, for both brains on identical observations. Then **freeze the method**. Everything after this checkpoint is evaluated against cases chosen after the freeze, which is what makes the numbers valid.
 
@@ -93,7 +93,7 @@ DO NOT TOUCH: src/world, src/ui, src/brain, src/corruption.
 You are working in the Firefly repo as Dean. Before anything else read CLAUDE.md, docs/00-README.md, docs/04-who-does-what.md, and src/shared/types.ts. Respect the directory ownership and lint boundaries in docs/04. Make reasonable assumptions instead of asking questions. Run `npm test && npm run lint && npm run typecheck` before you finish and do not report done unless all three are green. Commit in logical chunks with clear messages. Do not push. Finish by listing (1) what you built, (2) assumptions you made, (3) anything that did not work or that you skipped, (4) any contract change you need from Chase.
 
 CONTEXT: `npm run sweep` produces results/sweep-latest.json and a WHERE OURS LOSES block.
-It is about hour 23. The method freezes at hour 24.
+It is about hour 35. The method freezes at hour 36 (Mon 12:00 AM ET).
 
 TASK: execute the freeze procedure and write the checkpoint-3 notes. This prompt changes
 NO estimator or corruption logic. If you find a bug, report it; a human decides whether to

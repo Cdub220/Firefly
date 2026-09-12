@@ -1,4 +1,4 @@
-# Dean · Checkpoint 1 · hour 8 · Sat 8:00 PM ET
+# Dean · Checkpoint 1 · hour 12 · Sun 12:00 AM ET (Sat midnight)
 
 **Goal.** A failure model with real modes, a competent Kalman baseline, and a loop that runs two brains on identical observations so the sim prints the moment the baseline goes confidently wrong. This is the evidence behind the check-in 1 video: "the fire destroys its own sensors, and textbook estimators converge confidently on the wrong answer."
 

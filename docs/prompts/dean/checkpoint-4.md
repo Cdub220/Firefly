@@ -1,4 +1,4 @@
-# Dean · Checkpoint 4 · hour 32 · Sun 8:00 PM ET
+# Dean · Checkpoint 4 · hour 48 · Mon 12:00 PM ET
 
 **Goal.** The allocator. Every drone sent somewhere is both a suppression asset and a measurement, so we choose placements by containment value plus information value, jointly. The visible behavior for the video: when the belief is ambiguous between two spaces, the brain hedges and splits units to cover both.
 

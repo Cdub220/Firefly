@@ -1,4 +1,4 @@
-# Chase · Checkpoint 2 · hour 16 · Sun 4:00 AM ET
+# Chase · Checkpoint 2 · hour 24 · Sun 12:00 PM ET
 
 **Goal.** Multi-level structures with vertical conduction, and the first render. The plan says the demo structure is a multi-deck ship, but nothing in code may say so: it is a JSON file with `floor` edges. The render at this checkpoint shows truth only; belief comes in checkpoint 4.
 

@@ -1,4 +1,4 @@
-# Chase · Checkpoint 4 · hour 32 · Sun 8:00 PM ET
+# Chase · Checkpoint 4 · hour 48 · Mon 12:00 PM ET
 
 **Goal.** Drones and belief on screen. The money shot for this checkpoint is the brain hedging: two drones peeling off to cover two spaces the belief cannot separate. That has to be visible, so belief overlays, ambiguity groups, suspect sensors, and commands all render.
 

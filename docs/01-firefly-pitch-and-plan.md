@@ -1,7 +1,10 @@
 # Firefly — Pitch and Checkpoint Plan
 
 East v. West AllStar Hack · Defense track · Dean + Chase
+
 Saturday Sept 12, 12:00 PM ET → Monday Sept 14, 1:00 PM ET · 49 hours · five scored check-ins plus the final
+
+> **Schedule note (Sat Sept 12):** the organizers confirmed checkpoints every 12 hours, not 8. See `docs/00-README.md` for the real times. Checkpoint contents below still apply 1:1; only the hours differ.
 
 Source PDF: `docs/source/Firefly-Pitch-and-Checkpoint-Plan.pdf`
 
