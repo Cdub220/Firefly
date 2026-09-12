@@ -35,10 +35,10 @@ The intended session shape: `/dean` (or `/chase`) to orient, `/build docs/prompt
 
 ## CI (`.github/workflows/ci.yml`)
 
-On every push to `main` and every PR: `npm ci`, test, lint, typecheck, build on Node 22. A red badge on the README means someone pushed past the stop gate with `FIREFLY_ROLE=both` or edited outside Claude Code.
+On every push to any branch and every PR: `npm ci`, test, lint, typecheck, build on Node 22. A red badge on the README means someone pushed past the stop gate with `FIREFLY_ROLE=both` or edited outside Claude Code.
 
 ## Not automated, on purpose
 
-- Pushing. Agents commit; humans push. The prompts say "do not push."
+- Pushing and merging. Agents commit; humans push their own branch and merge to `main`. The prompts say "do not push."
 - The freeze itself. `/checkpoint 3` does not create `docs/06-freeze.md`; Dean's checkpoint-3 prompt 3 does, and a human runs it.
 - Contract edits. The guard asks; it does not decide.

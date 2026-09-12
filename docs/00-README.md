@@ -42,6 +42,10 @@ The Defense brief names four metrics we must report: **false certainty, estimati
 - **Nothing in the final demo depends on a live API call.** Cache generated plans and briefings.
 - **Through hour 36, the estimator beats the visuals.** Every time.
 
+## Branches
+
+`dean-branch` and `chase-branch`, cut from `main`. Merge to `main` at every checkpoint or sooner when the other person needs it. `main` is always green. Recipe in `docs/04-who-does-what.md` section 5.
+
 ## Division of labor
 
 - **Dean:** estimator, corruption injector, Kalman baseline, eval harness, allocator, identifiability result, briefings.

@@ -181,7 +181,14 @@ This is the decision most likely to cause a collision, so it is written down:
 
 **Before every push:** `npm test && npm run lint && npm run typecheck`. All three green. The arch test fails the build if the brain reaches for truth, on purpose.
 
-**Branching.** Work on `main`, commit small, pull with rebase before push. The directory boundaries mean you almost never touch the same file. If you do, it is `types.ts` or `loop.ts`, and you already talked.
+**Branching.** Each person works on their own branch: `dean-branch` and `chase-branch`, both cut from `main`. Commit small. Push your branch after every prompt lands. Merge to `main` at least at every checkpoint, and any time the other person needs what you built (a new plan file, a new `CorruptionConfig` field, a `runLoopMulti`). Before merging to `main`: `git pull origin main` into your branch first, run the checks, then merge with `--no-ff` so the history shows the unit of work. The directory boundaries mean the merge is almost always clean; when it is not, it is `package.json`, `types.ts`, or `loop.ts`, and you already talked. `main` must always be green: it is what a judge clones and what `/checkpoint` tags.
+
+```bash
+git checkout dean-branch && git pull origin main      # take Chase's work
+npm test && npm run lint && npm run typecheck         # still green?
+git checkout main && git pull && git merge --no-ff dean-branch && git push
+git checkout dean-branch
+```
 
 **When you need something from the other side.** Ask for it in terms of the contract. "I need `Observation` to carry X" or "I need `runLoop` to accept Y," not "change your code." Stub it yourself behind the interface if you are blocked, and leave a `TODO(Chase)` or `TODO(Dean)`.
 
