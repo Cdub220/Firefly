@@ -32,6 +32,7 @@
 import type { Belief, Brain, BrainConfig, Command, Observation, SensorId, SpaceId } from '../shared/types';
 import { add, identity, inverse, matmul, matvec, sub, transpose, zeros, type Mat } from './mat';
 import { COOL, FLAME_TEMP, FUEL_HAZARD_MULT, GEN_RATE } from './physics';
+import { planCommands } from './commands';
 
 export const BURN_THRESHOLD_C = 200; // x_i above this => believed burning
 const SIGMA_MEAS_C = 2; // sensor noise the filter assumes
@@ -280,3 +281,32 @@ export function createSourceKalmanBrain(config: BrainConfig): Brain {
     },
   };
 }
+
+// ---------------------------------------------------------------------------------------
+// Closed-loop baselines (CP4 prompt 3, task A). A filter has exactly one hypothesis, so
+// handing its burning set to the same allocator our brain uses gives a baseline that
+// dispatches and never hedges. What differs between the runs is the belief, nothing else.
+// ---------------------------------------------------------------------------------------
+export type BrainFactory = (cfg: BrainConfig) => Brain;
+
+/** Wrap any brain so its commands come from the shared allocator hook, with kept = [burningSet]. */
+export function withAllocator(factory: BrainFactory): BrainFactory {
+  return (cfg) => {
+    const inner = factory(cfg);
+    let prev: Command[] = [];
+    return {
+      step(obs) {
+        const { belief } = inner.step(obs);
+        prev = planCommands({ plan: cfg.plan, belief, kept: [new Set(belief.burningSet)], drones: obs.drones, prev });
+        return { belief, commands: prev };
+      },
+      reset() {
+        inner.reset();
+        prev = [];
+      },
+    };
+  };
+}
+
+export const createKalmanDispatching: BrainFactory = withAllocator(createKalmanBrain);
+export const createSourceKalmanDispatching: BrainFactory = withAllocator(createSourceKalmanBrain);

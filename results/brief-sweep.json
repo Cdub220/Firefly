@@ -1,0 +1,2274 @@
+{
+ "options": {
+  "plans": [
+   "demo-6",
+   "vessel-3x8",
+   "tower-5x4"
+  ],
+  "modes": [
+   "freeze",
+   "blind",
+   "flashover"
+  ],
+  "seeds": [
+   7,
+   8,
+   9
+  ],
+  "ticks": 120,
+  "brains": [
+   "ours",
+   "kalman",
+   "kalman-source"
+  ]
+ },
+ "rows": [
+  {
+   "plan": "demo-6",
+   "mode": "freeze",
+   "seed": 7,
+   "brain": "ours",
+   "fireVolume": 23,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 24,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 32,
+   "retardantSpent": 2.7,
+   "droneDeaths": 1,
+   "wrongFloor": 12,
+   "hedges": 3
+  },
+  {
+   "plan": "demo-6",
+   "mode": "freeze",
+   "seed": 7,
+   "brain": "kalman",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 56,
+   "retardantSpent": 4.2,
+   "droneDeaths": 0,
+   "wrongFloor": 10,
+   "hedges": 0
+  },
+  {
+   "plan": "demo-6",
+   "mode": "freeze",
+   "seed": 7,
+   "brain": "kalman-source",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 96,
+   "retardantSpent": 6.9,
+   "droneDeaths": 0,
+   "wrongFloor": 80,
+   "hedges": 0
+  },
+  {
+   "plan": "demo-6",
+   "mode": "freeze",
+   "seed": 8,
+   "brain": "ours",
+   "fireVolume": 23,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 24,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 32,
+   "retardantSpent": 2.7,
+   "droneDeaths": 1,
+   "wrongFloor": 12,
+   "hedges": 3
+  },
+  {
+   "plan": "demo-6",
+   "mode": "freeze",
+   "seed": 8,
+   "brain": "kalman",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 54,
+   "retardantSpent": 3.9,
+   "droneDeaths": 0,
+   "wrongFloor": 7,
+   "hedges": 0
+  },
+  {
+   "plan": "demo-6",
+   "mode": "freeze",
+   "seed": 8,
+   "brain": "kalman-source",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 96,
+   "retardantSpent": 6.9,
+   "droneDeaths": 0,
+   "wrongFloor": 80,
+   "hedges": 0
+  },
+  {
+   "plan": "demo-6",
+   "mode": "freeze",
+   "seed": 9,
+   "brain": "ours",
+   "fireVolume": 23,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 24,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 32,
+   "retardantSpent": 2.7,
+   "droneDeaths": 1,
+   "wrongFloor": 12,
+   "hedges": 3
+  },
+  {
+   "plan": "demo-6",
+   "mode": "freeze",
+   "seed": 9,
+   "brain": "kalman",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 54,
+   "retardantSpent": 3.9,
+   "droneDeaths": 0,
+   "wrongFloor": 7,
+   "hedges": 0
+  },
+  {
+   "plan": "demo-6",
+   "mode": "freeze",
+   "seed": 9,
+   "brain": "kalman-source",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 96,
+   "retardantSpent": 6.9,
+   "droneDeaths": 0,
+   "wrongFloor": 80,
+   "hedges": 0
+  },
+  {
+   "plan": "demo-6",
+   "mode": "blind",
+   "seed": 7,
+   "brain": "ours",
+   "fireVolume": 28,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 29,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 38,
+   "retardantSpent": 2.55,
+   "droneDeaths": 2,
+   "wrongFloor": 8,
+   "hedges": 0
+  },
+  {
+   "plan": "demo-6",
+   "mode": "blind",
+   "seed": 7,
+   "brain": "kalman",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 36,
+   "retardantSpent": 3.6,
+   "droneDeaths": 0,
+   "wrongFloor": 16,
+   "hedges": 0
+  },
+  {
+   "plan": "demo-6",
+   "mode": "blind",
+   "seed": 7,
+   "brain": "kalman-source",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 32,
+   "retardantSpent": 3.6,
+   "droneDeaths": 0,
+   "wrongFloor": 14,
+   "hedges": 0
+  },
+  {
+   "plan": "demo-6",
+   "mode": "blind",
+   "seed": 8,
+   "brain": "ours",
+   "fireVolume": 28,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 29,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 36,
+   "retardantSpent": 1.8,
+   "droneDeaths": 2,
+   "wrongFloor": 9,
+   "hedges": 0
+  },
+  {
+   "plan": "demo-6",
+   "mode": "blind",
+   "seed": 8,
+   "brain": "kalman",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 36,
+   "retardantSpent": 3.6,
+   "droneDeaths": 0,
+   "wrongFloor": 16,
+   "hedges": 0
+  },
+  {
+   "plan": "demo-6",
+   "mode": "blind",
+   "seed": 8,
+   "brain": "kalman-source",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 32,
+   "retardantSpent": 3.6,
+   "droneDeaths": 0,
+   "wrongFloor": 14,
+   "hedges": 0
+  },
+  {
+   "plan": "demo-6",
+   "mode": "blind",
+   "seed": 9,
+   "brain": "ours",
+   "fireVolume": 28,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 29,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 38,
+   "retardantSpent": 2.55,
+   "droneDeaths": 2,
+   "wrongFloor": 8,
+   "hedges": 0
+  },
+  {
+   "plan": "demo-6",
+   "mode": "blind",
+   "seed": 9,
+   "brain": "kalman",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 36,
+   "retardantSpent": 3.6,
+   "droneDeaths": 0,
+   "wrongFloor": 16,
+   "hedges": 0
+  },
+  {
+   "plan": "demo-6",
+   "mode": "blind",
+   "seed": 9,
+   "brain": "kalman-source",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 32,
+   "retardantSpent": 3.6,
+   "droneDeaths": 0,
+   "wrongFloor": 14,
+   "hedges": 0
+  },
+  {
+   "plan": "demo-6",
+   "mode": "flashover",
+   "seed": 7,
+   "brain": "ours",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 34,
+   "retardantSpent": 3.3,
+   "droneDeaths": 1,
+   "wrongFloor": 18,
+   "hedges": 3
+  },
+  {
+   "plan": "demo-6",
+   "mode": "flashover",
+   "seed": 7,
+   "brain": "kalman",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 54,
+   "retardantSpent": 4.05,
+   "droneDeaths": 0,
+   "wrongFloor": 10,
+   "hedges": 0
+  },
+  {
+   "plan": "demo-6",
+   "mode": "flashover",
+   "seed": 7,
+   "brain": "kalman-source",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 50,
+   "retardantSpent": 3.9,
+   "droneDeaths": 0,
+   "wrongFloor": 10,
+   "hedges": 0
+  },
+  {
+   "plan": "demo-6",
+   "mode": "flashover",
+   "seed": 8,
+   "brain": "ours",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 34,
+   "retardantSpent": 3.3,
+   "droneDeaths": 1,
+   "wrongFloor": 18,
+   "hedges": 3
+  },
+  {
+   "plan": "demo-6",
+   "mode": "flashover",
+   "seed": 8,
+   "brain": "kalman",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 54,
+   "retardantSpent": 4.05,
+   "droneDeaths": 0,
+   "wrongFloor": 10,
+   "hedges": 0
+  },
+  {
+   "plan": "demo-6",
+   "mode": "flashover",
+   "seed": 8,
+   "brain": "kalman-source",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 50,
+   "retardantSpent": 3.9,
+   "droneDeaths": 0,
+   "wrongFloor": 10,
+   "hedges": 0
+  },
+  {
+   "plan": "demo-6",
+   "mode": "flashover",
+   "seed": 9,
+   "brain": "ours",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 32,
+   "retardantSpent": 3.6,
+   "droneDeaths": 1,
+   "wrongFloor": 21,
+   "hedges": 1
+  },
+  {
+   "plan": "demo-6",
+   "mode": "flashover",
+   "seed": 9,
+   "brain": "kalman",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 54,
+   "retardantSpent": 4.05,
+   "droneDeaths": 0,
+   "wrongFloor": 10,
+   "hedges": 0
+  },
+  {
+   "plan": "demo-6",
+   "mode": "flashover",
+   "seed": 9,
+   "brain": "kalman-source",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 50,
+   "retardantSpent": 3.9,
+   "droneDeaths": 0,
+   "wrongFloor": 10,
+   "hedges": 0
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "freeze",
+   "seed": 7,
+   "brain": "ours",
+   "fireVolume": 28,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 29,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 16,
+   "retardantSpent": 0.6,
+   "droneDeaths": 2,
+   "wrongFloor": 67,
+   "hedges": 7
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "freeze",
+   "seed": 7,
+   "brain": "kalman",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 40,
+   "retardantSpent": 2.7,
+   "droneDeaths": 0,
+   "wrongFloor": 9,
+   "hedges": 0
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "freeze",
+   "seed": 7,
+   "brain": "kalman-source",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 234,
+   "retardantSpent": 12,
+   "droneDeaths": 0,
+   "wrongFloor": 268,
+   "hedges": 0
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "freeze",
+   "seed": 8,
+   "brain": "ours",
+   "fireVolume": 28,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 29,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 15,
+   "retardantSpent": 0.6,
+   "droneDeaths": 2,
+   "wrongFloor": 40,
+   "hedges": 8
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "freeze",
+   "seed": 8,
+   "brain": "kalman",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 46,
+   "retardantSpent": 2.85,
+   "droneDeaths": 0,
+   "wrongFloor": 12,
+   "hedges": 0
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "freeze",
+   "seed": 8,
+   "brain": "kalman-source",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 234,
+   "retardantSpent": 12,
+   "droneDeaths": 0,
+   "wrongFloor": 268,
+   "hedges": 0
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "freeze",
+   "seed": 9,
+   "brain": "ours",
+   "fireVolume": 28,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 29,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 16,
+   "retardantSpent": 0.6,
+   "droneDeaths": 2,
+   "wrongFloor": 40,
+   "hedges": 7
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "freeze",
+   "seed": 9,
+   "brain": "kalman",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 44,
+   "retardantSpent": 2.85,
+   "droneDeaths": 0,
+   "wrongFloor": 13,
+   "hedges": 0
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "freeze",
+   "seed": 9,
+   "brain": "kalman-source",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 234,
+   "retardantSpent": 12,
+   "droneDeaths": 0,
+   "wrongFloor": 268,
+   "hedges": 0
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "blind",
+   "seed": 7,
+   "brain": "ours",
+   "fireVolume": 28,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 29,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 20,
+   "retardantSpent": 0.6,
+   "droneDeaths": 2,
+   "wrongFloor": 43,
+   "hedges": 10
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "blind",
+   "seed": 7,
+   "brain": "kalman",
+   "fireVolume": 28,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 29,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 18,
+   "retardantSpent": 1.2,
+   "droneDeaths": 1,
+   "wrongFloor": 6,
+   "hedges": 0
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "blind",
+   "seed": 7,
+   "brain": "kalman-source",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 40,
+   "retardantSpent": 3,
+   "droneDeaths": 0,
+   "wrongFloor": 30,
+   "hedges": 0
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "blind",
+   "seed": 8,
+   "brain": "ours",
+   "fireVolume": 28,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 29,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 19,
+   "retardantSpent": 0.6,
+   "droneDeaths": 2,
+   "wrongFloor": 48,
+   "hedges": 9
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "blind",
+   "seed": 8,
+   "brain": "kalman",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 28,
+   "retardantSpent": 2.7,
+   "droneDeaths": 0,
+   "wrongFloor": 15,
+   "hedges": 0
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "blind",
+   "seed": 8,
+   "brain": "kalman-source",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 50,
+   "retardantSpent": 3.15,
+   "droneDeaths": 0,
+   "wrongFloor": 41,
+   "hedges": 0
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "blind",
+   "seed": 9,
+   "brain": "ours",
+   "fireVolume": 28,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 29,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 18,
+   "retardantSpent": 0.6,
+   "droneDeaths": 2,
+   "wrongFloor": 44,
+   "hedges": 8
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "blind",
+   "seed": 9,
+   "brain": "kalman",
+   "fireVolume": 28,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 29,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 10,
+   "retardantSpent": 1.2,
+   "droneDeaths": 1,
+   "wrongFloor": 6,
+   "hedges": 0
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "blind",
+   "seed": 9,
+   "brain": "kalman-source",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 40,
+   "retardantSpent": 3,
+   "droneDeaths": 0,
+   "wrongFloor": 29,
+   "hedges": 0
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "flashover",
+   "seed": 7,
+   "brain": "ours",
+   "fireVolume": 28,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 29,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 14,
+   "retardantSpent": 0.6,
+   "droneDeaths": 1,
+   "wrongFloor": 42,
+   "hedges": 12
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "flashover",
+   "seed": 7,
+   "brain": "kalman",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 40,
+   "retardantSpent": 2.7,
+   "droneDeaths": 0,
+   "wrongFloor": 11,
+   "hedges": 0
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "flashover",
+   "seed": 7,
+   "brain": "kalman-source",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 62,
+   "retardantSpent": 3.45,
+   "droneDeaths": 0,
+   "wrongFloor": 14,
+   "hedges": 0
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "flashover",
+   "seed": 8,
+   "brain": "ours",
+   "fireVolume": 28,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 29,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 14,
+   "retardantSpent": 0.6,
+   "droneDeaths": 1,
+   "wrongFloor": 44,
+   "hedges": 10
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "flashover",
+   "seed": 8,
+   "brain": "kalman",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 46,
+   "retardantSpent": 2.85,
+   "droneDeaths": 0,
+   "wrongFloor": 12,
+   "hedges": 0
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "flashover",
+   "seed": 8,
+   "brain": "kalman-source",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 64,
+   "retardantSpent": 3.6,
+   "droneDeaths": 0,
+   "wrongFloor": 17,
+   "hedges": 0
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "flashover",
+   "seed": 9,
+   "brain": "ours",
+   "fireVolume": 28,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 29,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 14,
+   "retardantSpent": 0.6,
+   "droneDeaths": 1,
+   "wrongFloor": 41,
+   "hedges": 12
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "flashover",
+   "seed": 9,
+   "brain": "kalman",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 42,
+   "retardantSpent": 2.7,
+   "droneDeaths": 0,
+   "wrongFloor": 12,
+   "hedges": 0
+  },
+  {
+   "plan": "vessel-3x8",
+   "mode": "flashover",
+   "seed": 9,
+   "brain": "kalman-source",
+   "fireVolume": 33,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 34,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 64,
+   "retardantSpent": 3.6,
+   "droneDeaths": 0,
+   "wrongFloor": 18,
+   "hedges": 0
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "freeze",
+   "seed": 7,
+   "brain": "ours",
+   "fireVolume": 34,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 35,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 19,
+   "retardantSpent": 3.6,
+   "droneDeaths": 0,
+   "wrongFloor": 36,
+   "hedges": 6
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "freeze",
+   "seed": 7,
+   "brain": "kalman",
+   "fireVolume": 49,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 50,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 62,
+   "retardantSpent": 3.75,
+   "droneDeaths": 0,
+   "wrongFloor": 8,
+   "hedges": 0
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "freeze",
+   "seed": 7,
+   "brain": "kalman-source",
+   "fireVolume": 49,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 50,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 234,
+   "retardantSpent": 11.85,
+   "droneDeaths": 0,
+   "wrongFloor": 223,
+   "hedges": 0
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "freeze",
+   "seed": 8,
+   "brain": "ours",
+   "fireVolume": 34,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 35,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 16,
+   "retardantSpent": 3.3,
+   "droneDeaths": 1,
+   "wrongFloor": 24,
+   "hedges": 2
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "freeze",
+   "seed": 8,
+   "brain": "kalman",
+   "fireVolume": 49,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 50,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 62,
+   "retardantSpent": 3.75,
+   "droneDeaths": 0,
+   "wrongFloor": 8,
+   "hedges": 0
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "freeze",
+   "seed": 8,
+   "brain": "kalman-source",
+   "fireVolume": 49,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 50,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 234,
+   "retardantSpent": 11.85,
+   "droneDeaths": 0,
+   "wrongFloor": 223,
+   "hedges": 0
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "freeze",
+   "seed": 9,
+   "brain": "ours",
+   "fireVolume": 34,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 35,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 14,
+   "retardantSpent": 0.9,
+   "droneDeaths": 1,
+   "wrongFloor": 6,
+   "hedges": 0
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "freeze",
+   "seed": 9,
+   "brain": "kalman",
+   "fireVolume": 49,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 50,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 68,
+   "retardantSpent": 4.05,
+   "droneDeaths": 0,
+   "wrongFloor": 14,
+   "hedges": 0
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "freeze",
+   "seed": 9,
+   "brain": "kalman-source",
+   "fireVolume": 49,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 50,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 234,
+   "retardantSpent": 11.85,
+   "droneDeaths": 0,
+   "wrongFloor": 223,
+   "hedges": 0
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "blind",
+   "seed": 7,
+   "brain": "ours",
+   "fireVolume": 28,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 29,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 18,
+   "retardantSpent": 2.7,
+   "droneDeaths": 0,
+   "wrongFloor": 43,
+   "hedges": 4
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "blind",
+   "seed": 7,
+   "brain": "kalman",
+   "fireVolume": 49,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 50,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 48,
+   "retardantSpent": 3.3,
+   "droneDeaths": 0,
+   "wrongFloor": 9,
+   "hedges": 0
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "blind",
+   "seed": 7,
+   "brain": "kalman-source",
+   "fireVolume": 49,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 50,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 58,
+   "retardantSpent": 4.5,
+   "droneDeaths": 0,
+   "wrongFloor": 16,
+   "hedges": 0
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "blind",
+   "seed": 8,
+   "brain": "ours",
+   "fireVolume": 35,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 36,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 20,
+   "retardantSpent": 3.15,
+   "droneDeaths": 0,
+   "wrongFloor": 18,
+   "hedges": 3
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "blind",
+   "seed": 8,
+   "brain": "kalman",
+   "fireVolume": 49,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 50,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 48,
+   "retardantSpent": 3.15,
+   "droneDeaths": 0,
+   "wrongFloor": 9,
+   "hedges": 0
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "blind",
+   "seed": 8,
+   "brain": "kalman-source",
+   "fireVolume": 49,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 50,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 46,
+   "retardantSpent": 4.5,
+   "droneDeaths": 0,
+   "wrongFloor": 18,
+   "hedges": 0
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "blind",
+   "seed": 9,
+   "brain": "ours",
+   "fireVolume": 42,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 43,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 26,
+   "retardantSpent": 4.05,
+   "droneDeaths": 0,
+   "wrongFloor": 30,
+   "hedges": 6
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "blind",
+   "seed": 9,
+   "brain": "kalman",
+   "fireVolume": 49,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 50,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 50,
+   "retardantSpent": 3.15,
+   "droneDeaths": 0,
+   "wrongFloor": 6,
+   "hedges": 0
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "blind",
+   "seed": 9,
+   "brain": "kalman-source",
+   "fireVolume": 49,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 50,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 72,
+   "retardantSpent": 4.2,
+   "droneDeaths": 0,
+   "wrongFloor": 11,
+   "hedges": 0
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "flashover",
+   "seed": 7,
+   "brain": "ours",
+   "fireVolume": 42,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 43,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 18,
+   "retardantSpent": 1.5,
+   "droneDeaths": 1,
+   "wrongFloor": 19,
+   "hedges": 0
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "flashover",
+   "seed": 7,
+   "brain": "kalman",
+   "fireVolume": 49,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 50,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 62,
+   "retardantSpent": 3.75,
+   "droneDeaths": 0,
+   "wrongFloor": 8,
+   "hedges": 0
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "flashover",
+   "seed": 7,
+   "brain": "kalman-source",
+   "fireVolume": 49,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 50,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 76,
+   "retardantSpent": 4.5,
+   "droneDeaths": 0,
+   "wrongFloor": 10,
+   "hedges": 0
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "flashover",
+   "seed": 8,
+   "brain": "ours",
+   "fireVolume": 42,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 43,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 18,
+   "retardantSpent": 1.5,
+   "droneDeaths": 1,
+   "wrongFloor": 19,
+   "hedges": 0
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "flashover",
+   "seed": 8,
+   "brain": "kalman",
+   "fireVolume": 49,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 50,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 62,
+   "retardantSpent": 3.75,
+   "droneDeaths": 0,
+   "wrongFloor": 8,
+   "hedges": 0
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "flashover",
+   "seed": 8,
+   "brain": "kalman-source",
+   "fireVolume": 49,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 50,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 80,
+   "retardantSpent": 4.8,
+   "droneDeaths": 0,
+   "wrongFloor": 19,
+   "hedges": 0
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "flashover",
+   "seed": 9,
+   "brain": "ours",
+   "fireVolume": 34,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 35,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 14,
+   "retardantSpent": 1.5,
+   "droneDeaths": 1,
+   "wrongFloor": 11,
+   "hedges": 0
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "flashover",
+   "seed": 9,
+   "brain": "kalman",
+   "fireVolume": 49,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 50,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 64,
+   "retardantSpent": 3.9,
+   "droneDeaths": 0,
+   "wrongFloor": 11,
+   "hedges": 0
+  },
+  {
+   "plan": "tower-5x4",
+   "mode": "flashover",
+   "seed": 9,
+   "brain": "kalman-source",
+   "fireVolume": 49,
+   "peakBurning": 1,
+   "containedAt": 1,
+   "extinguishedAt": 50,
+   "spacesBurnedOut": 1,
+   "tetherTicks": 82,
+   "retardantSpent": 4.5,
+   "droneDeaths": 0,
+   "wrongFloor": 12,
+   "hedges": 0
+  }
+ ],
+ "byPlan": [
+  {
+   "group": "demo-6",
+   "brain": "ours",
+   "n": 9,
+   "fireVolume": {
+    "mean": 28,
+    "never": 0
+   },
+   "peakBurning": {
+    "mean": 1,
+    "never": 0
+   },
+   "containedAt": {
+    "mean": 1,
+    "never": 0
+   },
+   "extinguishedAt": {
+    "mean": 29,
+    "never": 0
+   },
+   "spacesBurnedOut": {
+    "mean": 1,
+    "never": 0
+   },
+   "tetherTicks": {
+    "mean": 34.22222222222222,
+    "never": 0
+   },
+   "retardantSpent": {
+    "mean": 2.8000000000000007,
+    "never": 0
+   },
+   "droneDeaths": {
+    "mean": 1.3333333333333333,
+    "never": 0
+   },
+   "wrongFloor": {
+    "mean": 13.11111111111111,
+    "never": 0
+   },
+   "hedges": {
+    "mean": 1.7777777777777777,
+    "never": 0
+   }
+  },
+  {
+   "group": "demo-6",
+   "brain": "kalman",
+   "n": 9,
+   "fireVolume": {
+    "mean": 33,
+    "never": 0
+   },
+   "peakBurning": {
+    "mean": 1,
+    "never": 0
+   },
+   "containedAt": {
+    "mean": 1,
+    "never": 0
+   },
+   "extinguishedAt": {
+    "mean": 34,
+    "never": 0
+   },
+   "spacesBurnedOut": {
+    "mean": 1,
+    "never": 0
+   },
+   "tetherTicks": {
+    "mean": 48.22222222222222,
+    "never": 0
+   },
+   "retardantSpent": {
+    "mean": 3.8833333333333337,
+    "never": 0
+   },
+   "droneDeaths": {
+    "mean": 0,
+    "never": 0
+   },
+   "wrongFloor": {
+    "mean": 11.333333333333334,
+    "never": 0
+   },
+   "hedges": {
+    "mean": 0,
+    "never": 0
+   }
+  },
+  {
+   "group": "demo-6",
+   "brain": "kalman-source",
+   "n": 9,
+   "fireVolume": {
+    "mean": 33,
+    "never": 0
+   },
+   "peakBurning": {
+    "mean": 1,
+    "never": 0
+   },
+   "containedAt": {
+    "mean": 1,
+    "never": 0
+   },
+   "extinguishedAt": {
+    "mean": 34,
+    "never": 0
+   },
+   "spacesBurnedOut": {
+    "mean": 1,
+    "never": 0
+   },
+   "tetherTicks": {
+    "mean": 59.333333333333336,
+    "never": 0
+   },
+   "retardantSpent": {
+    "mean": 4.800000000000001,
+    "never": 0
+   },
+   "droneDeaths": {
+    "mean": 0,
+    "never": 0
+   },
+   "wrongFloor": {
+    "mean": 34.666666666666664,
+    "never": 0
+   },
+   "hedges": {
+    "mean": 0,
+    "never": 0
+   }
+  },
+  {
+   "group": "vessel-3x8",
+   "brain": "ours",
+   "n": 9,
+   "fireVolume": {
+    "mean": 28,
+    "never": 0
+   },
+   "peakBurning": {
+    "mean": 1,
+    "never": 0
+   },
+   "containedAt": {
+    "mean": 1,
+    "never": 0
+   },
+   "extinguishedAt": {
+    "mean": 29,
+    "never": 0
+   },
+   "spacesBurnedOut": {
+    "mean": 1,
+    "never": 0
+   },
+   "tetherTicks": {
+    "mean": 16.22222222222222,
+    "never": 0
+   },
+   "retardantSpent": {
+    "mean": 0.6,
+    "never": 0
+   },
+   "droneDeaths": {
+    "mean": 1.6666666666666667,
+    "never": 0
+   },
+   "wrongFloor": {
+    "mean": 45.44444444444444,
+    "never": 0
+   },
+   "hedges": {
+    "mean": 9.222222222222221,
+    "never": 0
+   }
+  },
+  {
+   "group": "vessel-3x8",
+   "brain": "kalman",
+   "n": 9,
+   "fireVolume": {
+    "mean": 31.88888888888889,
+    "never": 0
+   },
+   "peakBurning": {
+    "mean": 1,
+    "never": 0
+   },
+   "containedAt": {
+    "mean": 1,
+    "never": 0
+   },
+   "extinguishedAt": {
+    "mean": 32.888888888888886,
+    "never": 0
+   },
+   "spacesBurnedOut": {
+    "mean": 1,
+    "never": 0
+   },
+   "tetherTicks": {
+    "mean": 34.888888888888886,
+    "never": 0
+   },
+   "retardantSpent": {
+    "mean": 2.4166666666666665,
+    "never": 0
+   },
+   "droneDeaths": {
+    "mean": 0.2222222222222222,
+    "never": 0
+   },
+   "wrongFloor": {
+    "mean": 10.666666666666666,
+    "never": 0
+   },
+   "hedges": {
+    "mean": 0,
+    "never": 0
+   }
+  },
+  {
+   "group": "vessel-3x8",
+   "brain": "kalman-source",
+   "n": 9,
+   "fireVolume": {
+    "mean": 33,
+    "never": 0
+   },
+   "peakBurning": {
+    "mean": 1,
+    "never": 0
+   },
+   "containedAt": {
+    "mean": 1,
+    "never": 0
+   },
+   "extinguishedAt": {
+    "mean": 34,
+    "never": 0
+   },
+   "spacesBurnedOut": {
+    "mean": 1,
+    "never": 0
+   },
+   "tetherTicks": {
+    "mean": 113.55555555555556,
+    "never": 0
+   },
+   "retardantSpent": {
+    "mean": 6.2,
+    "never": 0
+   },
+   "droneDeaths": {
+    "mean": 0,
+    "never": 0
+   },
+   "wrongFloor": {
+    "mean": 105.88888888888889,
+    "never": 0
+   },
+   "hedges": {
+    "mean": 0,
+    "never": 0
+   }
+  },
+  {
+   "group": "tower-5x4",
+   "brain": "ours",
+   "n": 9,
+   "fireVolume": {
+    "mean": 36.111111111111114,
+    "never": 0
+   },
+   "peakBurning": {
+    "mean": 1,
+    "never": 0
+   },
+   "containedAt": {
+    "mean": 1,
+    "never": 0
+   },
+   "extinguishedAt": {
+    "mean": 37.111111111111114,
+    "never": 0
+   },
+   "spacesBurnedOut": {
+    "mean": 1,
+    "never": 0
+   },
+   "tetherTicks": {
+    "mean": 18.11111111111111,
+    "never": 0
+   },
+   "retardantSpent": {
+    "mean": 2.466666666666667,
+    "never": 0
+   },
+   "droneDeaths": {
+    "mean": 0.5555555555555556,
+    "never": 0
+   },
+   "wrongFloor": {
+    "mean": 22.88888888888889,
+    "never": 0
+   },
+   "hedges": {
+    "mean": 2.3333333333333335,
+    "never": 0
+   }
+  },
+  {
+   "group": "tower-5x4",
+   "brain": "kalman",
+   "n": 9,
+   "fireVolume": {
+    "mean": 49,
+    "never": 0
+   },
+   "peakBurning": {
+    "mean": 1,
+    "never": 0
+   },
+   "containedAt": {
+    "mean": 1,
+    "never": 0
+   },
+   "extinguishedAt": {
+    "mean": 50,
+    "never": 0
+   },
+   "spacesBurnedOut": {
+    "mean": 1,
+    "never": 0
+   },
+   "tetherTicks": {
+    "mean": 58.44444444444444,
+    "never": 0
+   },
+   "retardantSpent": {
+    "mean": 3.6166666666666663,
+    "never": 0
+   },
+   "droneDeaths": {
+    "mean": 0,
+    "never": 0
+   },
+   "wrongFloor": {
+    "mean": 9,
+    "never": 0
+   },
+   "hedges": {
+    "mean": 0,
+    "never": 0
+   }
+  },
+  {
+   "group": "tower-5x4",
+   "brain": "kalman-source",
+   "n": 9,
+   "fireVolume": {
+    "mean": 49,
+    "never": 0
+   },
+   "peakBurning": {
+    "mean": 1,
+    "never": 0
+   },
+   "containedAt": {
+    "mean": 1,
+    "never": 0
+   },
+   "extinguishedAt": {
+    "mean": 50,
+    "never": 0
+   },
+   "spacesBurnedOut": {
+    "mean": 1,
+    "never": 0
+   },
+   "tetherTicks": {
+    "mean": 124,
+    "never": 0
+   },
+   "retardantSpent": {
+    "mean": 6.949999999999999,
+    "never": 0
+   },
+   "droneDeaths": {
+    "mean": 0,
+    "never": 0
+   },
+   "wrongFloor": {
+    "mean": 83.88888888888889,
+    "never": 0
+   },
+   "hedges": {
+    "mean": 0,
+    "never": 0
+   }
+  }
+ ],
+ "byMode": [
+  {
+   "group": "freeze",
+   "brain": "ours",
+   "n": 9,
+   "fireVolume": {
+    "mean": 28.333333333333332,
+    "never": 0
+   },
+   "peakBurning": {
+    "mean": 1,
+    "never": 0
+   },
+   "containedAt": {
+    "mean": 1,
+    "never": 0
+   },
+   "extinguishedAt": {
+    "mean": 29.333333333333332,
+    "never": 0
+   },
+   "spacesBurnedOut": {
+    "mean": 1,
+    "never": 0
+   },
+   "tetherTicks": {
+    "mean": 21.333333333333332,
+    "never": 0
+   },
+   "retardantSpent": {
+    "mean": 1.9666666666666666,
+    "never": 0
+   },
+   "droneDeaths": {
+    "mean": 1.2222222222222223,
+    "never": 0
+   },
+   "wrongFloor": {
+    "mean": 27.666666666666668,
+    "never": 0
+   },
+   "hedges": {
+    "mean": 4.333333333333333,
+    "never": 0
+   }
+  },
+  {
+   "group": "freeze",
+   "brain": "kalman",
+   "n": 9,
+   "fireVolume": {
+    "mean": 38.333333333333336,
+    "never": 0
+   },
+   "peakBurning": {
+    "mean": 1,
+    "never": 0
+   },
+   "containedAt": {
+    "mean": 1,
+    "never": 0
+   },
+   "extinguishedAt": {
+    "mean": 39.333333333333336,
+    "never": 0
+   },
+   "spacesBurnedOut": {
+    "mean": 1,
+    "never": 0
+   },
+   "tetherTicks": {
+    "mean": 54,
+    "never": 0
+   },
+   "retardantSpent": {
+    "mean": 3.5500000000000003,
+    "never": 0
+   },
+   "droneDeaths": {
+    "mean": 0,
+    "never": 0
+   },
+   "wrongFloor": {
+    "mean": 9.777777777777779,
+    "never": 0
+   },
+   "hedges": {
+    "mean": 0,
+    "never": 0
+   }
+  },
+  {
+   "group": "freeze",
+   "brain": "kalman-source",
+   "n": 9,
+   "fireVolume": {
+    "mean": 38.333333333333336,
+    "never": 0
+   },
+   "peakBurning": {
+    "mean": 1,
+    "never": 0
+   },
+   "containedAt": {
+    "mean": 1,
+    "never": 0
+   },
+   "extinguishedAt": {
+    "mean": 39.333333333333336,
+    "never": 0
+   },
+   "spacesBurnedOut": {
+    "mean": 1,
+    "never": 0
+   },
+   "tetherTicks": {
+    "mean": 188,
+    "never": 0
+   },
+   "retardantSpent": {
+    "mean": 10.249999999999998,
+    "never": 0
+   },
+   "droneDeaths": {
+    "mean": 0,
+    "never": 0
+   },
+   "wrongFloor": {
+    "mean": 190.33333333333334,
+    "never": 0
+   },
+   "hedges": {
+    "mean": 0,
+    "never": 0
+   }
+  },
+  {
+   "group": "blind",
+   "brain": "ours",
+   "n": 9,
+   "fireVolume": {
+    "mean": 30.333333333333332,
+    "never": 0
+   },
+   "peakBurning": {
+    "mean": 1,
+    "never": 0
+   },
+   "containedAt": {
+    "mean": 1,
+    "never": 0
+   },
+   "extinguishedAt": {
+    "mean": 31.333333333333332,
+    "never": 0
+   },
+   "spacesBurnedOut": {
+    "mean": 1,
+    "never": 0
+   },
+   "tetherTicks": {
+    "mean": 25.88888888888889,
+    "never": 0
+   },
+   "retardantSpent": {
+    "mean": 2.0666666666666664,
+    "never": 0
+   },
+   "droneDeaths": {
+    "mean": 1.3333333333333333,
+    "never": 0
+   },
+   "wrongFloor": {
+    "mean": 27.88888888888889,
+    "never": 0
+   },
+   "hedges": {
+    "mean": 4.444444444444445,
+    "never": 0
+   }
+  },
+  {
+   "group": "blind",
+   "brain": "kalman",
+   "n": 9,
+   "fireVolume": {
+    "mean": 37.22222222222222,
+    "never": 0
+   },
+   "peakBurning": {
+    "mean": 1,
+    "never": 0
+   },
+   "containedAt": {
+    "mean": 1,
+    "never": 0
+   },
+   "extinguishedAt": {
+    "mean": 38.22222222222222,
+    "never": 0
+   },
+   "spacesBurnedOut": {
+    "mean": 1,
+    "never": 0
+   },
+   "tetherTicks": {
+    "mean": 34.44444444444444,
+    "never": 0
+   },
+   "retardantSpent": {
+    "mean": 2.833333333333333,
+    "never": 0
+   },
+   "droneDeaths": {
+    "mean": 0.2222222222222222,
+    "never": 0
+   },
+   "wrongFloor": {
+    "mean": 11,
+    "never": 0
+   },
+   "hedges": {
+    "mean": 0,
+    "never": 0
+   }
+  },
+  {
+   "group": "blind",
+   "brain": "kalman-source",
+   "n": 9,
+   "fireVolume": {
+    "mean": 38.333333333333336,
+    "never": 0
+   },
+   "peakBurning": {
+    "mean": 1,
+    "never": 0
+   },
+   "containedAt": {
+    "mean": 1,
+    "never": 0
+   },
+   "extinguishedAt": {
+    "mean": 39.333333333333336,
+    "never": 0
+   },
+   "spacesBurnedOut": {
+    "mean": 1,
+    "never": 0
+   },
+   "tetherTicks": {
+    "mean": 44.666666666666664,
+    "never": 0
+   },
+   "retardantSpent": {
+    "mean": 3.683333333333333,
+    "never": 0
+   },
+   "droneDeaths": {
+    "mean": 0,
+    "never": 0
+   },
+   "wrongFloor": {
+    "mean": 20.77777777777778,
+    "never": 0
+   },
+   "hedges": {
+    "mean": 0,
+    "never": 0
+   }
+  },
+  {
+   "group": "flashover",
+   "brain": "ours",
+   "n": 9,
+   "fireVolume": {
+    "mean": 33.44444444444444,
+    "never": 0
+   },
+   "peakBurning": {
+    "mean": 1,
+    "never": 0
+   },
+   "containedAt": {
+    "mean": 1,
+    "never": 0
+   },
+   "extinguishedAt": {
+    "mean": 34.44444444444444,
+    "never": 0
+   },
+   "spacesBurnedOut": {
+    "mean": 1,
+    "never": 0
+   },
+   "tetherTicks": {
+    "mean": 21.333333333333332,
+    "never": 0
+   },
+   "retardantSpent": {
+    "mean": 1.8333333333333333,
+    "never": 0
+   },
+   "droneDeaths": {
+    "mean": 1,
+    "never": 0
+   },
+   "wrongFloor": {
+    "mean": 25.88888888888889,
+    "never": 0
+   },
+   "hedges": {
+    "mean": 4.555555555555555,
+    "never": 0
+   }
+  },
+  {
+   "group": "flashover",
+   "brain": "kalman",
+   "n": 9,
+   "fireVolume": {
+    "mean": 38.333333333333336,
+    "never": 0
+   },
+   "peakBurning": {
+    "mean": 1,
+    "never": 0
+   },
+   "containedAt": {
+    "mean": 1,
+    "never": 0
+   },
+   "extinguishedAt": {
+    "mean": 39.333333333333336,
+    "never": 0
+   },
+   "spacesBurnedOut": {
+    "mean": 1,
+    "never": 0
+   },
+   "tetherTicks": {
+    "mean": 53.111111111111114,
+    "never": 0
+   },
+   "retardantSpent": {
+    "mean": 3.533333333333333,
+    "never": 0
+   },
+   "droneDeaths": {
+    "mean": 0,
+    "never": 0
+   },
+   "wrongFloor": {
+    "mean": 10.222222222222221,
+    "never": 0
+   },
+   "hedges": {
+    "mean": 0,
+    "never": 0
+   }
+  },
+  {
+   "group": "flashover",
+   "brain": "kalman-source",
+   "n": 9,
+   "fireVolume": {
+    "mean": 38.333333333333336,
+    "never": 0
+   },
+   "peakBurning": {
+    "mean": 1,
+    "never": 0
+   },
+   "containedAt": {
+    "mean": 1,
+    "never": 0
+   },
+   "extinguishedAt": {
+    "mean": 39.333333333333336,
+    "never": 0
+   },
+   "spacesBurnedOut": {
+    "mean": 1,
+    "never": 0
+   },
+   "tetherTicks": {
+    "mean": 64.22222222222223,
+    "never": 0
+   },
+   "retardantSpent": {
+    "mean": 4.0166666666666675,
+    "never": 0
+   },
+   "droneDeaths": {
+    "mean": 0,
+    "never": 0
+   },
+   "wrongFloor": {
+    "mean": 13.333333333333334,
+    "never": 0
+   },
+   "hedges": {
+    "mean": 0,
+    "never": 0
+   }
+  }
+ ],
+ "overall": [
+  {
+   "group": "all",
+   "brain": "ours",
+   "n": 27,
+   "fireVolume": {
+    "mean": 30.703703703703702,
+    "never": 0
+   },
+   "peakBurning": {
+    "mean": 1,
+    "never": 0
+   },
+   "containedAt": {
+    "mean": 1,
+    "never": 0
+   },
+   "extinguishedAt": {
+    "mean": 31.703703703703702,
+    "never": 0
+   },
+   "spacesBurnedOut": {
+    "mean": 1,
+    "never": 0
+   },
+   "tetherTicks": {
+    "mean": 22.85185185185185,
+    "never": 0
+   },
+   "retardantSpent": {
+    "mean": 1.955555555555556,
+    "never": 0
+   },
+   "droneDeaths": {
+    "mean": 1.1851851851851851,
+    "never": 0
+   },
+   "wrongFloor": {
+    "mean": 27.14814814814815,
+    "never": 0
+   },
+   "hedges": {
+    "mean": 4.444444444444445,
+    "never": 0
+   }
+  },
+  {
+   "group": "all",
+   "brain": "kalman",
+   "n": 27,
+   "fireVolume": {
+    "mean": 37.96296296296296,
+    "never": 0
+   },
+   "peakBurning": {
+    "mean": 1,
+    "never": 0
+   },
+   "containedAt": {
+    "mean": 1,
+    "never": 0
+   },
+   "extinguishedAt": {
+    "mean": 38.96296296296296,
+    "never": 0
+   },
+   "spacesBurnedOut": {
+    "mean": 1,
+    "never": 0
+   },
+   "tetherTicks": {
+    "mean": 47.18518518518518,
+    "never": 0
+   },
+   "retardantSpent": {
+    "mean": 3.3055555555555567,
+    "never": 0
+   },
+   "droneDeaths": {
+    "mean": 0.07407407407407407,
+    "never": 0
+   },
+   "wrongFloor": {
+    "mean": 10.333333333333334,
+    "never": 0
+   },
+   "hedges": {
+    "mean": 0,
+    "never": 0
+   }
+  },
+  {
+   "group": "all",
+   "brain": "kalman-source",
+   "n": 27,
+   "fireVolume": {
+    "mean": 38.333333333333336,
+    "never": 0
+   },
+   "peakBurning": {
+    "mean": 1,
+    "never": 0
+   },
+   "containedAt": {
+    "mean": 1,
+    "never": 0
+   },
+   "extinguishedAt": {
+    "mean": 39.333333333333336,
+    "never": 0
+   },
+   "spacesBurnedOut": {
+    "mean": 1,
+    "never": 0
+   },
+   "tetherTicks": {
+    "mean": 98.96296296296296,
+    "never": 0
+   },
+   "retardantSpent": {
+    "mean": 5.9833333333333325,
+    "never": 0
+   },
+   "droneDeaths": {
+    "mean": 0,
+    "never": 0
+   },
+   "wrongFloor": {
+    "mean": 74.81481481481481,
+    "never": 0
+   },
+   "hedges": {
+    "mean": 0,
+    "never": 0
+   }
+  }
+ ]
+}

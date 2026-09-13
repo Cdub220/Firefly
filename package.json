@@ -18,7 +18,9 @@
     "typecheck": "tsc --noEmit",
     "viewer": "tsx src/eval/export-viewer.ts",
     "probe:mismatch": "tsx src/eval/mismatch.ts",
-    "hedge": "tsx src/eval/hedge.ts"
+    "hedge": "tsx src/eval/hedge.ts",
+    "brief": "tsx src/eval/brief-cli.ts",
+    "brief:sweep": "tsx src/eval/brief-sweep.ts"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",
