@@ -1,12 +1,12 @@
 <!doctype html><html><head><meta charset="utf-8"><title>Firefly estimator, the math</title>
 <style>
-@page { size: Letter; margin: 0.8in 0.85in; }
+@page { size: Letter; margin: 0.7in 0.6in; }
 body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; color:#1a1a1a; font-size:11pt; line-height:1.45; margin:0; }
 h1 { font-size:20pt; margin:0 0 2pt; letter-spacing:-0.01em; }
 .sub { color:#666; font-size:10pt; margin:0 0 18pt; }
 h2 { font-size:12.5pt; margin:16pt 0 5pt; }
 p { margin:0 0 7pt; }
-pre { font-family: Menlo, "SF Mono", Consolas, monospace; font-size:10pt; background:#f4f4f2; border-left:3px solid #d9822b; padding:7pt 10pt; margin:5pt 0 8pt; white-space:pre-wrap; }
+pre { font-family: Menlo, "SF Mono", Consolas, monospace; font-size:8.6pt; background:#f4f4f2; border-left:3px solid #d9822b; padding:7pt 10pt; margin:5pt 0 8pt; white-space:pre-wrap; }
 .note { color:#555; font-size:10pt; }
 .slide { border:1px solid #ccc; padding:9pt 12pt; margin-top:14pt; background:#fbfbfa; }
 .slide h2 { margin-top:0; }
@@ -22,11 +22,11 @@ pre { font-family: Menlo, "SF Mono", Consolas, monospace; font-size:10pt; backgr
 <p><b>x</b> is the true temperature of every space. <b>H</b> selects the spaces that have a sensor. <b>ε</b> is ordinary noise. <b>a</b> is the corruption vector: zero for honest sensors, arbitrary for at most <i>k</i> of them. The estimator is not told which entries of <b>a</b> are nonzero. The Kalman baseline assumes <b>a</b> = 0. Ours does not.</p>
 
 <h2>1. Shared physics model (both brains)</h2>
-<pre>x_i(t+1) = x_i(t) + Σ_j r_ij (x_j(t) − x_i(t))  +  c (T_amb − x_i(t))  +  b_i · g (T_flame − x_i(t))</pre>
+<pre>x_i(t+1) = x_i(t) + Σ_j r_ij (x_j(t) − x_i(t)) + c (T_amb − x_i(t)) + b_i · g (T_flame − x_i(t))</pre>
 <p><i>r_ij</i> is the per-edge heat-transfer rate from the structure plan (door 0.15, passage 0.2, bulkhead 0.05, and so on). <i>c</i> = 0.02 is loss to ambient. <i>T_flame</i> = 900 °C, <i>g</i> = 0.25 (1.5× in a fuel-hazard space). <i>b_i</i> is 1 if space <i>i</i> is burning. The first term is a weighted graph Laplacian, so the model is <span class="k">x(t+1) = A x(t) + generation</span> with <b>A</b> built from the plan's edges. The structure is data; the estimator is not.</p>
 
 <h2>2. Kalman baseline</h2>
-<pre>predict:  x̂ ← A x̂ + 40·b        P ← A P Aᵀ + Q          Q = 25·I,  R = 4·I,  P₀ = 100·I
+<pre>predict:  x̂ ← A x̂ + 40·b      P ← A P Aᵀ + Q      Q = 25·I,  R = 4·I,  P₀ = 100·I
 update:   standard Kalman gain over every reading, none doubted
 b_i = 1  if  x̂_i &gt; 200
 confidence = mean_i ( 1 − √P_ii / 50 )</pre>
@@ -35,7 +35,7 @@ confidence = mean_i ( 1 − √P_ii / 50 )</pre>
 <h2>3. Ours, step one: decide which readings to trust</h2>
 <p>Each reading is tested against physics and its neighbors before it is used. A reading is set aside as <i>suspect</i> if it is:</p>
 <pre>stale       timestamp lags the current tick by more than 2
-frozen      unchanged (|Δ| &lt; 0.05 °C) for 6 ticks while the median neighbor moved more than 15 °C
+frozen      unchanged (|Δ| &lt; 0.05 °C) for 6 ticks while the median neighbor moved &gt; 15 °C
 impossible  rose faster than the model allows from last tick's estimate
 cold        below ambient + 10 °C while trusted neighbors read above 250 °C
 pathless    above 200 °C with nothing within two edges above 60 °C (3-tick grace at the start)</pre>
@@ -43,7 +43,7 @@ pathless    above 200 °C with nothing within two edges above 60 °C (3-tick gra
 
 <h2>4. Ours, step two: score hypotheses, tolerating k liars</h2>
 <p>A hypothesis <b>B</b> is a set of burning spaces. Each candidate is rolled forward 3 ticks from the estimate 3 ticks ago with the model in section 1, giving predicted temperatures <b>x̂_B</b>. Its score is the mean absolute residual over trusted readings after discarding up to <i>k</i> of the largest <i>downward</i> misses:</p>
-<pre>s(B) = mean_{i ∈ T} | x̂_B,i − y_i |      dropping up to k terms where x̂_B,i &gt; y_i      (k = 1 by default)</pre>
+<pre>s(B) = mean_{i ∈ T} | x̂_B,i − y_i |      dropping up to k terms where x̂_B,i &gt; y_i   (k = 1 by default)</pre>
 <p>Only downward misses can be dropped, because every failure mode in the model (freeze, blind, saturate, flashover) pushes a reading down or away from the truth, never up. A sensor reading <i>hotter</i> than a hypothesis allows is never excusable, so the "no fire" hypothesis cannot discard the one sensor that sees the fire. This is the sparse-corruption tolerance from the brief: the estimate may disagree with <i>k</i> sensors without knowing which <i>k</i>.</p>
 
 <h2>5. Ours, step three: keep the set of survivors, not one winner</h2>
@@ -56,11 +56,11 @@ ambiguous = ∪ kept − ∩ kept     spaces in some survivors but not all</pre>
 <h2>6. Graded belief</h2>
 <p>Survivors are weighted like a Boltzmann distribution, with the tolerance as the temperature, so a hypothesis at the edge of tolerance weighs e⁻¹ of the best:</p>
 <pre>w_B = exp( −(s(B) − s*) / τ )                    τ = max(8, 0.15 · s*)
-P(space i burning) = ( Σ_{B ∋ i} w_B ) / ( Σ_B w_B )  ×  0.8^(suspect sensors in space i)</pre>
+P(space i burning) = ( Σ_{B ∋ i} w_B ) / ( Σ_B w_B ) × 0.8^(suspect sensors in space i)</pre>
 
 <h2>7. Earned confidence</h2>
 <pre>conf = ( 1 / |kept| ) × 0.8^(#suspect sensors) × min(1, 6 / s*)
-capped at 0.7 until the burning set has been uncontested and unchanged for 5 consecutive ticks
+capped at 0.7 until the burning set is uncontested and unchanged for 5 consecutive ticks
 floor 0.05, and exactly 0.05 when no reading at all is trusted</pre>
 <p>Confidence is one over the number of surviving explanations, discounted for every sensor being ignored and for poor fit, and held below 0.7 until the answer has stood still. This is why ours is never confidently wrong, and also why it takes 30 to 56 ticks to reach high confidence in the sweep: the caution is the price.</p>
 
@@ -68,11 +68,12 @@ floor 0.05, and exactly 0.05 when no reading at all is trusted</pre>
 <h2>The slide version</h2>
 <div class="two"><div>
 <pre>y = H x + a + ε
-Kalman:  assume a = 0, average everything.</pre>
+Kalman:  assume a = 0
+         average everything</pre>
 </div><div>
-<pre>Ours:   s(B) = mean |x̂_B − y|,
-        dropping ≤ k downward misses
-        report { B : s(B) ≤ s* + τ }, not argmin</pre>
+<pre>Ours:  s(B) = mean |x̂_B − y|
+       drop ≤ k downward misses
+       report { B : s(B) ≤ s* + τ }</pre>
 </div></div>
 <p class="note">Same physics, same readings, same seeds. The difference is whether readings are allowed to lie, and whether the answer is a point or a set.</p>
 </div>
@@ -80,10 +81,9 @@ Kalman:  assume a = 0, average everything.</pre>
 <h2>Reported metrics (from <span class="k">computeMetrics</span>)</h2>
 <pre>false certainty    fraction of ticks with conf ≥ 0.9 and burning set ≠ truth
 estimation error   mean |estimate − truth| over spaces, ticks ≥ onset
-time to recovery   ticks from corruption onset to the first of 5 consecutive exact matches
+time to recovery   ticks from onset to the first of 5 consecutive exact matches
 compute cost       wall-clock ms per brain.step
-wrong dispatch     fraction of ticks where the burning set names a space that is
-                   neither burning nor ambiguous
+wrong dispatch     fraction of ticks naming a space that is neither burning nor ambiguous
 ambiguity coverage fraction of ticks where truth ⊆ burning ∪ ambiguous
 Brier score        mean over spaces and ticks of (P(burning) − truth)²</pre>
 </body></html>
