@@ -29,7 +29,7 @@ H1 = {A1} is burning. H2 = {B1} is burning. Truth in every run below is H1.
 
 Meanwhile A1 sits at 710.9 C under H1 and 163.0 C under H2. The fire is real; it is unseen.
 
-**No estimator can distinguish H1 from H2 with this sensor set, because swapping the two wings is a symmetry of the plan that fixes every sensor, so the two fire states produce identical measurement vectors and any choice between them is a coin toss, whatever the algorithm.** The threshold for "identical" is 2 σ = 4 C of sensor noise; here the difference is exactly zero.
+**No estimator can distinguish H1 from H2 with this sensor set, because swapping the two wings is a symmetry of the plan that fixes every sensor, so the two fire states produce identical measurement vectors and any choice between them is a coin toss, whatever the algorithm.** The threshold for "identical" is 2 σ = 4 C, where σ = 2 C is the noise the estimator assumes (the simulator adds 0.5 C); here the difference is exactly zero.
 
 ## The k = 1 sensor
 
