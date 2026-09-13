@@ -1,0 +1,28 @@
+/* Truth | belief | diff. Three columns at 1600px and wider; below that truth over belief with diff collapsible. */
+.compare-view { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 12px; align-items: start; padding-block: 12px; }
+.compare-view .compare-left { display: flex; flex-direction: column; gap: 12px; max-height: calc(100vh - 80px); overflow: auto; }
+.compare-view .compare-main { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.compare-view .compare-bar { margin-bottom: 0; }
+.compare-view .compare-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 1600px) { .compare-view .compare-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.compare-view .compare-col { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px 8px; min-width: 0; }
+.compare-view .compare-col header, .compare-view .compare-col summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; margin-bottom: 6px; }
+.compare-view .compare-col summary { cursor: pointer; list-style: none; }
+.compare-view .compare-col summary::-webkit-details-marker { display: none; }
+.compare-view .compare-col summary::before { content: '▸'; color: var(--muted); }
+.compare-view .compare-diff[open] summary::before { content: '▾'; }
+.compare-view .compare-col h2 { font: 600 13px var(--sans); margin: 0; color: var(--ink); }
+.compare-view .compare-col .sub { font: 11px var(--sans); color: var(--muted); }
+.compare-view .compare-canvas { height: calc(100vh - 260px); min-height: 320px; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: #0e1116; }
+@media (max-width: 1599px) { .compare-view .compare-canvas { height: 44vh; min-height: 280px; } }
+.compare-view .compare-empty { height: 60vh; display: grid; place-items: center; color: var(--muted); }
+.compare-view .conf { display: inline-flex; align-items: center; gap: 6px; font: 11px var(--mono); color: var(--ink-2); }
+.compare-view .conf .bar { display: inline-block; width: 90px; height: 6px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
+.compare-view .conf .bar i { display: block; height: 100%; background: var(--ok); }
+.compare-view .conf.hi .bar i { background: var(--wrong); }
+.compare-view .conf.lo .bar i { background: var(--uncertain); }
+.compare-view .hedge-badge { margin-left: auto; font: 700 12px var(--mono); letter-spacing: 0.08em; color: #0e1116; background: var(--uncertain); border-radius: 4px; padding: 4px 10px; animation: hedge-flash 0.9s ease-in-out infinite alternate; }
+@keyframes hedge-flash { from { opacity: 1; box-shadow: 0 0 0 0 rgba(240, 180, 41, 0.7); } to { opacity: 0.75; box-shadow: 0 0 0 8px rgba(240, 180, 41, 0); } }
+@media (prefers-reduced-motion: reduce) { .compare-view .hedge-badge { animation: none; } }
+.compare-view .note { margin: 0; max-width: none; }
+@media (max-width: 1100px) { .compare-view { grid-template-columns: 1fr; } .compare-view .compare-left { max-height: none; } }
