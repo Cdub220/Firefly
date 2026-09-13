@@ -15,7 +15,11 @@ function NumberKnob({ f, value, onChange }: { f: NumberField; value: number | un
   const dflt = DEFAULTS[f.key];
   const effective = value ?? dflt ?? f.min;
   const id = `chaos-${f.key}`;
-  const clamp = (v: number): number => (Number.isFinite(v) ? Math.max(f.min, Math.min(f.max, v)) : effective);
+  const clamp = (v: number): number => {
+    if (!Number.isFinite(v)) return effective;
+    const bounded = Math.max(f.min, Math.min(f.max, v));
+    return f.kind === 'int' ? Math.round(bounded) : bounded;
+  };
   return (
     <label htmlFor={id} title={f.help}>
       <span className="knob-label">{f.label}{f.unit ? ` (${f.unit})` : ''}{value === undefined && <em> default {dflt}</em>}</span>
