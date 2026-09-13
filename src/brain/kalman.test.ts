@@ -293,6 +293,31 @@ describe('createSourceKalmanBrain (augmented-state source filter, the fair basel
     expect(last.belief.probability['S1']!).toBeLessThan(0.01);
   });
 
+  it('the 3-sigma half of the rule: a source estimate that stays above 10 C/tick but whose uncertainty grows past q/3 leaves burningSet while P(burning) stays high', () => {
+    // 40 ticks of a clean fire fix q_S1 near 47 C/tick; then a 100-tick blackout. The random
+    // walk keeps q where it was but its variance grows 4 per tick, so sd passes q/3 and the
+    // significance test fails while the magnitude test still passes: not confidently burning.
+    const brain = createSourceKalmanBrain({ plan, seed: 42 });
+    let temps: Record<string, number> = { S1: 450, S2: 20, S3: 20 };
+    for (let t = 1; t <= 40; t++) {
+      brain.step(streamObs(temps, t));
+      temps = forward(plan, temps, new Set(['S1']));
+    }
+    let out = brain.step({ t: 41, readings: [], drones: [] });
+    expect(out.belief.burningSet).toContain('S1');
+    for (let t = 42; t <= 140; t++) out = brain.step({ t, readings: [], drones: [] });
+    expect(out.belief.burningSet).not.toContain('S1');
+    expect(out.belief.probability['S1']!).toBeGreaterThan(0.5); // magnitude still says fire; significance does not
+    expect(out.belief.confidence).toBeLessThan(0.1); // and it says so
+  });
+
+  it('the process model keeps ambient: with no readings at all the estimate stays at plan.ambient, not decaying toward zero', () => {
+    const brain = createSourceKalmanBrain({ plan, seed: 42 });
+    let out = brain.step({ t: 1, readings: [], drones: [] });
+    for (let t = 2; t <= 30; t++) out = brain.step({ t, readings: [], drones: [] });
+    for (const id of ['S1', 'S2', 'S3']) expect(out.belief.estimate[id]!).toBeCloseTo(plan.ambient, 6);
+  });
+
   it('reset() restores the initial state deterministically and a tick with no readings does not break confidence', () => {
     const brain = createSourceKalmanBrain({ plan, seed: 42 });
     const a = JSON.stringify([1, 2, 3].map((t) => brain.step(tick(t))));
