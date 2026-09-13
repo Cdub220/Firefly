@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEMO_PLAN, runLoop, runLoopMulti } from './loop';
+import { DEMO_PLAN, runLoop, runLoopMulti, type TickRecord } from './loop';
 import { createBrain } from './brain';
 import { createKalmanBrain } from './brain/kalman';
 
@@ -56,5 +56,27 @@ describe('runLoop', () => {
       expect(Object.keys(rec.obs).sort()).toEqual(['drones', 'readings', 't']);
       expect(JSON.stringify(rec.obs)).not.toContain('burning');
     }
+  });
+
+  it('dispatch: off by default (idle drones, no commands recorded); on, the brain\'s commands move drones and change the run', () => {
+    const open = runLoop({ plan: DEMO_PLAN, seed: 1, ticks: 30 });
+    const closed = runLoop({ plan: DEMO_PLAN, seed: 1, ticks: 30, dispatch: true });
+    expect(open.every((r) => r.commands.length === 0)).toBe(true);
+    const home = DEMO_PLAN.resupply[0]!;
+    expect(open[29]!.truth.drones.every((d) => d.at === home)).toBe(true);
+    expect(closed.some((r) => r.commands.some((c) => c.task !== 'hold'))).toBe(true);
+    expect(closed[29]!.truth.drones.some((d) => d.at !== home)).toBe(true);
+    // Tethers on the fire: fewer spaces burn by tick 30 than with idle drones.
+    const burning = (r: TickRecord): number => r.truth.spaces.filter((s) => s.burning).length;
+    expect(burning(closed[29]!)).toBeLessThan(burning(open[29]!));
+    // Deterministic either way.
+    const again = runLoop({ plan: DEMO_PLAN, seed: 1, ticks: 30, dispatch: true });
+    expect(JSON.stringify(again.map((r) => ({ ...r, stepMs: 0 })))).toBe(JSON.stringify(closed.map((r) => ({ ...r, stepMs: 0 }))));
+  });
+
+  it('a drone roster passes through to the world', () => {
+    const trace = runLoop({ plan: DEMO_PLAN, seed: 1, ticks: 2, drones: [{ id: 'X1', class: 'scout', at: 'S1' }, { id: 'X2', class: 'tether', at: 'S2' }] });
+    expect(trace[0]!.truth.drones.map((d) => d.id)).toEqual(['X1', 'X2']);
+    expect(trace[0]!.obs.readings.filter((r) => r.source === 'drone').map((r) => r.droneId)).toEqual(['X1', 'X2']);
   });
 });

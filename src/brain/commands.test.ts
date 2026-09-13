@@ -1,10 +1,11 @@
 /**
- * The command hook: planCommands() returns no commands today, and step() gets its
- * commands from it (so the CP4 allocator plugs in without touching a frozen file).
+ * The command hook: planCommands() is allocate() on the hook's inputs, and step() gets
+ * its commands from it (the CP4 allocator plugged in without touching a frozen file).
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createBrain } from './index';
 import { planCommands, type PlanCommandsInput } from './commands';
+import { allocate } from './allocator';
 import type { Command, Observation, Reading, StructurePlan } from '../shared/types';
 
 vi.mock('./commands', async (importOriginal) => {
@@ -34,7 +35,7 @@ describe('planCommands', () => {
     hook.mockClear();
   });
 
-  it('returns [] today for any input', () => {
+  it('returns exactly what allocate() returns for the same inputs', () => {
     const input: PlanCommandsInput = {
       plan,
       belief: { estimate: {}, burningSet: ['S1'], ambiguous: [['S2'], ['S3']], suspectSensors: [], confidence: 0.5, probability: {} },
@@ -42,15 +43,16 @@ describe('planCommands', () => {
       drones: obs(1).drones,
       prev: [{ droneId: 'D1', goTo: 'S2', task: 'observe' }],
     };
-    expect(planCommands(input)).toEqual([]);
+    expect(planCommands(input)).toEqual(allocate(input.plan, input.belief, input.kept, input.drones, input.prev));
+    expect(planCommands(input).length).toBeGreaterThan(0);
   });
 
   it('step() returns exactly what the hook returns, and hands it the kept hypotheses, the drones and last tick\'s commands', () => {
     const brain = createBrain({ plan, seed: 42 });
     const first = brain.step(obs(1));
-    expect(first.commands).toEqual([]);
     expect(hook).toHaveBeenCalledTimes(1);
     const a = hook.mock.calls[0]![0];
+    expect(first.commands).toEqual(allocate(plan, first.belief, a.kept, a.drones, []));
     expect(a.plan).toBe(plan);
     expect(a.belief).toBe(first.belief);
     expect(a.kept.length).toBeGreaterThan(0);
@@ -65,13 +67,13 @@ describe('planCommands', () => {
     expect(second.commands).toBe(sentinel);
     const third = brain.step(obs(3));
     expect(hook.mock.calls[2]![0].prev).toBe(sentinel);
-    expect(third.commands).toEqual([]);
+    expect(third.commands).toEqual(allocate(plan, third.belief, hook.mock.calls[2]![0].kept, third.belief && a.drones, sentinel));
 
     // Under a total blackout the hook still runs, with the carried-forward set as the one hypothesis.
     const dark = brain.step({ ...obs(4), readings: [] });
     const d = hook.mock.calls[3]![0];
     expect(d.kept).toEqual([new Set(dark.belief.burningSet)]);
-    expect(dark.commands).toEqual([]);
+    expect(dark.commands).toEqual(allocate(plan, dark.belief, d.kept, d.drones, d.prev));
 
     // reset() clears prev: the tick before reset handed out a command, and it must not survive.
     hook.mockReturnValueOnce(sentinel);

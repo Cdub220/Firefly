@@ -8,9 +8,11 @@
  * plugs in (docs/prompts/dean/checkpoint-4.md prompt 1 fills it in and adds allocator.ts)
  * without touching a frozen file.
  *
- * Today it returns no commands: every drone holds where it is, which is exactly the
- * open-loop behaviour the freeze record's estimator numbers are measured on.
+ * Since CP4 prompt 1 it calls allocate() in allocator.ts. The open-loop family the freeze
+ * record's estimator numbers are measured on is produced by a wrapper brain that strips
+ * commands (src/eval), not by this hook.
  */
+import { allocate } from './allocator';
 import type { Belief, Command, Drone, SpaceId, StructurePlan } from '../shared/types';
 
 export type PlanCommandsInput = {
@@ -30,8 +32,10 @@ export type PlanCommandsInput = {
   prev: Command[];
 };
 
-/** The allocator hook. CP4 fills this in; until then, no commands. */
+/**
+ * The allocator hook (CP4 prompt 1): containment value plus information value, greedy
+ * with diversity, hysteresis, refills and safety. See allocator.ts.
+ */
 export function planCommands(input: PlanCommandsInput): Command[] {
-  void input;
-  return [];
+  return allocate(input.plan, input.belief, input.kept, input.drones, input.prev);
 }
