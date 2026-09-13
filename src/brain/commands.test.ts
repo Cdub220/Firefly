@@ -67,7 +67,7 @@ describe('planCommands', () => {
     expect(second.commands).toBe(sentinel);
     const third = brain.step(obs(3));
     expect(hook.mock.calls[2]![0].prev).toBe(sentinel);
-    expect(third.commands).toEqual(allocate(plan, third.belief, hook.mock.calls[2]![0].kept, third.belief && a.drones, sentinel));
+    expect(third.commands).toEqual(allocate(plan, third.belief, hook.mock.calls[2]![0].kept, hook.mock.calls[2]![0].drones, sentinel));
 
     // Under a total blackout the hook still runs, with the carried-forward set as the one hypothesis.
     const dark = brain.step({ ...obs(4), readings: [] });
