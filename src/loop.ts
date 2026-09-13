@@ -70,7 +70,7 @@ export function runLoop(cfg: LoopConfig): TickRecord[] {
   const corruptor = createCorruptor({ seed: cfg.seed, mode: 'none', ...cfg.corruption });
   const makeBrain = cfg.brain ?? createBrain;
   const dispatch = cfg.dispatch === true;
-  const brain = makeBrain({ plan: cfg.plan, seed: cfg.seed });
+  const brain = makeBrain({ plan: cfg.plan, seed: cfg.seed, dispatch });
 
   const onset = onsetOf(cfg.corruption);
   const trace: TickRecord[] = [];
@@ -111,7 +111,8 @@ export function runLoopMulti(cfg: MultiLoopConfig): Record<string, TickRecord[]>
   const dispatch = cfg.dispatch === true;
   const brains = names.map((name) => ({
     name,
-    brain: cfg.brains[name]!({ plan: cfg.plan, seed: cfg.seed }),
+    // Only the primary's commands drive the world; the others are told they are open-loop.
+    brain: cfg.brains[name]!({ plan: cfg.plan, seed: cfg.seed, dispatch: dispatch && name === primary }),
   }));
 
   const onset = onsetOf(cfg.corruption);

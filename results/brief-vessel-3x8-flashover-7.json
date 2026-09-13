@@ -12,13 +12,13 @@
   {
    "name": "ours",
    "outcome": {
-    "fireVolume": 28,
+    "fireVolume": 33,
     "peakBurning": 1,
     "spacesBurnedOut": [
      "L1-B3"
     ],
     "containedAt": 1,
-    "extinguishedAt": 29,
+    "extinguishedAt": 34,
     "dronesUsed": {
      "hatch": [
       "D6"
@@ -35,15 +35,11 @@
       "D4"
      ]
     },
-    "tetherTicks": 14,
-    "retardantSpent": 0.6,
-    "droneDeaths": {
-     "retardant": [
-      "D5"
-     ]
-    },
-    "wrongFloor": 42,
-    "hedges": 12,
+    "tetherTicks": 68,
+    "retardantSpent": 4.2,
+    "droneDeaths": {},
+    "wrongFloor": 59,
+    "hedges": 0,
     "events": [
      {
       "t": 1,
@@ -106,418 +102,158 @@
       "text": "D1 (scout) L1-A2 -> L2-B2 observe"
      },
      {
-      "t": 5,
-      "kind": "dispatch",
-      "text": "D2 (scout) L1-A1 -> L2-B2 observe"
-     },
-     {
-      "t": 5,
-      "kind": "dispatch",
-      "text": "D3 (tether) L1-B3 -> L1-B4 suppress"
-     },
-     {
-      "t": 5,
-      "kind": "dispatch",
-      "text": "D4 (tether) L1-B3 -> L1-B4 suppress"
-     },
-     {
-      "t": 5,
-      "kind": "dispatch",
-      "text": "D5 (retardant) L1-A3 -> L1-B3 coat"
-     },
-     {
-      "t": 5,
-      "kind": "dispatch",
-      "text": "D6 (hatch) L2-A3 -> L2-B3 close-door"
-     },
-     {
-      "t": 6,
-      "kind": "dispatch",
-      "text": "D3 (tether) L1-B4 -> L1-B3 suppress"
-     },
-     {
-      "t": 6,
-      "kind": "dispatch",
-      "text": "D4 (tether) L1-B4 -> L1-B3 suppress"
-     },
-     {
-      "t": 6,
-      "kind": "hedge",
-      "text": "hedge across {L1-A3,L1-B3,L2-B3}: D3->L1-B3, D4->L1-B3, D6->L2-B3"
-     },
-     {
-      "t": 6,
-      "kind": "drone-death",
-      "text": "D5 (retardant) dies in L1-B3 (439 C)"
-     },
-     {
-      "t": 7,
-      "kind": "dispatch",
-      "text": "D3 (tether) L1-B3 -> L1-A3 suppress"
-     },
-     {
-      "t": 7,
-      "kind": "hedge",
-      "text": "hedge across {L1-B3,L1-B4,L2-B3}: D4->L1-B3, D6->L2-B3"
-     },
-     {
       "t": 8,
       "kind": "dispatch",
-      "text": "D3 (tether) L1-A3 -> L1-B3 suppress"
+      "text": "D5 (retardant) L1-A3 -> L1-A1 refill"
      },
      {
-      "t": 9,
+      "t": 10,
       "kind": "dispatch",
       "text": "D1 (scout) L2-B2 -> L2-B2 observe"
      },
      {
-      "t": 9,
-      "kind": "dispatch",
-      "text": "D3 (tether) L1-B3 -> L1-A3 suppress"
-     },
-     {
-      "t": 9,
-      "kind": "dispatch",
-      "text": "D4 (tether) L1-B3 -> L1-B4 suppress"
-     },
-     {
-      "t": 9,
-      "kind": "dispatch",
-      "text": "D6 (hatch) L2-B3 -> L2-B3 close-door"
-     },
-     {
       "t": 10,
       "kind": "dispatch",
-      "text": "D3 (tether) L1-A3 -> L1-B3 suppress"
-     },
-     {
-      "t": 10,
-      "kind": "dispatch",
-      "text": "D4 (tether) L1-B4 -> L1-B3 suppress"
-     },
-     {
-      "t": 10,
-      "kind": "hedge",
-      "text": "hedge across {L1-B3,L2-B3}: D3->L1-B3, D4->L1-B3, D6->L2-B3"
+      "text": "D5 (retardant) L1-A1 -> L1-A2 coat"
      },
      {
       "t": 11,
       "kind": "dispatch",
-      "text": "D3 (tether) L1-B3 -> L1-A3 suppress"
-     },
-     {
-      "t": 11,
-      "kind": "hedge",
-      "text": "hedge across {L1-B3,L1-B4,L2-B3}: D4->L1-B3, D6->L2-B3"
+      "text": "D5 (retardant) L1-A2 -> L1-A3 coat"
      },
      {
       "t": 12,
       "kind": "dispatch",
-      "text": "D3 (tether) L1-A3 -> L1-B3 suppress"
-     },
-     {
-      "t": 13,
-      "kind": "dispatch",
       "text": "D1 (scout) L2-B2 -> L2-B2 observe"
-     },
-     {
-      "t": 13,
-      "kind": "dispatch",
-      "text": "D3 (tether) L1-B3 -> L1-A3 suppress"
-     },
-     {
-      "t": 13,
-      "kind": "dispatch",
-      "text": "D4 (tether) L1-B3 -> L1-B4 suppress"
-     },
-     {
-      "t": 13,
-      "kind": "dispatch",
-      "text": "D6 (hatch) L2-B3 -> L2-B3 close-door"
-     },
-     {
-      "t": 14,
-      "kind": "dispatch",
-      "text": "D3 (tether) L1-A3 -> L1-B3 suppress"
-     },
-     {
-      "t": 14,
-      "kind": "dispatch",
-      "text": "D4 (tether) L1-B4 -> L1-B3 suppress"
-     },
-     {
-      "t": 14,
-      "kind": "hedge",
-      "text": "hedge across {L1-B3,L2-B3}: D3->L1-B3, D4->L1-B3, D6->L2-B3"
-     },
-     {
-      "t": 15,
-      "kind": "dispatch",
-      "text": "D3 (tether) L1-B3 -> L1-A3 suppress"
-     },
-     {
-      "t": 15,
-      "kind": "hedge",
-      "text": "hedge across {L1-B3,L1-B4,L2-B3}: D4->L1-B3, D6->L2-B3"
      },
      {
       "t": 16,
       "kind": "dispatch",
-      "text": "D3 (tether) L1-A3 -> L1-B3 suppress"
+      "text": "D5 (retardant) L1-A3 -> L1-A1 refill"
      },
      {
-      "t": 17,
+      "t": 18,
       "kind": "dispatch",
       "text": "D1 (scout) L2-B2 -> L2-B2 observe"
      },
      {
-      "t": 17,
-      "kind": "dispatch",
-      "text": "D3 (tether) L1-B3 -> L1-A3 suppress"
-     },
-     {
-      "t": 17,
-      "kind": "dispatch",
-      "text": "D4 (tether) L1-B3 -> L1-B4 suppress"
-     },
-     {
-      "t": 17,
-      "kind": "dispatch",
-      "text": "D6 (hatch) L2-B3 -> L2-B3 close-door"
-     },
-     {
       "t": 18,
       "kind": "dispatch",
-      "text": "D3 (tether) L1-A3 -> L1-B3 suppress"
-     },
-     {
-      "t": 18,
-      "kind": "dispatch",
-      "text": "D4 (tether) L1-B4 -> L1-B3 suppress"
-     },
-     {
-      "t": 18,
-      "kind": "hedge",
-      "text": "hedge across {L1-B3,L2-B3}: D3->L1-B3, D4->L1-B3, D6->L2-B3"
+      "text": "D5 (retardant) L1-A1 -> L1-A2 coat"
      },
      {
       "t": 19,
       "kind": "dispatch",
-      "text": "D3 (tether) L1-B3 -> L1-A3 suppress"
-     },
-     {
-      "t": 19,
-      "kind": "hedge",
-      "text": "hedge across {L1-B3,L1-B4,L2-B3}: D4->L1-B3, D6->L2-B3"
+      "text": "D5 (retardant) L1-A2 -> L1-A3 coat"
      },
      {
       "t": 20,
       "kind": "dispatch",
-      "text": "D3 (tether) L1-A3 -> L1-B3 suppress"
-     },
-     {
-      "t": 21,
-      "kind": "dispatch",
       "text": "D1 (scout) L2-B2 -> L2-B2 observe"
-     },
-     {
-      "t": 21,
-      "kind": "dispatch",
-      "text": "D3 (tether) L1-B3 -> L1-A3 suppress"
-     },
-     {
-      "t": 21,
-      "kind": "dispatch",
-      "text": "D4 (tether) L1-B3 -> L1-B4 suppress"
-     },
-     {
-      "t": 21,
-      "kind": "dispatch",
-      "text": "D6 (hatch) L2-B3 -> L2-B3 close-door"
-     },
-     {
-      "t": 22,
-      "kind": "dispatch",
-      "text": "D3 (tether) L1-A3 -> L1-B3 suppress"
-     },
-     {
-      "t": 22,
-      "kind": "dispatch",
-      "text": "D4 (tether) L1-B4 -> L1-B3 suppress"
-     },
-     {
-      "t": 22,
-      "kind": "hedge",
-      "text": "hedge across {L1-B3,L2-B3}: D3->L1-B3, D4->L1-B3, D6->L2-B3"
-     },
-     {
-      "t": 23,
-      "kind": "dispatch",
-      "text": "D3 (tether) L1-B3 -> L1-A3 suppress"
-     },
-     {
-      "t": 23,
-      "kind": "hedge",
-      "text": "hedge across {L1-B3,L1-B4,L2-B3}: D4->L1-B3, D6->L2-B3"
      },
      {
       "t": 24,
       "kind": "dispatch",
-      "text": "D3 (tether) L1-A3 -> L1-B3 suppress"
+      "text": "D5 (retardant) L1-A3 -> L1-A1 refill"
      },
      {
-      "t": 25,
+      "t": 26,
       "kind": "dispatch",
       "text": "D1 (scout) L2-B2 -> L2-B2 observe"
      },
      {
-      "t": 25,
-      "kind": "dispatch",
-      "text": "D3 (tether) L1-B3 -> L1-A3 suppress"
-     },
-     {
-      "t": 25,
-      "kind": "dispatch",
-      "text": "D4 (tether) L1-B3 -> L1-B4 suppress"
-     },
-     {
-      "t": 25,
-      "kind": "dispatch",
-      "text": "D6 (hatch) L2-B3 -> L2-B3 close-door"
-     },
-     {
       "t": 26,
       "kind": "dispatch",
-      "text": "D3 (tether) L1-A3 -> L1-B3 suppress"
-     },
-     {
-      "t": 26,
-      "kind": "dispatch",
-      "text": "D4 (tether) L1-B4 -> L1-B3 suppress"
-     },
-     {
-      "t": 26,
-      "kind": "hedge",
-      "text": "hedge across {L1-B3,L2-B3}: D3->L1-B3, D4->L1-B3, D6->L2-B3"
+      "text": "D5 (retardant) L1-A1 -> L1-A2 coat"
      },
      {
       "t": 27,
       "kind": "dispatch",
-      "text": "D3 (tether) L1-B3 -> L1-A3 suppress"
-     },
-     {
-      "t": 27,
-      "kind": "hedge",
-      "text": "hedge across {L1-B3,L1-B4,L2-B3}: D4->L1-B3, D6->L2-B3"
+      "text": "D5 (retardant) L1-A2 -> L1-A3 coat"
      },
      {
       "t": 28,
       "kind": "dispatch",
-      "text": "D3 (tether) L1-A3 -> L1-B3 suppress"
+      "text": "D1 (scout) L2-B2 -> L2-B2 observe"
      },
      {
-      "t": 29,
+      "t": 32,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A3 -> L1-A1 refill"
+     },
+     {
+      "t": 34,
       "kind": "dispatch",
       "text": "D1 (scout) L2-B2 -> L2-B2 observe"
      },
      {
-      "t": 29,
+      "t": 34,
       "kind": "dispatch",
-      "text": "D3 (tether) L1-B3 -> L1-A3 suppress"
+      "text": "D5 (retardant) L1-A1 -> L1-A2 coat"
      },
      {
-      "t": 29,
-      "kind": "dispatch",
-      "text": "D4 (tether) L1-B3 -> L1-B4 suppress"
-     },
-     {
-      "t": 29,
-      "kind": "dispatch",
-      "text": "D6 (hatch) L2-B3 -> L2-B3 close-door"
-     },
-     {
-      "t": 29,
+      "t": 34,
       "kind": "burned-out",
       "text": "L1-B3 burns out"
      },
      {
-      "t": 29,
+      "t": 34,
       "kind": "extinguished",
       "text": "no space burning"
      },
      {
-      "t": 30,
+      "t": 35,
       "kind": "dispatch",
-      "text": "D3 (tether) L1-A3 -> L2-B3 suppress"
+      "text": "D5 (retardant) L1-A2 -> L2-A4 coat"
      },
      {
-      "t": 30,
-      "kind": "dispatch",
-      "text": "D4 (tether) L1-B4 -> L2-B3 suppress"
-     },
-     {
-      "t": 34,
-      "kind": "dispatch",
-      "text": "D3 (tether) L1-B3 -> L1-A4 suppress"
-     },
-     {
-      "t": 34,
-      "kind": "dispatch",
-      "text": "D4 (tether) L1-B3 -> L1-A4 suppress"
-     },
-     {
-      "t": 34,
+      "t": 35,
       "kind": "dispatch",
       "text": "D6 (hatch) L2-B3 -> L2-B4 close-door"
      },
      {
-      "t": 69,
+      "t": 36,
       "kind": "dispatch",
-      "text": "D3 (tether) L1-A3 -> L3-A4 suppress"
+      "text": "D1 (scout) L2-B2 -> L2-B3 observe"
      },
      {
-      "t": 69,
+      "t": 36,
       "kind": "dispatch",
-      "text": "D4 (tether) L1-A3 -> L3-A4 suppress"
+      "text": "D2 (scout) L1-A1 -> L2-B3 observe"
      },
      {
-      "t": 69,
+      "t": 36,
       "kind": "dispatch",
-      "text": "D6 (hatch) L2-B4 -> L3-A4 close-door"
+      "text": "D5 (retardant) L1-A3 -> L1-A3 coat"
      },
      {
-      "t": 71,
+      "t": 36,
       "kind": "dispatch",
-      "text": "D3 (tether) L1-A4 -> L3-B4 suppress"
+      "text": "D6 (hatch) L2-B4 -> L1-B3 close-door"
      },
      {
-      "t": 71,
+      "t": 38,
       "kind": "dispatch",
-      "text": "D4 (tether) L1-A4 -> L3-B4 suppress"
+      "text": "D3 (tether) L1-B3 -> L2-A4 suppress"
      },
      {
-      "t": 71,
+      "t": 38,
       "kind": "dispatch",
-      "text": "D6 (hatch) L2-A4 -> L3-B4 close-door"
+      "text": "D4 (tether) L1-B3 -> L2-A4 suppress"
      },
      {
-      "t": 72,
+      "t": 38,
       "kind": "dispatch",
-      "text": "D3 (tether) L1-B4 -> L3-A4 suppress"
+      "text": "D5 (retardant) L1-A3 -> L1-A4 coat"
      },
      {
-      "t": 72,
+      "t": 38,
       "kind": "dispatch",
-      "text": "D4 (tether) L1-B4 -> L3-A4 suppress"
-     },
-     {
-      "t": 72,
-      "kind": "dispatch",
-      "text": "D6 (hatch) L2-B4 -> L3-A4 close-door"
+      "text": "D6 (hatch) L1-B3 -> L2-A4 close-door"
      }
     ]
    },
-   "brief": "COMMANDER'S BRIEF: ours\n\nSituation\n  Structure vessel-3x8: 24 spaces on 3 level(s), 22 fixed sensors, resupply at L1-A1.\n  Fire started in L1-B3. Failure mode: flashover from tick 5, k=1. Seed 7. 120 ticks (1..120).\n  Drones: D1 scout, D2 scout, D3 tether, D4 tether, D5 retardant, D6 hatch.\n\nPlay by play\n  t=  1  L1-B3 is burning at the start\n  t=  1  D3 (tether) L1-A1 -> L1-B3 suppress\n  t=  1  D4 (tether) L1-A1 -> L1-B3 suppress\n  t=  1  D5 (retardant) L1-A1 -> L1-A3 coat\n  t=  1  D6 (hatch) L1-A1 -> L2-B3 close-door\n  t=  1  contained: no new space ignites after this (1 ever burned)\n  t=  2  D1 (scout) L1-A1 -> L2-B2 observe\n  t=  2  D5 (retardant) L1-A2 -> L1-A2 coat\n  t=  2  D6 (hatch) L1-A2 -> L1-A3 close-door\n  t=  3  D5 (retardant) L1-A2 -> L1-A3 coat\n  t=  3  D6 (hatch) L1-A3 -> L2-B3 close-door\n  t=  5  D1 (scout) L1-A2 -> L2-B2 observe\n  t=  5  D2 (scout) L1-A1 -> L2-B2 observe\n  t=  5  D3 (tether) L1-B3 -> L1-B4 suppress\n  t=  5  D4 (tether) L1-B3 -> L1-B4 suppress\n  t=  5  D5 (retardant) L1-A3 -> L1-B3 coat\n  t=  5  D6 (hatch) L2-A3 -> L2-B3 close-door\n  t=  6  D3 (tether) L1-B4 -> L1-B3 suppress\n  t=  6  D4 (tether) L1-B4 -> L1-B3 suppress\n  t=  6  hedge across {L1-A3,L1-B3,L2-B3}: D3->L1-B3, D4->L1-B3, D6->L2-B3\n  t=  6  D5 (retardant) dies in L1-B3 (439 C)\n  t=  7  D3 (tether) L1-B3 -> L1-A3 suppress\n  t=  7  hedge across {L1-B3,L1-B4,L2-B3}: D4->L1-B3, D6->L2-B3\n  t=  8  D3 (tether) L1-A3 -> L1-B3 suppress\n  t=  9  D1 (scout) L2-B2 -> L2-B2 observe\n  t=  9  D3 (tether) L1-B3 -> L1-A3 suppress\n  t=  9  D4 (tether) L1-B3 -> L1-B4 suppress\n  t=  9  D6 (hatch) L2-B3 -> L2-B3 close-door\n  t= 10  D3 (tether) L1-A3 -> L1-B3 suppress\n  t= 10  D4 (tether) L1-B4 -> L1-B3 suppress\n  t= 10  hedge across {L1-B3,L2-B3}: D3->L1-B3, D4->L1-B3, D6->L2-B3\n  t= 11  D3 (tether) L1-B3 -> L1-A3 suppress\n  t= 11  hedge across {L1-B3,L1-B4,L2-B3}: D4->L1-B3, D6->L2-B3\n  t= 12  D3 (tether) L1-A3 -> L1-B3 suppress\n  t= 13  D1 (scout) L2-B2 -> L2-B2 observe\n  t= 13  D3 (tether) L1-B3 -> L1-A3 suppress\n  t= 13  D4 (tether) L1-B3 -> L1-B4 suppress\n  t= 13  D6 (hatch) L2-B3 -> L2-B3 close-door\n  t= 14  D3 (tether) L1-A3 -> L1-B3 suppress\n  t= 14  D4 (tether) L1-B4 -> L1-B3 suppress\n  ... 54 more events not shown\n\nOutcome\n  fireVolume 28 space-ticks, peak 1 burning at once, burned out: L1-B3.\n  contained tick 1, extinguished tick 29.\n  drones used: hatch 1 (D6); retardant 1 (D5); scout 2 (D1, D2); tether 2 (D3, D4).\n  water: 14 tether-ticks on suppress; retardant spent 0.60.\n  drone deaths: retardant 1 (D5).\n  commands to the wrong place: 42; hedges: 12.\n\nThe fire was put out at tick 29 after burning 28 space-ticks; 1 space(s) burned out."
+   "brief": "COMMANDER'S BRIEF: ours\n\nSituation\n  Structure vessel-3x8: 24 spaces on 3 level(s), 22 fixed sensors, resupply at L1-A1.\n  Fire started in L1-B3. Failure mode: flashover from tick 5, k=1. Seed 7. 120 ticks (1..120).\n  Drones: D1 scout, D2 scout, D3 tether, D4 tether, D5 retardant, D6 hatch.\n\nPlay by play\n  t=  1  L1-B3 is burning at the start\n  t=  1  D3 (tether) L1-A1 -> L1-B3 suppress\n  t=  1  D4 (tether) L1-A1 -> L1-B3 suppress\n  t=  1  D5 (retardant) L1-A1 -> L1-A3 coat\n  t=  1  D6 (hatch) L1-A1 -> L2-B3 close-door\n  t=  1  contained: no new space ignites after this (1 ever burned)\n  t=  2  D1 (scout) L1-A1 -> L2-B2 observe\n  t=  2  D5 (retardant) L1-A2 -> L1-A2 coat\n  t=  2  D6 (hatch) L1-A2 -> L1-A3 close-door\n  t=  3  D5 (retardant) L1-A2 -> L1-A3 coat\n  t=  3  D6 (hatch) L1-A3 -> L2-B3 close-door\n  t=  5  D1 (scout) L1-A2 -> L2-B2 observe\n  t=  8  D5 (retardant) L1-A3 -> L1-A1 refill\n  t= 10  D1 (scout) L2-B2 -> L2-B2 observe\n  t= 10  D5 (retardant) L1-A1 -> L1-A2 coat\n  t= 11  D5 (retardant) L1-A2 -> L1-A3 coat\n  t= 12  D1 (scout) L2-B2 -> L2-B2 observe\n  t= 16  D5 (retardant) L1-A3 -> L1-A1 refill\n  t= 18  D1 (scout) L2-B2 -> L2-B2 observe\n  t= 18  D5 (retardant) L1-A1 -> L1-A2 coat\n  t= 19  D5 (retardant) L1-A2 -> L1-A3 coat\n  t= 20  D1 (scout) L2-B2 -> L2-B2 observe\n  t= 24  D5 (retardant) L1-A3 -> L1-A1 refill\n  t= 26  D1 (scout) L2-B2 -> L2-B2 observe\n  t= 26  D5 (retardant) L1-A1 -> L1-A2 coat\n  t= 27  D5 (retardant) L1-A2 -> L1-A3 coat\n  t= 28  D1 (scout) L2-B2 -> L2-B2 observe\n  t= 32  D5 (retardant) L1-A3 -> L1-A1 refill\n  t= 34  D1 (scout) L2-B2 -> L2-B2 observe\n  t= 34  D5 (retardant) L1-A1 -> L1-A2 coat\n  t= 34  L1-B3 burns out\n  t= 34  no space burning\n  t= 35  D5 (retardant) L1-A2 -> L2-A4 coat\n  t= 35  D6 (hatch) L2-B3 -> L2-B4 close-door\n  t= 36  D1 (scout) L2-B2 -> L2-B3 observe\n  t= 36  D2 (scout) L1-A1 -> L2-B3 observe\n  t= 36  D5 (retardant) L1-A3 -> L1-A3 coat\n  t= 36  D6 (hatch) L2-B4 -> L1-B3 close-door\n  t= 38  D3 (tether) L1-B3 -> L2-A4 suppress\n  t= 38  D4 (tether) L1-B3 -> L2-A4 suppress\n  ... 2 more events not shown\n\nOutcome\n  fireVolume 33 space-ticks, peak 1 burning at once, burned out: L1-B3.\n  contained tick 1, extinguished tick 34.\n  drones used: hatch 1 (D6); retardant 1 (D5); scout 2 (D1, D2); tether 2 (D3, D4).\n  water: 68 tether-ticks on suppress; retardant spent 4.20.\n  drone deaths: none.\n  commands to the wrong place: 59; hedges: 0.\n\nThe fire was put out at tick 34 after burning 33 space-ticks; 1 space(s) burned out."
   },
   {
    "name": "kalman",

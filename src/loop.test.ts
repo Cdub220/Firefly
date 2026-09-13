@@ -84,30 +84,30 @@ describe('runLoop', () => {
   });
   it('CP4 hedge: on the closest configuration that hedges while the fire burns, a two-way ambiguity exists and two drones split across it; the prompt\'s flashover configuration is reported, not forced', () => {
     // The hedge script's roster and plan (vessel-3x8), k=2, onset 5, commands applied.
-    // Under flashover the frozen estimator never produces a hedge while the fire burns on
-    // seeds 1-5 (docs/decisions.md, Sun hour 24). Under blind it does, at tick 7, on every seed.
+    // Under flashover the estimator never produces a hedge while the fire burns on seeds
+    // 1-5 (docs/decisions.md, Sun hour 24, updated at CP3 prompt 2d). Under mixed
+    // corruption, seed 2, it hedges at ticks 12-15 while L1-B3 burns.
     const plan = loadPlan(largestPlanName());
     const home = plan.resupply[0]!;
-    const run = (mode: 'flashover' | 'blind'): TickRecord[] =>
+    const run = (mode: 'flashover' | 'mixed', seed = HEDGE_DEFAULTS.seed): TickRecord[] =>
       runLoop({
-        plan, seed: HEDGE_DEFAULTS.seed, ticks: HEDGE_DEFAULTS.ticks, dispatch: true,
+        plan, seed, ticks: HEDGE_DEFAULTS.ticks, dispatch: true,
         corruption: { mode, k: 2, onset: 5, target: [plan.ignition[0]!], ambient: plan.ambient },
         drones: HEDGE_ROSTER.map((d) => ({ ...d, at: home })),
       });
     const burning = (r: TickRecord): boolean => r.truth.spaces.some((s) => s.burning);
     const hedgedWhileBurning = (trace: TickRecord[]): TickRecord[] => trace.filter((r) => burning(r) && r.belief.ambiguous.length > 0 && isHedge(r.belief.ambiguous, r.commands));
 
-    const blind = run('blind');
+    const mixed = run('mixed', 2);
     // A two-way ambiguity: a group of two or more spaces the estimator cannot separate.
-    expect(blind.some((r) => r.belief.ambiguous.some((g) => g.length >= 2))).toBe(true);
-    const hedged = hedgedWhileBurning(blind);
+    expect(mixed.some((r) => r.belief.ambiguous.some((g) => g.length >= 2))).toBe(true);
+    const hedged = hedgedWhileBurning(mixed);
     expect(hedged.length).toBeGreaterThan(0);
-    // The recorded fact (docs/decisions.md, results/hedge-cp4-vessel-3x8-blind-1.txt): the hedge
-    // is at tick 7, a scout and the tethers split across one group while L1-B3 burns.
-    expect(hedged.map((r) => r.t)).toContain(7);
-    const t7 = blind.find((r) => r.t === 7)!;
-    expect(t7.belief.ambiguous.some((g) => g.length >= 2 && g.includes('L1-B3'))).toBe(true);
-    expect(new Set(t7.commands.map((c) => c.droneId)).size).toBeGreaterThanOrEqual(3);
+    // The recorded fact (docs/decisions.md, results/hedge-cp4-vessel-3x8-mixed-2.txt): hedges
+    // at ticks 12-15 while L1-B3 burns.
+    expect(hedged.map((r) => r.t)).toEqual([12, 13, 14, 15]);
+    const t12 = mixed.find((r) => r.t === 12)!;
+    expect(new Set(t12.commands.map((c) => c.droneId)).size).toBeGreaterThanOrEqual(2);
     for (const r of hedged) {
       const group = r.belief.ambiguous.find((g) => new Set(r.commands.filter((c) => g.includes(c.goTo)).map((c) => c.goTo)).size >= 2)!;
       expect(group.length).toBeGreaterThanOrEqual(2);
@@ -119,5 +119,28 @@ describe('runLoop', () => {
     // The prompt's own configuration: recorded as it is. If this ever starts hedging while
     // burning, update docs/decisions.md and results/hedge-cp4.txt rather than this line.
     expect(hedgedWhileBurning(run('flashover')).length).toBe(0);
+  });
+
+  it('CP3 2d, suppression-aware rollout, closed loop: demo-6 seed 1, 60 ticks, dispatch on, two tethers, mode none: burningSet flips <= 3 (14 before the change)', () => {
+    // Lives here rather than in src/brain/brain.test.ts because src/brain may not import the loop.
+    const home = DEMO_PLAN.resupply[0]!;
+    const trace = runLoop({ plan: DEMO_PLAN, seed: 1, ticks: 60, dispatch: true, drones: [{ id: 'D3', class: 'tether', at: home }, { id: 'D4', class: 'tether', at: home }] });
+    // A flip: a space leaves burningSet and re-enters it later.
+    let flips = 0;
+    const left = new Set<string>();
+    let prev = new Set<string>();
+    for (const r of trace) {
+      const now = new Set(r.belief.burningSet);
+      for (const id of prev) if (!now.has(id)) left.add(id);
+      for (const id of now) if (!prev.has(id) && left.has(id)) { flips += 1; left.delete(id); }
+      prev = now;
+    }
+    expect(flips).toBeLessThanOrEqual(3);
+    // The tethers reached the fire and it never spread: one space ever burns, and the brain
+    // keeps naming it while the tethers cool it.
+    expect(new Set(trace.flatMap((r) => r.truth.spaces.filter((s) => s.burning).map((s) => s.id))).size).toBe(1);
+    const fire = DEMO_PLAN.ignition[0]!;
+    const burningTicks = trace.filter((r) => r.truth.spaces.some((s) => s.id === fire && s.burning));
+    expect(burningTicks.filter((r) => r.belief.burningSet.includes(fire)).length / burningTicks.length).toBeGreaterThan(0.9);
   });
 });

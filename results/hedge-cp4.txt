@@ -1,31 +1,31 @@
 hedge-cp4  plan=vessel-3x8  mode=flashover  k=2  onset=5  seed=1  ticks=60  target=L1-B3  roster=D1:scout,D2:scout,D3:tether,D4:tether,D5:retardant at L1-A1
 
    t  ambiguous                           commands                                                                          truth burning
-   5  {L1-A3} {L2-B3}                     D1->L2-B3 observe  D2->L2-B2 observe  D3->L1-B4 suppress  D4->L1-B4 suppress  D5->L1-B3 coat  [L1-B3]
-   6  {L1-A3,L1-B3,L2-B3}                 D2->L2-B2 observe  D3->L1-B3 suppress  D4->L1-B3 suppress                         [L1-B3]
-   7  {L1-B2} {L1-B4} {L2-B3}             D2->L2-B2 observe  D3->L1-A3 suppress  D4->L1-A3 suppress                         [L1-B3]
-   8  -                                   D2->L2-B2 hold  D3->L1-B3 suppress  D4->L1-B3 suppress                            [L1-B3]
-   9  {L1-B2} {L1-B4} {L2-B3}             D2->L2-B2 observe  D3->L1-A3 suppress  D4->L1-A3 suppress                         [L1-B3]
-  10  -                                   D2->L2-B2 hold  D3->L1-B3 suppress  D4->L1-B3 suppress                            [L1-B3]
-  11  {L1-A3} {L1-B2} {L2-B3}             D2->L2-B2 observe  D3->L1-B4 suppress  D4->L1-B4 suppress                         [L1-B3]
-  12  {L1-B2}                             D2->L2-B2 hold  D3->L1-B3 suppress  D4->L1-B3 suppress                            [L1-B3]
-  13  -                                   D2->L2-B2 hold  D3->L1-B3 suppress  D4->L1-B3 suppress                            [L1-B3]
-  14  {L1-A2,L1-B2} {L1-A4,L1-B4} {L2-A3,L2-B3}  D2->L2-B2 observe  D3->L1-A3 suppress  D4->L1-A3 suppress                         [L1-B3]
-  15  {L1-B2} {L1-B4} {L2-B3}             D2->L2-B2 observe  D3->L1-B3 suppress  D4->L1-B3 suppress                         [L1-B3]
-  16  {L1-B2} {L1-B4} {L2-B3}             D2->L2-B2 observe  D3->L1-A3 suppress  D4->L1-A3 suppress                         [L1-B3]
-  17  {L1-B4}                             D2->L2-B2 hold  D3->L1-B3 suppress  D4->L1-B3 suppress                            [L1-B3]
-  18  -                                   D2->L2-B2 hold  D3->L1-B3 suppress  D4->L1-B3 suppress                            [L1-B3]
-  19  {L1-A3,L1-A4} {L1-B2} {L2-B3,L2-B4}  D2->L2-B3 observe  D3->L1-B4 suppress  D4->L1-B4 suppress                         [L1-B3]
-  20  {L1-A3,L1-B2,L1-B3}                 D2->L2-B2 observe  D3->L1-B3 suppress  D4->L1-B3 suppress                         [L1-B3]
-  21  {L1-A3,L1-B2,L1-B3,L2-B3}           D2->L2-B2 observe  D3->L1-B4 suppress  D4->L1-B3 suppress                         [L1-B3]
-  22  -                                   D2->L2-B2 hold  D3->L1-B3 suppress  D4->L1-B3 suppress                            [L1-B3]
-  23  {L1-A3} {L1-B2} {L1-B4} {L2-B3}     D2->L2-B2 observe  D3->L2-B3 suppress  D4->L2-B3 suppress                         [L1-B3]
-  24  {L1-A3} {L1-B4}                     D2->L2-B2 hold  D3->L1-B3 suppress  D4->L1-B3 suppress                            [L1-B3]
-  25  {L1-A3,L1-B2,L1-B3,L2-B3}           D2->L2-B2 observe  D3->L1-B4 suppress  D4->L1-B3 suppress                         [L1-B3]
+   5  {L1-A3} {L2-B3}                     D1->L2-B2 observe  D2->L2-B3 observe  D3->L1-B3 suppress  D4->L1-B3 suppress  D5->L1-A3 coat  [L1-B3]
+   6  {L1-B2} {L1-B4} {L2-B3}             D1->L2-B2 observe  D2->L2-B3 observe  D3->L1-B3 suppress  D4->L1-B3 suppress  D5->L1-A3 coat  [L1-B3]
+   7  {L1-B4}                             D1->L2-B3 observe  D2->L2-B3 observe  D3->L1-B3 suppress  D4->L1-B3 suppress  D5->L1-A3 coat  [L1-B3]
+   8  {L1-B4}                             D1->L2-B3 hold  D2->L2-B3 hold  D3->L1-B3 suppress  D4->L1-B3 suppress  D5->L1-A1 refill  [L1-B3]
+   9  {L1-B4}                             D1->L2-B3 hold  D2->L2-B3 hold  D3->L1-B3 suppress  D4->L1-B3 suppress  D5->L1-A1 refill  [L1-B3]
+  10  {L1-A4,L1-B4}                       D1->L2-B3 hold  D2->L2-B3 hold  D3->L1-B3 suppress  D4->L1-B3 suppress  D5->L2-A4 coat  [L1-B3]
+  11  {L1-B4}                             D1->L2-B3 hold  D2->L2-B3 hold  D3->L1-B3 suppress  D4->L1-B3 suppress  D5->L1-A3 coat  [L1-B3]
+  12  {L1-B2} {L1-B4}                     D1->L2-B2 observe  D2->L2-B2 observe  D3->L1-B3 suppress  D4->L1-B3 suppress  D5->L1-A3 coat  [L1-B3]
+  13  {L1-B4}                             D1->L2-B3 observe  D2->L2-B3 observe  D3->L1-B3 suppress  D4->L1-B3 suppress  D5->L1-A3 coat  [L1-B3]
+  14  {L1-B2} {L1-B4}                     D1->L2-B2 observe  D2->L2-B2 observe  D3->L1-B3 suppress  D4->L1-B3 suppress  D5->L1-A3 coat  [L1-B3]
+  15  {L1-B4}                             D1->L2-B3 observe  D2->L2-B3 observe  D3->L1-B3 suppress  D4->L1-B3 suppress  D5->L1-A3 coat  [L1-B3]
+  16  {L1-B2} {L1-B4}                     D1->L2-B2 observe  D2->L2-B2 observe  D3->L1-B3 suppress  D4->L1-B3 suppress  D5->L1-A3 coat  [L1-B3]
+  17  {L1-B4}                             D1->L2-B3 observe  D2->L2-B3 observe  D3->L1-B3 suppress  D4->L1-B3 suppress  D5->L1-A1 refill  [L1-B3]
+  18  {L1-B4}                             D1->L2-B3 hold  D2->L2-B3 hold  D3->L1-B3 suppress  D4->L1-B3 suppress  D5->L1-A1 refill  [L1-B3]
+  19  {L1-B2} {L1-B4}                     D1->L2-B2 observe  D2->L2-B2 observe  D3->L1-B3 suppress  D4->L1-B3 suppress  D5->L1-A2 coat  [L1-B3]
+  20  {L1-B4}                             D1->L2-B3 observe  D2->L2-B3 observe  D3->L1-B3 suppress  D4->L1-B3 suppress  D5->L1-A3 coat  [L1-B3]
+  21  {L1-B2} {L1-B4}                     D1->L2-B2 observe  D2->L2-B2 observe  D3->L1-B3 suppress  D4->L1-B3 suppress  D5->L1-A3 coat  [L1-B3]
+  22  {L1-B4}                             D1->L2-B3 observe  D2->L2-B3 observe  D3->L1-B3 suppress  D4->L1-B3 suppress  D5->L1-A3 coat  [L1-B3]
+  23  {L1-B2} {L1-B4}                     D1->L2-B2 observe  D2->L2-B2 observe  D3->L1-B3 suppress  D4->L1-B3 suppress  D5->L1-A3 coat  [L1-B3]
+  24  {L1-B4}                             D1->L2-B3 observe  D2->L2-B3 observe  D3->L1-B3 suppress  D4->L1-B3 suppress  D5->L1-A3 coat  [L1-B3]
+  25  {L1-B2} {L1-B4}                     D1->L2-B2 observe  D2->L2-B2 observe  D3->L1-B3 suppress  D4->L1-B3 suppress  D5->L1-A1 refill  [L1-B3]
 
-hedgeRate = 2% of ticks (ambiguous belief AND commands split across one ambiguous group)
-  hedged ticks: 36 (fire already out) (outside the window)
+hedgeRate = 0% of ticks (ambiguous belief AND commands split across one ambiguous group)
+  hedged ticks: none
   NO hedge inside the printed window while the fire burns on this configuration; see docs/decisions.md (Sun hour 24) for the configurations that do.
-  (commands covering two or more ambiguous spaces across ALL groups: 7% of ticks)
+  (commands covering two or more ambiguous spaces across ALL groups: 2% of ticks)
 containmentDelta = -21 spaces burning at tick 60: with allocator 0, null allocator 21
-drone deaths with allocator: D1:scout, D5:retardant
+drone deaths with allocator: none

@@ -55,13 +55,18 @@ describe('hedge', () => {
     // The numbers are the metrics' numbers, and the hedged-tick list matches the metric.
     expect(hedgeRate).toBe(computeMetrics(run.withAllocator, { onset: 5 }).hedgeRate);
     expect(hedgedTicks.filter((t) => t >= 5).length / run.withAllocator.filter((r) => r.t >= 5).length).toBeCloseTo(hedgeRate, 12);
-    // And hedgeRate is the strict per-group number, not the broader spread diagnostic: on the
-    // prompt's own configuration the two differ (1 strict hedge, 4 spread ticks in 56).
+    // The prompt's own configuration never hedges (recorded fact, CP3 prompt 2d); the report says so.
     const strict = hedgeReport(HEDGE_DEFAULTS);
-    const spread = Number(/ALL groups: (\d+)%/.exec(strict.text)![1]);
-    expect(strict.hedgedTicks).toEqual([36]);
-    expect(strict.hedgeRate).toBeCloseTo(1 / 56, 12);
-    expect(spread).toBeGreaterThan(Math.round(100 * strict.hedgeRate));
+    expect(strict.hedgedTicks).toEqual([]);
+    expect(strict.hedgeRate).toBe(0);
+    expect(strict.text).toContain('hedged ticks: none');
+    expect(strict.text).toContain('NO hedge inside the printed window');
+    // The closest configuration hedges at ticks 12-15, and hedgeRate is the strict per-group
+    // number from the metric, not the broader spread diagnostic.
+    const closest = hedgeReport({ ...HEDGE_DEFAULTS, mode: 'mixed', seed: 2 });
+    expect(closest.hedgedTicks).toEqual([12, 13, 14, 15]);
+    expect(closest.hedgeRate).toBe(computeMetrics(closest.run.withAllocator, { onset: 5 }).hedgeRate);
+    expect(closest.hedgeRate).toBeCloseTo(4 / 56, 12);
     expect(text).toContain('hedgeRate = ');
     expect(text).toContain('hedged ticks: ');
     expect(text).toContain('containmentDelta = ');

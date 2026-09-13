@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import { createBrain } from './index';
 import { forward, IGNITE } from './physics';
-import type { Observation, Reading, SpaceId, StructurePlan } from '../shared/types';
+import type { Drone, Observation, Reading, SpaceId, StructurePlan } from '../shared/types';
 
 const plan: StructurePlan = {
   name: 'test-3',
@@ -318,5 +318,57 @@ describe('createBrain v1', () => {
     expect(sawAmbiguity).toBe(true);
     expect(resolvedAt).not.toBeNull();
     expect(resolvedAt!).toBeLessThanOrEqual(ARRIVE + 1);
+  });
+
+  describe('suppression-aware rollout (CP3 prompt 2d, the last estimator change before the freeze)', () => {
+    const tethers: Drone[] = [
+      { id: 'D3', class: 'tether', at: 'S1', resource: 1, alive: true, linked: true },
+      { id: 'D4', class: 'tether', at: 'S1', resource: 1, alive: true, linked: true },
+    ];
+    const ARRIVE = 16;
+    // S1 holds four occupants so the allocator keeps BOTH tethers on it once S2 and S3 ignite
+    // too (a tether counts as working a space only where the brain told it to suppress, and
+    // greedy diversity would otherwise send the second tether next door). The estimator
+    // does not read occupants.
+    const crowded: StructurePlan = { ...plan, spaces: plan.spaces.map((s) => (s.id === 'S1' ? { ...s, occupants: 4 } : s)) };
+    /**
+     * World-consistent stream: S1 burns from 450; neighbours ignite at IGNITE; from ARRIVE two
+     * tethers work S1 (generation x 0.09, cooling 0.2/tick) so S1 falls from ~770 toward ~280
+     * while still burning. Returns the belief per tick with or without the tethers visible.
+     */
+    const run = (visible: boolean): Array<{ t: number; s1: number; belief: ReturnType<ReturnType<typeof createBrain>['step']>['belief'] }> => {
+      const brain = createBrain({ plan: crowded, seed: 42 });
+      let temps: Record<SpaceId, number> = { S1: 450, S2: 20, S3: 20 };
+      const burning = new Set<SpaceId>(['S1']);
+      const out: Array<{ t: number; s1: number; belief: ReturnType<ReturnType<typeof createBrain>['step']>['belief'] }> = [];
+      for (let t = 1; t <= 40; t++) {
+        const drones = t >= ARRIVE && visible ? tethers : [];
+        const o: Observation = { ...obs(t, [reading('F1', 'S1', temps['S1']!, t), reading('F2', 'S2', temps['S2']!, t), reading('F3', 'S3', temps['S3']!, t)]), drones };
+        out.push({ t, s1: temps['S1']!, belief: brain.step(o).belief });
+        for (const e of plan.edges) {
+          if (burning.has(e.a) && !burning.has(e.b) && temps[e.b]! >= IGNITE) burning.add(e.b);
+          else if (burning.has(e.b) && !burning.has(e.a) && temps[e.a]! >= IGNITE) burning.add(e.a);
+        }
+        temps = forward(plan, temps, burning, t >= ARRIVE ? new Map([['S1', 2]]) : undefined);
+      }
+      return out;
+    };
+
+    it('regression: with two alive tethers visible in S1, S1 stays in burningSet on every tick 16-40 while it falls from ~770 to ~280 C, and confidence is earned', () => {
+      const trace = run(true);
+      expect(trace[ARRIVE - 1]!.s1).toBeGreaterThan(700);
+      expect(trace[39]!.s1).toBeLessThan(300);
+      for (const r of trace.filter((r) => r.t >= ARRIVE)) expect(r.belief.burningSet).toContain('S1');
+      expect(trace[39]!.belief.confidence).toBeGreaterThanOrEqual(0.9); // the suppressed rollout fits: certainty is earned
+      expect(trace[39]!.belief.suspectSensors).toEqual([]); // the cooling is physically allowed, nobody is called a liar
+    });
+
+    it('control, observed behaviour: with NO drones visible the same stream keeps S1 only through the forced rule (its reading stays above ignition) and confidence stays below 0.5 because the rollout misfits', () => {
+      const trace = run(false);
+      // Not required to keep S1; it does here because S1 never cools below IGNITE (its
+      // burning neighbour holds it up), so the forced-space rule pins it.
+      expect(trace.filter((r) => r.t >= 25).every((r) => r.belief.confidence < 0.5)).toBe(true);
+      expect(run(true).filter((r) => r.t >= 25).every((r) => r.belief.confidence >= 0.9)).toBe(true);
+    });
   });
 });

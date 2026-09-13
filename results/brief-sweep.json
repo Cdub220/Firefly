@@ -28,16 +28,16 @@
    "mode": "freeze",
    "seed": 7,
    "brain": "ours",
-   "fireVolume": 23,
+   "fireVolume": 33,
    "peakBurning": 1,
    "containedAt": 1,
-   "extinguishedAt": 24,
+   "extinguishedAt": 34,
    "spacesBurnedOut": 1,
-   "tetherTicks": 32,
-   "retardantSpent": 2.7,
-   "droneDeaths": 1,
-   "wrongFloor": 12,
-   "hedges": 3
+   "tetherTicks": 68,
+   "retardantSpent": 4.65,
+   "droneDeaths": 0,
+   "wrongFloor": 14,
+   "hedges": 0
   },
   {
    "plan": "demo-6",
@@ -76,16 +76,16 @@
    "mode": "freeze",
    "seed": 8,
    "brain": "ours",
-   "fireVolume": 23,
+   "fireVolume": 33,
    "peakBurning": 1,
    "containedAt": 1,
-   "extinguishedAt": 24,
+   "extinguishedAt": 34,
    "spacesBurnedOut": 1,
-   "tetherTicks": 32,
-   "retardantSpent": 2.7,
-   "droneDeaths": 1,
-   "wrongFloor": 12,
-   "hedges": 3
+   "tetherTicks": 68,
+   "retardantSpent": 4.65,
+   "droneDeaths": 0,
+   "wrongFloor": 14,
+   "hedges": 0
   },
   {
    "plan": "demo-6",
@@ -124,16 +124,16 @@
    "mode": "freeze",
    "seed": 9,
    "brain": "ours",
-   "fireVolume": 23,
+   "fireVolume": 33,
    "peakBurning": 1,
    "containedAt": 1,
-   "extinguishedAt": 24,
+   "extinguishedAt": 34,
    "spacesBurnedOut": 1,
-   "tetherTicks": 32,
-   "retardantSpent": 2.7,
-   "droneDeaths": 1,
-   "wrongFloor": 12,
-   "hedges": 3
+   "tetherTicks": 68,
+   "retardantSpent": 4.65,
+   "droneDeaths": 0,
+   "wrongFloor": 14,
+   "hedges": 0
   },
   {
    "plan": "demo-6",
@@ -172,15 +172,15 @@
    "mode": "blind",
    "seed": 7,
    "brain": "ours",
-   "fireVolume": 28,
+   "fireVolume": 33,
    "peakBurning": 1,
    "containedAt": 1,
-   "extinguishedAt": 29,
+   "extinguishedAt": 34,
    "spacesBurnedOut": 1,
-   "tetherTicks": 38,
-   "retardantSpent": 2.55,
-   "droneDeaths": 2,
-   "wrongFloor": 8,
+   "tetherTicks": 68,
+   "retardantSpent": 4.65,
+   "droneDeaths": 0,
+   "wrongFloor": 14,
    "hedges": 0
   },
   {
@@ -220,15 +220,15 @@
    "mode": "blind",
    "seed": 8,
    "brain": "ours",
-   "fireVolume": 28,
+   "fireVolume": 33,
    "peakBurning": 1,
    "containedAt": 1,
-   "extinguishedAt": 29,
+   "extinguishedAt": 34,
    "spacesBurnedOut": 1,
-   "tetherTicks": 36,
-   "retardantSpent": 1.8,
-   "droneDeaths": 2,
-   "wrongFloor": 9,
+   "tetherTicks": 68,
+   "retardantSpent": 4.65,
+   "droneDeaths": 0,
+   "wrongFloor": 14,
    "hedges": 0
   },
   {
@@ -268,15 +268,15 @@
    "mode": "blind",
    "seed": 9,
    "brain": "ours",
-   "fireVolume": 28,
+   "fireVolume": 33,
    "peakBurning": 1,
    "containedAt": 1,
-   "extinguishedAt": 29,
+   "extinguishedAt": 34,
    "spacesBurnedOut": 1,
-   "tetherTicks": 38,
-   "retardantSpent": 2.55,
-   "droneDeaths": 2,
-   "wrongFloor": 8,
+   "tetherTicks": 68,
+   "retardantSpent": 4.65,
+   "droneDeaths": 0,
+   "wrongFloor": 14,
    "hedges": 0
   },
   {
@@ -321,11 +321,11 @@
    "containedAt": 1,
    "extinguishedAt": 34,
    "spacesBurnedOut": 1,
-   "tetherTicks": 34,
-   "retardantSpent": 3.3,
-   "droneDeaths": 1,
-   "wrongFloor": 18,
-   "hedges": 3
+   "tetherTicks": 68,
+   "retardantSpent": 4.65,
+   "droneDeaths": 0,
+   "wrongFloor": 14,
+   "hedges": 0
   },
   {
    "plan": "demo-6",
@@ -369,11 +369,11 @@
    "containedAt": 1,
    "extinguishedAt": 34,
    "spacesBurnedOut": 1,
-   "tetherTicks": 34,
-   "retardantSpent": 3.3,
-   "droneDeaths": 1,
-   "wrongFloor": 18,
-   "hedges": 3
+   "tetherTicks": 68,
+   "retardantSpent": 4.65,
+   "droneDeaths": 0,
+   "wrongFloor": 14,
+   "hedges": 0
   },
   {
    "plan": "demo-6",
@@ -417,11 +417,11 @@
    "containedAt": 1,
    "extinguishedAt": 34,
    "spacesBurnedOut": 1,
-   "tetherTicks": 32,
-   "retardantSpent": 3.6,
-   "droneDeaths": 1,
-   "wrongFloor": 21,
-   "hedges": 1
+   "tetherTicks": 68,
+   "retardantSpent": 4.65,
+   "droneDeaths": 0,
+   "wrongFloor": 14,
+   "hedges": 0
   },
   {
    "plan": "demo-6",
@@ -460,16 +460,16 @@
    "mode": "freeze",
    "seed": 7,
    "brain": "ours",
-   "fireVolume": 28,
+   "fireVolume": 33,
    "peakBurning": 1,
    "containedAt": 1,
-   "extinguishedAt": 29,
+   "extinguishedAt": 34,
    "spacesBurnedOut": 1,
-   "tetherTicks": 16,
-   "retardantSpent": 0.6,
-   "droneDeaths": 2,
-   "wrongFloor": 67,
-   "hedges": 7
+   "tetherTicks": 68,
+   "retardantSpent": 3.75,
+   "droneDeaths": 0,
+   "wrongFloor": 52,
+   "hedges": 0
   },
   {
    "plan": "vessel-3x8",
@@ -508,16 +508,16 @@
    "mode": "freeze",
    "seed": 8,
    "brain": "ours",
-   "fireVolume": 28,
+   "fireVolume": 33,
    "peakBurning": 1,
    "containedAt": 1,
-   "extinguishedAt": 29,
+   "extinguishedAt": 34,
    "spacesBurnedOut": 1,
-   "tetherTicks": 15,
-   "retardantSpent": 0.6,
-   "droneDeaths": 2,
-   "wrongFloor": 40,
-   "hedges": 8
+   "tetherTicks": 68,
+   "retardantSpent": 3.75,
+   "droneDeaths": 0,
+   "wrongFloor": 52,
+   "hedges": 0
   },
   {
    "plan": "vessel-3x8",
@@ -556,16 +556,16 @@
    "mode": "freeze",
    "seed": 9,
    "brain": "ours",
-   "fireVolume": 28,
+   "fireVolume": 33,
    "peakBurning": 1,
    "containedAt": 1,
-   "extinguishedAt": 29,
+   "extinguishedAt": 34,
    "spacesBurnedOut": 1,
-   "tetherTicks": 16,
-   "retardantSpent": 0.6,
-   "droneDeaths": 2,
-   "wrongFloor": 40,
-   "hedges": 7
+   "tetherTicks": 68,
+   "retardantSpent": 3.6,
+   "droneDeaths": 0,
+   "wrongFloor": 54,
+   "hedges": 0
   },
   {
    "plan": "vessel-3x8",
@@ -604,16 +604,16 @@
    "mode": "blind",
    "seed": 7,
    "brain": "ours",
-   "fireVolume": 28,
+   "fireVolume": 33,
    "peakBurning": 1,
    "containedAt": 1,
-   "extinguishedAt": 29,
+   "extinguishedAt": 34,
    "spacesBurnedOut": 1,
-   "tetherTicks": 20,
-   "retardantSpent": 0.6,
-   "droneDeaths": 2,
-   "wrongFloor": 43,
-   "hedges": 10
+   "tetherTicks": 68,
+   "retardantSpent": 3.6,
+   "droneDeaths": 0,
+   "wrongFloor": 54,
+   "hedges": 0
   },
   {
    "plan": "vessel-3x8",
@@ -652,16 +652,16 @@
    "mode": "blind",
    "seed": 8,
    "brain": "ours",
-   "fireVolume": 28,
+   "fireVolume": 33,
    "peakBurning": 1,
    "containedAt": 1,
-   "extinguishedAt": 29,
+   "extinguishedAt": 34,
    "spacesBurnedOut": 1,
-   "tetherTicks": 19,
-   "retardantSpent": 0.6,
-   "droneDeaths": 2,
-   "wrongFloor": 48,
-   "hedges": 9
+   "tetherTicks": 68,
+   "retardantSpent": 3.6,
+   "droneDeaths": 0,
+   "wrongFloor": 51,
+   "hedges": 0
   },
   {
    "plan": "vessel-3x8",
@@ -700,16 +700,16 @@
    "mode": "blind",
    "seed": 9,
    "brain": "ours",
-   "fireVolume": 28,
+   "fireVolume": 33,
    "peakBurning": 1,
    "containedAt": 1,
-   "extinguishedAt": 29,
+   "extinguishedAt": 34,
    "spacesBurnedOut": 1,
-   "tetherTicks": 18,
-   "retardantSpent": 0.6,
-   "droneDeaths": 2,
-   "wrongFloor": 44,
-   "hedges": 8
+   "tetherTicks": 68,
+   "retardantSpent": 3.6,
+   "droneDeaths": 0,
+   "wrongFloor": 54,
+   "hedges": 0
   },
   {
    "plan": "vessel-3x8",
@@ -748,16 +748,16 @@
    "mode": "flashover",
    "seed": 7,
    "brain": "ours",
-   "fireVolume": 28,
+   "fireVolume": 33,
    "peakBurning": 1,
    "containedAt": 1,
-   "extinguishedAt": 29,
+   "extinguishedAt": 34,
    "spacesBurnedOut": 1,
-   "tetherTicks": 14,
-   "retardantSpent": 0.6,
-   "droneDeaths": 1,
-   "wrongFloor": 42,
-   "hedges": 12
+   "tetherTicks": 68,
+   "retardantSpent": 4.2,
+   "droneDeaths": 0,
+   "wrongFloor": 59,
+   "hedges": 0
   },
   {
    "plan": "vessel-3x8",
@@ -796,16 +796,16 @@
    "mode": "flashover",
    "seed": 8,
    "brain": "ours",
-   "fireVolume": 28,
+   "fireVolume": 33,
    "peakBurning": 1,
    "containedAt": 1,
-   "extinguishedAt": 29,
+   "extinguishedAt": 34,
    "spacesBurnedOut": 1,
-   "tetherTicks": 14,
-   "retardantSpent": 0.6,
-   "droneDeaths": 1,
-   "wrongFloor": 44,
-   "hedges": 10
+   "tetherTicks": 68,
+   "retardantSpent": 4.05,
+   "droneDeaths": 0,
+   "wrongFloor": 55,
+   "hedges": 0
   },
   {
    "plan": "vessel-3x8",
@@ -844,16 +844,16 @@
    "mode": "flashover",
    "seed": 9,
    "brain": "ours",
-   "fireVolume": 28,
+   "fireVolume": 33,
    "peakBurning": 1,
    "containedAt": 1,
-   "extinguishedAt": 29,
+   "extinguishedAt": 34,
    "spacesBurnedOut": 1,
-   "tetherTicks": 14,
-   "retardantSpent": 0.6,
-   "droneDeaths": 1,
-   "wrongFloor": 41,
-   "hedges": 12
+   "tetherTicks": 68,
+   "retardantSpent": 3.9,
+   "droneDeaths": 0,
+   "wrongFloor": 56,
+   "hedges": 0
   },
   {
    "plan": "vessel-3x8",
@@ -892,16 +892,16 @@
    "mode": "freeze",
    "seed": 7,
    "brain": "ours",
-   "fireVolume": 34,
+   "fireVolume": 49,
    "peakBurning": 1,
    "containedAt": 1,
-   "extinguishedAt": 35,
+   "extinguishedAt": 50,
    "spacesBurnedOut": 1,
-   "tetherTicks": 19,
-   "retardantSpent": 3.6,
+   "tetherTicks": 98,
+   "retardantSpent": 5.4,
    "droneDeaths": 0,
-   "wrongFloor": 36,
-   "hedges": 6
+   "wrongFloor": 28,
+   "hedges": 0
   },
   {
    "plan": "tower-5x4",
@@ -940,16 +940,16 @@
    "mode": "freeze",
    "seed": 8,
    "brain": "ours",
-   "fireVolume": 34,
+   "fireVolume": 49,
    "peakBurning": 1,
    "containedAt": 1,
-   "extinguishedAt": 35,
+   "extinguishedAt": 50,
    "spacesBurnedOut": 1,
-   "tetherTicks": 16,
-   "retardantSpent": 3.3,
-   "droneDeaths": 1,
-   "wrongFloor": 24,
-   "hedges": 2
+   "tetherTicks": 98,
+   "retardantSpent": 5.4,
+   "droneDeaths": 0,
+   "wrongFloor": 28,
+   "hedges": 0
   },
   {
    "plan": "tower-5x4",
@@ -988,15 +988,15 @@
    "mode": "freeze",
    "seed": 9,
    "brain": "ours",
-   "fireVolume": 34,
+   "fireVolume": 49,
    "peakBurning": 1,
    "containedAt": 1,
-   "extinguishedAt": 35,
+   "extinguishedAt": 50,
    "spacesBurnedOut": 1,
-   "tetherTicks": 14,
-   "retardantSpent": 0.9,
-   "droneDeaths": 1,
-   "wrongFloor": 6,
+   "tetherTicks": 96,
+   "retardantSpent": 4.5,
+   "droneDeaths": 0,
+   "wrongFloor": 37,
    "hedges": 0
   },
   {
@@ -1036,16 +1036,16 @@
    "mode": "blind",
    "seed": 7,
    "brain": "ours",
-   "fireVolume": 28,
+   "fireVolume": 49,
    "peakBurning": 1,
    "containedAt": 1,
-   "extinguishedAt": 29,
+   "extinguishedAt": 50,
    "spacesBurnedOut": 1,
-   "tetherTicks": 18,
-   "retardantSpent": 2.7,
+   "tetherTicks": 98,
+   "retardantSpent": 5.4,
    "droneDeaths": 0,
-   "wrongFloor": 43,
-   "hedges": 4
+   "wrongFloor": 29,
+   "hedges": 0
   },
   {
    "plan": "tower-5x4",
@@ -1084,16 +1084,16 @@
    "mode": "blind",
    "seed": 8,
    "brain": "ours",
-   "fireVolume": 35,
+   "fireVolume": 49,
    "peakBurning": 1,
    "containedAt": 1,
-   "extinguishedAt": 36,
+   "extinguishedAt": 50,
    "spacesBurnedOut": 1,
-   "tetherTicks": 20,
-   "retardantSpent": 3.15,
+   "tetherTicks": 98,
+   "retardantSpent": 5.4,
    "droneDeaths": 0,
-   "wrongFloor": 18,
-   "hedges": 3
+   "wrongFloor": 27,
+   "hedges": 0
   },
   {
    "plan": "tower-5x4",
@@ -1132,16 +1132,16 @@
    "mode": "blind",
    "seed": 9,
    "brain": "ours",
-   "fireVolume": 42,
+   "fireVolume": 49,
    "peakBurning": 1,
    "containedAt": 1,
-   "extinguishedAt": 43,
+   "extinguishedAt": 50,
    "spacesBurnedOut": 1,
-   "tetherTicks": 26,
-   "retardantSpent": 4.05,
+   "tetherTicks": 98,
+   "retardantSpent": 5.4,
    "droneDeaths": 0,
-   "wrongFloor": 30,
-   "hedges": 6
+   "wrongFloor": 26,
+   "hedges": 0
   },
   {
    "plan": "tower-5x4",
@@ -1180,15 +1180,15 @@
    "mode": "flashover",
    "seed": 7,
    "brain": "ours",
-   "fireVolume": 42,
+   "fireVolume": 49,
    "peakBurning": 1,
    "containedAt": 1,
-   "extinguishedAt": 43,
+   "extinguishedAt": 50,
    "spacesBurnedOut": 1,
-   "tetherTicks": 18,
-   "retardantSpent": 1.5,
-   "droneDeaths": 1,
-   "wrongFloor": 19,
+   "tetherTicks": 98,
+   "retardantSpent": 5.4,
+   "droneDeaths": 0,
+   "wrongFloor": 29,
    "hedges": 0
   },
   {
@@ -1228,15 +1228,15 @@
    "mode": "flashover",
    "seed": 8,
    "brain": "ours",
-   "fireVolume": 42,
+   "fireVolume": 49,
    "peakBurning": 1,
    "containedAt": 1,
-   "extinguishedAt": 43,
+   "extinguishedAt": 50,
    "spacesBurnedOut": 1,
-   "tetherTicks": 18,
-   "retardantSpent": 1.5,
-   "droneDeaths": 1,
-   "wrongFloor": 19,
+   "tetherTicks": 98,
+   "retardantSpent": 5.4,
+   "droneDeaths": 0,
+   "wrongFloor": 29,
    "hedges": 0
   },
   {
@@ -1276,16 +1276,16 @@
    "mode": "flashover",
    "seed": 9,
    "brain": "ours",
-   "fireVolume": 34,
+   "fireVolume": 49,
    "peakBurning": 1,
    "containedAt": 1,
-   "extinguishedAt": 35,
+   "extinguishedAt": 50,
    "spacesBurnedOut": 1,
-   "tetherTicks": 14,
-   "retardantSpent": 1.5,
-   "droneDeaths": 1,
-   "wrongFloor": 11,
-   "hedges": 0
+   "tetherTicks": 94,
+   "retardantSpent": 5.4,
+   "droneDeaths": 0,
+   "wrongFloor": 28,
+   "hedges": 1
   },
   {
    "plan": "tower-5x4",
@@ -1326,7 +1326,7 @@
    "brain": "ours",
    "n": 9,
    "fireVolume": {
-    "mean": 28,
+    "mean": 33,
     "never": 0
    },
    "peakBurning": {
@@ -1338,7 +1338,7 @@
     "never": 0
    },
    "extinguishedAt": {
-    "mean": 29,
+    "mean": 34,
     "never": 0
    },
    "spacesBurnedOut": {
@@ -1346,23 +1346,23 @@
     "never": 0
    },
    "tetherTicks": {
-    "mean": 34.22222222222222,
+    "mean": 68,
     "never": 0
    },
    "retardantSpent": {
-    "mean": 2.8000000000000007,
+    "mean": 4.6499999999999995,
     "never": 0
    },
    "droneDeaths": {
-    "mean": 1.3333333333333333,
+    "mean": 0,
     "never": 0
    },
    "wrongFloor": {
-    "mean": 13.11111111111111,
+    "mean": 14,
     "never": 0
    },
    "hedges": {
-    "mean": 1.7777777777777777,
+    "mean": 0,
     "never": 0
    }
   },
@@ -1461,7 +1461,7 @@
    "brain": "ours",
    "n": 9,
    "fireVolume": {
-    "mean": 28,
+    "mean": 33,
     "never": 0
    },
    "peakBurning": {
@@ -1473,7 +1473,7 @@
     "never": 0
    },
    "extinguishedAt": {
-    "mean": 29,
+    "mean": 34,
     "never": 0
    },
    "spacesBurnedOut": {
@@ -1481,23 +1481,23 @@
     "never": 0
    },
    "tetherTicks": {
-    "mean": 16.22222222222222,
+    "mean": 68,
     "never": 0
    },
    "retardantSpent": {
-    "mean": 0.6,
+    "mean": 3.7833333333333337,
     "never": 0
    },
    "droneDeaths": {
-    "mean": 1.6666666666666667,
+    "mean": 0,
     "never": 0
    },
    "wrongFloor": {
-    "mean": 45.44444444444444,
+    "mean": 54.111111111111114,
     "never": 0
    },
    "hedges": {
-    "mean": 9.222222222222221,
+    "mean": 0,
     "never": 0
    }
   },
@@ -1596,7 +1596,7 @@
    "brain": "ours",
    "n": 9,
    "fireVolume": {
-    "mean": 36.111111111111114,
+    "mean": 49,
     "never": 0
    },
    "peakBurning": {
@@ -1608,7 +1608,7 @@
     "never": 0
    },
    "extinguishedAt": {
-    "mean": 37.111111111111114,
+    "mean": 50,
     "never": 0
    },
    "spacesBurnedOut": {
@@ -1616,23 +1616,23 @@
     "never": 0
    },
    "tetherTicks": {
-    "mean": 18.11111111111111,
+    "mean": 97.33333333333333,
     "never": 0
    },
    "retardantSpent": {
-    "mean": 2.466666666666667,
+    "mean": 5.3,
     "never": 0
    },
    "droneDeaths": {
-    "mean": 0.5555555555555556,
+    "mean": 0,
     "never": 0
    },
    "wrongFloor": {
-    "mean": 22.88888888888889,
+    "mean": 29,
     "never": 0
    },
    "hedges": {
-    "mean": 2.3333333333333335,
+    "mean": 0.1111111111111111,
     "never": 0
    }
   },
@@ -1733,7 +1733,7 @@
    "brain": "ours",
    "n": 9,
    "fireVolume": {
-    "mean": 28.333333333333332,
+    "mean": 38.333333333333336,
     "never": 0
    },
    "peakBurning": {
@@ -1745,7 +1745,7 @@
     "never": 0
    },
    "extinguishedAt": {
-    "mean": 29.333333333333332,
+    "mean": 39.333333333333336,
     "never": 0
    },
    "spacesBurnedOut": {
@@ -1753,23 +1753,23 @@
     "never": 0
    },
    "tetherTicks": {
-    "mean": 21.333333333333332,
+    "mean": 77.77777777777777,
     "never": 0
    },
    "retardantSpent": {
-    "mean": 1.9666666666666666,
+    "mean": 4.483333333333333,
     "never": 0
    },
    "droneDeaths": {
-    "mean": 1.2222222222222223,
+    "mean": 0,
     "never": 0
    },
    "wrongFloor": {
-    "mean": 27.666666666666668,
+    "mean": 32.55555555555556,
     "never": 0
    },
    "hedges": {
-    "mean": 4.333333333333333,
+    "mean": 0,
     "never": 0
    }
   },
@@ -1868,7 +1868,7 @@
    "brain": "ours",
    "n": 9,
    "fireVolume": {
-    "mean": 30.333333333333332,
+    "mean": 38.333333333333336,
     "never": 0
    },
    "peakBurning": {
@@ -1880,7 +1880,7 @@
     "never": 0
    },
    "extinguishedAt": {
-    "mean": 31.333333333333332,
+    "mean": 39.333333333333336,
     "never": 0
    },
    "spacesBurnedOut": {
@@ -1888,23 +1888,23 @@
     "never": 0
    },
    "tetherTicks": {
-    "mean": 25.88888888888889,
+    "mean": 78,
     "never": 0
    },
    "retardantSpent": {
-    "mean": 2.0666666666666664,
+    "mean": 4.550000000000001,
     "never": 0
    },
    "droneDeaths": {
-    "mean": 1.3333333333333333,
+    "mean": 0,
     "never": 0
    },
    "wrongFloor": {
-    "mean": 27.88888888888889,
+    "mean": 31.444444444444443,
     "never": 0
    },
    "hedges": {
-    "mean": 4.444444444444445,
+    "mean": 0,
     "never": 0
    }
   },
@@ -2003,7 +2003,7 @@
    "brain": "ours",
    "n": 9,
    "fireVolume": {
-    "mean": 33.44444444444444,
+    "mean": 38.333333333333336,
     "never": 0
    },
    "peakBurning": {
@@ -2015,7 +2015,7 @@
     "never": 0
    },
    "extinguishedAt": {
-    "mean": 34.44444444444444,
+    "mean": 39.333333333333336,
     "never": 0
    },
    "spacesBurnedOut": {
@@ -2023,23 +2023,23 @@
     "never": 0
    },
    "tetherTicks": {
-    "mean": 21.333333333333332,
+    "mean": 77.55555555555556,
     "never": 0
    },
    "retardantSpent": {
-    "mean": 1.8333333333333333,
+    "mean": 4.699999999999999,
     "never": 0
    },
    "droneDeaths": {
-    "mean": 1,
+    "mean": 0,
     "never": 0
    },
    "wrongFloor": {
-    "mean": 25.88888888888889,
+    "mean": 33.111111111111114,
     "never": 0
    },
    "hedges": {
-    "mean": 4.555555555555555,
+    "mean": 0.1111111111111111,
     "never": 0
    }
   },
@@ -2140,7 +2140,7 @@
    "brain": "ours",
    "n": 27,
    "fireVolume": {
-    "mean": 30.703703703703702,
+    "mean": 38.333333333333336,
     "never": 0
    },
    "peakBurning": {
@@ -2152,7 +2152,7 @@
     "never": 0
    },
    "extinguishedAt": {
-    "mean": 31.703703703703702,
+    "mean": 39.333333333333336,
     "never": 0
    },
    "spacesBurnedOut": {
@@ -2160,23 +2160,23 @@
     "never": 0
    },
    "tetherTicks": {
-    "mean": 22.85185185185185,
+    "mean": 77.77777777777777,
     "never": 0
    },
    "retardantSpent": {
-    "mean": 1.955555555555556,
+    "mean": 4.577777777777779,
     "never": 0
    },
    "droneDeaths": {
-    "mean": 1.1851851851851851,
+    "mean": 0,
     "never": 0
    },
    "wrongFloor": {
-    "mean": 27.14814814814815,
+    "mean": 32.370370370370374,
     "never": 0
    },
    "hedges": {
-    "mean": 4.444444444444445,
+    "mean": 0.037037037037037035,
     "never": 0
    }
   },
