@@ -172,7 +172,12 @@ function parseArgs(argv: string[]): CliArgs {
   return { ticks: getNum('--ticks') ?? 50, seed: getNum('--seed') ?? 42, corruption };
 }
 
-const isMain = process.argv[1] !== undefined && import.meta.url === new URL(`file://${process.argv[1]}`).href;
+// CLI entry guard. `process` does not exist in the browser, and src/ui imports this module,
+// so the check must be safe there or the whole page fails to mount.
+const isMain =
+  typeof process !== 'undefined' &&
+  process.argv?.[1] !== undefined &&
+  import.meta.url === new URL(`file://${process.argv[1]}`).href;
 if (isMain) {
   const { ticks, seed, corruption } = parseArgs(process.argv.slice(2));
   console.log(
