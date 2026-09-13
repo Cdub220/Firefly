@@ -4,7 +4,7 @@
  *   npm run viewer -- --mode freeze --k 1 --onset 5 --target S3 --ticks 60 --seed 42
  *
  * Writes results/viewer-<mode>.html. Open it in a browser; no server needed.
- * Both brains see the identical corrupted observation stream (runLoopMulti).
+ * The same view runs live at `npm run dev` (src/ui/split); this is the filming backup.
  */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { DEMO_PLAN, runLoopMulti } from '../loop';
 import { createBrain } from '../brain';
 import { createKalmanBrain } from '../brain/kalman';
+import { buildViewerData } from './viewerData';
 import type { CorruptionConfig, CorruptionMode } from '../shared/types';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -30,23 +31,7 @@ const out = str('--out', join(here, '..', '..', 'results', `viewer-${mode}.html`
 
 const corruption: Omit<CorruptionConfig, 'seed'> = mode === 'none' ? { mode } : { mode, k, onset, ...(target ? { target } : {}) };
 const traces = runLoopMulti({ plan: DEMO_PLAN, seed, ticks, corruption, brains: { ours: createBrain, kalman: createKalmanBrain }, primary: 'ours' });
-const ours = traces.ours!, kalman = traces.kalman!;
-
-const pick = (b: (typeof ours)[number]['belief']) => ({
-  estimate: Object.fromEntries(Object.entries(b.estimate).map(([id, v]) => [id, Math.round(v * 10) / 10])),
-  burningSet: b.burningSet, ambiguous: b.ambiguous, suspectSensors: b.suspectSensors, confidence: Math.round(b.confidence * 100) / 100,
-});
-const data = {
-  plan: { name: DEMO_PLAN.name, spaces: DEMO_PLAN.spaces.map((s) => ({ id: s.id })), edges: DEMO_PLAN.edges, sensors: DEMO_PLAN.sensors },
-  ambient: DEMO_PLAN.ambient, seed, corruption, onset: mode === 'none' ? null : onset, startAt: Math.max(0, onset - 2),
-  note: 'Six spaces in a ring, one fixed sensor each. Left is the world as it is: a space burns until its fuel runs out, then it is hot but not burning. Middle and right are two estimators reading the same damaged sensor feed; neither can see truth. Solid red border: believed burning. Dashed amber MAYBE: the brain cannot rule it in or out. Red tag: wrong. Struck-through chip: the brain has stopped trusting that sensor.',
-  ticks: ours.map((r, i) => ({
-    t: r.t,
-    truth: Object.fromEntries(r.truth.spaces.map((s) => [s.id, { temp: Math.round(s.temp * 10) / 10, burning: s.burning, fuel: Math.round(s.fuel * 100) / 100 }])),
-    readings: r.obs.readings.map((x) => ({ sensorId: x.sensorId, source: x.source, spaceId: x.spaceId, temp: Math.round(x.temp * 10) / 10, t: x.t })),
-    brains: { ours: pick(r.belief), kalman: pick(kalman[i]!.belief) },
-  })),
-};
+const data = buildViewerData(DEMO_PLAN, traces, { seed, corruption });
 
 const template = readFileSync(join(here, 'viewer.template.html'), 'utf8');
 const body = template.replace('__DATA__', JSON.stringify(data));
