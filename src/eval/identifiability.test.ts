@@ -24,6 +24,14 @@ describe('identifiability', () => {
     const s2 = steadyState(IDENT_PLAN, new Set(H2));
     for (const s of IDENT_PLAN.sensors) expect(Math.abs(s1[s.spaceId]! - s2[s.spaceId]!)).toBeLessThan(INDISTINGUISHABLE_C);
     expect(measurementTable(IDENT_PLAN).maxDiff).toBeLessThan(INDISTINGUISHABLE_C);
+    // Stronger than the prompt asks: the swap is an exact symmetry, so the difference is exactly zero.
+    expect(measurementTable(IDENT_PLAN).maxDiff).toBe(0);
+    // And it is a symmetry of the plan: relabel A<->B and every edge maps onto an edge with the same rate.
+    const swap = (id: string): string => (id.startsWith('A') ? 'B' + id.slice(1) : id.startsWith('B') ? 'A' + id.slice(1) : id);
+    const key = (a: string, b: string, rate: number): string => [a, b].sort().join('-') + '@' + rate;
+    const edges = new Set(IDENT_PLAN.edges.map((e) => key(e.a, e.b, e.rate)));
+    for (const e of IDENT_PLAN.edges) expect(edges.has(key(swap(e.a), swap(e.b), e.rate))).toBe(true);
+    for (const s of IDENT_PLAN.sensors) expect(swap(s.spaceId)).toBe(s.spaceId);
     // But the wings themselves differ by hundreds of degrees: the fire is real, only unseen.
     expect(Math.abs(s1['A1']! - s2['A1']!)).toBeGreaterThan(400);
   });

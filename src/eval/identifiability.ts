@@ -73,7 +73,7 @@ function wingVerdict(r: TickRecord): string {
   const named = r.belief.burningSet.filter((id) => wingOf(id) !== null);
   const amb = r.belief.ambiguous.filter((g) => g.some((id) => wingOf(id) !== null)).map((g) => `{${g.join(',')}}`);
   const pick = named.length === 0 ? 'neither wing' : named.every((id) => wingOf(id) === 'A') ? 'A wing (H1)' : named.every((id) => wingOf(id) === 'B') ? 'B wing (H2)' : 'both wings';
-  return `${pick}${named.length ? ` [${named.join(',')}]` : ''}${amb.length ? ` ambiguous ${amb.join(' ')}` : ''} conf ${r.belief.confidence.toFixed(2)}`;
+  return `${pick}; burningSet [${r.belief.burningSet.join(',') || '-'}]${amb.length ? `; ambiguous ${amb.join(' ')}` : ''}; conf ${r.belief.confidence.toFixed(2)}`;
 }
 
 export type OpenLoopRun = { label: string; traces: Record<string, TickRecord[]>; onset: number };
@@ -93,8 +93,9 @@ function formatOpenLoop(run: OpenLoopRun, lines: string[]): void {
     lines.push(`    t=${String(t).padStart(2)}  truth [${truth.join(',')}]  P=${f1(ours[i]!.truth.spaces.find((s) => s.id === 'P')!.temp)} C`);
     for (const name of Object.keys(IDENT_BRAINS)) lines.push(`         ${name.padEnd(14)} ${wingVerdict(run.traces[name]![i]!)}`);
   }
+  const pIgnites = ours.find((r) => burningIds(r).includes('P'));
   const merged = ours.find((r) => burningIds(r).some((id) => wingOf(id) === 'B'));
-  lines.push(`    (the passage ignites and the fire reaches the B wing at tick ${merged ? merged.t : 'never'}; after that both wings really burn)`);
+  lines.push(`    (the passage P itself ignites at tick ${pIgnites ? pIgnites.t : 'never'} and the fire reaches the B wing at tick ${merged ? merged.t : 'never'}: the pair is only a pair before then)`);
   lines.push(`    metrics over ticks >= ${run.onset} (the whole run):`);
   for (const name of Object.keys(IDENT_BRAINS)) {
     const m = computeMetrics(run.traces[name]!, { onset: run.onset });
@@ -159,7 +160,7 @@ export function identifiabilityReport(): string {
   lines.push('');
 
   // Step 1
-  lines.push('STEP 1  steady-state temperature at every sensor');
+  lines.push('STEP 1  steady-state temperature at every sensor (the brain\'s steadyState(), which stops iterating at 0.5 C per tick, so a few C under the exact fixed point; symmetric either way)');
   const t1 = measurementTable(IDENT_PLAN);
   lines.push(`  ${'sensor'.padEnd(8)}${'space'.padEnd(7)}${'H1={A1}'.padStart(10)}${'H2={B1}'.padStart(10)}${'|diff|'.padStart(9)}`);
   for (const r of t1.rows) lines.push(`  ${r.sensor.padEnd(8)}${r.space.padEnd(7)}${f1(r.h1).padStart(10)}${f1(r.h2).padStart(10)}${f1(Math.abs(r.h1 - r.h2)).padStart(9)}`);

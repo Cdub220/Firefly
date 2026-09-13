@@ -1,6 +1,6 @@
 # 05 · Identifiability: two fires the sensors cannot tell apart
 
-Numbers from `results/identifiability.txt` (`npm run ident`, seed 1, 60 ticks). Plans in `data/ident/`.
+Numbers from `results/identifiability.txt` (`npm run ident`, seed 1, 60 ticks). Plans in `data/ident/`. Failure model: `docs/06-freeze-plan.md` section 1 (up to k sensors frozen or blinded; flashover kills every sensor in a space above the flashover temperature). Steady-state temperatures are the brain's `steadyState()`, which stops iterating at 0.5 C per tick and so sits a few degrees under the exact fixed point; the symmetry argument does not depend on that.
 
 ## The plan
 
@@ -37,11 +37,11 @@ On `ident-7` no single sensor carries the distinction: with the brain's own resi
 
 ## What the baselines do
 
-Open loop, mode none, ticks 5 to 40: the naive Kalman names **neither wing** at confidence 0.84 to 0.87 the whole time (its unsensed wing estimates are symmetric, so it calls neither burning until the passage itself passes 200 C); the source Kalman names neither wing either. Coverage of the true fire: naive 18 %, source 15 %. Both report a wrong dispatch on 47 % and 57 % of ticks. With FP frozen from tick 5, both baselines lose the fire entirely (coverage 0 %).
+Open loop, mode none, ticks 5 to 40: the naive Kalman names **neither wing** at confidence 0.84 to 0.87 the whole time (its unsensed wing estimates are symmetric, so it calls neither burning) and from tick 30 commits to the passage P instead, which is not burning; the source Kalman names P from tick 5 and neither wing. Coverage of the true fire: naive 18 %, source 15 %. Both report a wrong dispatch on 47 % and 57 % of ticks. With FP frozen from tick 5, both baselines lose the fire entirely (coverage 0 %).
 
 ## What ours does
 
-The same ticks: `burningSet` empty or a best guess, with **{A1,A2} and {B1,B2} reported as ambiguous groups at confidence 0.14**, coverage 93 %, false certainty 0 % at every threshold. It does not know which wing burns, and it says so. (On two of the printed ticks the best-guess set names B1, the wrong wing: with identical scores the tie breaks by id. That is what an honest coin toss looks like from the outside, and the confidence stays at 0.14.)
+The same ticks: `burningSet` empty or a best guess, with **{A1,A2} and {B1,B2} reported as ambiguous groups at confidence 0.14**, coverage 93 %, false certainty 0 % at confidence 0.9 and at P ≥ 0.9 (1.7 % at P ≥ 0.5, one tick where the passage was given 0.51). It does not know which wing burns, and it says so. The best-guess set is a coin toss and looks like one: over ticks 1–40 it names a B-wing space on 14 ticks and an A-wing space on 8, with the other wing always in the ambiguous set, so ours' own wrong-dispatch figure is 37 % against the baselines' 47 % and 57 %, at confidence 0.14 rather than 0.85.
 
 ## The operational cost
 
