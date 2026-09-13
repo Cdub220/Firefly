@@ -95,7 +95,11 @@ describe('layout', () => {
     const a = computeLayout(RING);
     const b = computeLayout({ ...RING, name: 'ring-2-renamed' });
     expect(JSON.stringify(a)).not.toBe(JSON.stringify(b));
-    const withBad: StructurePlan = { ...RING, edges: [...RING.edges, { a: 'A', b: 'NOPE', kind: 'floor', rate: 0.1 }] };
+    // Two bad edges from two different columns must not merge those columns onto one point.
+    const withBad: StructurePlan = {
+      ...RING,
+      edges: [...RING.edges, { a: 'A', b: 'NOPE', kind: 'floor', rate: 0.1 }, { a: 'C', b: 'ALSO-NOPE', kind: 'floor', rate: 0.1 }],
+    };
     expect(JSON.stringify(computeLayout(withBad))).toBe(JSON.stringify(a));
   });
 

@@ -50,12 +50,26 @@ function save(s: Pick<SimState, 'seed' | 'ticks' | 'corruption'>): void {
 const saved = load();
 const DEFAULT_CORR: Corr = { mode: 'freeze', k: 1, onset: 5, target: [DEMO_PLAN.ignition[0] ?? 'S3'] };
 
+/**
+ * A corruption target names spaces, and spaces belong to a plan. Drop targets the plan does
+ * not have (a saved config from another plan, or a typo); if that empties the list, aim at
+ * the plan's ignition space so a targeted mode still does something. Pure; exported for tests.
+ */
+export function sanitizeCorruption(corr: Corr, plan: StructurePlan): Corr {
+  if (corr.target === undefined) return corr;
+  const known = new Set(plan.spaces.map((s) => s.id));
+  const kept = corr.target.filter((id) => known.has(id));
+  if (kept.length === corr.target.length) return corr;
+  const target = kept.length > 0 ? kept : [...plan.ignition];
+  return { ...corr, target };
+}
+
 export const useSim = create<SimState>((set, get) => ({
   plan: DEMO_PLAN,
   planName: DEMO_PLAN.name,
   seed: saved.seed ?? 42,
   ticks: saved.ticks ?? 60,
-  corruption: saved.corruption ?? DEFAULT_CORR,
+  corruption: sanitizeCorruption(saved.corruption ?? DEFAULT_CORR, DEMO_PLAN),
   data: null,
   trace: null,
   error: null,
@@ -63,7 +77,9 @@ export const useSim = create<SimState>((set, get) => ({
   playing: false,
   speed: 4,
   run: () => {
-    const { plan, seed, ticks, corruption } = get();
+    const { plan, seed, ticks } = get();
+    const corruption = sanitizeCorruption(get().corruption, plan);
+    if (corruption !== get().corruption) set({ corruption });
     save({ seed, ticks, corruption });
     try {
       const traces = runLoopMulti({ plan, seed, ticks, corruption, brains: { ours: createBrain, kalman: createKalmanBrain }, primary: 'ours' });
@@ -77,8 +93,8 @@ export const useSim = create<SimState>((set, get) => ({
     if (name === get().planName) return;
     const plan = loadPlan(name);
     // A corruption target from the old plan is meaningless here; aim at the new ignition space.
-    const target = plan.ignition.length ? [...plan.ignition] : [];
-    set({ plan, planName: name, corruption: { ...get().corruption, target }, data: null, trace: null, cursor: 0, playing: false, error: null });
+    const corruption = sanitizeCorruption({ ...get().corruption, target: [...plan.ignition] }, plan);
+    set({ plan, planName: name, corruption, data: null, trace: null, cursor: 0, playing: false, error: null });
   },
   setSeed: (seed) => set({ seed }),
   setTicks: (ticks) => set({ ticks }),
