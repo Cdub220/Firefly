@@ -180,6 +180,10 @@ describe('allocate', () => {
     // Nearest resupply: with resupply at S1 and S5, an empty retardant at S4 goes to S5.
     const two: StructurePlan = { ...plan, resupply: ['S1', 'S5'] };
     expect(allocate(two, b, hyps, [drone('D5', 'retardant', 'S4', 0.05)], [])).toEqual([{ droneId: 'D5', goTo: 'S5', task: 'refill' }]);
+    // A resupply space believed burning is no refill point: the next nearest is used; none safe means hold.
+    const hotS1 = belief(['S1', 'S3'], [], { S1: 500, S3: 500 });
+    expect(allocate(two, hotS1, [new Set<SpaceId>(['S1', 'S3'])], [drone('D5', 'retardant', 'S2', 0.05)], [])).toEqual([{ droneId: 'D5', goTo: 'S5', task: 'refill' }]);
+    expect(allocate(plan, hotS1, [new Set<SpaceId>(['S1', 'S3'])], [drone('D5', 'retardant', 'S2', 0.05)], [])[0]!.task).not.toBe('refill');
     // Tethers never refill, whatever their resource says.
     expect(allocate(two, b, hyps, [drone('D3', 'tether', 'S4', 0)], [])[0]!.task).toBe('suppress');
   });

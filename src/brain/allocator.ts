@@ -157,14 +157,24 @@ export function allocate(
   const prevById = new Map(prevCommands.map((c) => [c.droneId, c]));
   const estimate = (id: SpaceId): number => belief.estimate[id] ?? plan.ambient;
 
+  // Safety: a free-flying drone dies above SAFE_TEMP. The estimate of a believed-burning
+  // space can lag (its sensor is often the one that died), so burningSet itself is unsafe
+  // for non-tethers regardless of the number; ambiguous spaces are judged by estimate.
+  // The rule governs SENDING a drone somewhere; a drone already in a space may act there
+  // (a tether standing in the fire it was sent to keeps suppressing rather than holding).
+  const burningNow = new Set(belief.burningSet);
+  const safeFor = (d: Drone, id: SpaceId): boolean =>
+    id === d.at || (d.class === 'tether' ? estimate(id) <= SAFE_TEMP_TETHER : estimate(id) <= SAFE_TEMP && !burningNow.has(id));
+
   const out: Command[] = [];
   const pending: Drone[] = [];
   // Resource first: an empty retardant goes to the nearest resupply, whatever the fire does.
   for (const d of active) {
     if (d.class === 'retardant' && d.resource < REFILL_BELOW && plan.resupply.length > 0) {
       const dist = pathLengths(plan, d.at);
+      // Nearest resupply that is safe to enter (a burning resupply space is no refill point).
       const target = [...plan.resupply]
-        .filter((r) => byId.has(r))
+        .filter((r) => byId.has(r) && safeFor(d, r))
         .sort((a, b) => (dist.get(a) ?? Infinity) - (dist.get(b) ?? Infinity) || a.localeCompare(b))[0];
       if (target !== undefined) {
         out.push({ droneId: d.id, goTo: target, task: 'refill' });
@@ -178,14 +188,6 @@ export function allocate(
   const infoNow = new Map(information);
   const contNow = new Map([...containment].map(([id, c]) => [id, { ...c }]));
   const distByDrone = new Map(pending.map((d) => [d.id, pathLengths(plan, d.at)]));
-  // Safety: a free-flying drone dies above SAFE_TEMP. The estimate of a believed-burning
-  // space can lag (its sensor is often the one that died), so burningSet itself is unsafe
-  // for non-tethers regardless of the number; ambiguous spaces are judged by estimate.
-  // The rule governs SENDING a drone somewhere; a drone already in a space may act there
-  // (a tether standing in the fire it was sent to keeps suppressing rather than holding).
-  const burningNow = new Set(belief.burningSet);
-  const safeFor = (d: Drone, id: SpaceId): boolean =>
-    id === d.at || (d.class === 'tether' ? estimate(id) <= SAFE_TEMP_TETHER : estimate(id) <= SAFE_TEMP && !burningNow.has(id));
   const wInfo = (d: Drone): number => (d.class === 'scout' || d.class === 'relay' ? W_INFO_SENSOR : W_INFO_OTHER);
   const score = (d: Drone, id: SpaceId): number => {
     const dist = distByDrone.get(d.id)!.get(id);
