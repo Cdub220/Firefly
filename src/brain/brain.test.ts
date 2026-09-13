@@ -276,4 +276,47 @@ describe('createBrain v1', () => {
     brain.reset();
     expect(run()).toBe(a);
   });
+
+  it('an ambiguity {S2}|{S4} with no fixed sensor in either is resolved within 2 ticks once a drone reading arrives from S2 (hot)', () => {
+    // S1-S2-S3-S4-S5 through slow doors; the only fixed sensor is in S3. A fire in S2 and a
+    // fire in S4 heat S3 identically, so the readings cannot separate them. The CP4 scout's
+    // reading from S2 is the one observation that can.
+    const five: StructurePlan = {
+      name: 'line-5-one-sensor',
+      ambient: 20,
+      spaces: ['S1', 'S2', 'S3', 'S4', 'S5'].map((id) => ({ id, level: 1 })),
+      edges: [['S1', 'S2'], ['S2', 'S3'], ['S3', 'S4'], ['S4', 'S5']].map(([a, b]) => ({ a: a!, b: b!, kind: 'door' as const, rate: 0.05 })),
+      sensors: [{ id: 'F3', spaceId: 'S3' }],
+      resupply: ['S1'],
+      ignition: ['S2'],
+    };
+    const droneReading = (spaceId: string, temp: number, t: number): Reading => ({ sensorId: 'D1:temp', source: 'drone', droneId: 'D1', spaceId, temp, t });
+    const ARRIVE = 7;
+    const brain = createBrain({ plan: five, seed: 42 });
+    let temps: Record<SpaceId, number> = { S1: 20, S2: 450, S3: 20, S4: 20, S5: 20 };
+    let sawAmbiguity = false;
+    let resolvedAt: number | null = null;
+    for (let t = 1; t <= ARRIVE + 2; t++) {
+      const readings = [reading('F3', 'S3', temps['S3']!, t)];
+      if (t >= ARRIVE) readings.push(droneReading('S2', temps['S2']!, t));
+      const out = brain.step(obs(t, readings));
+      const mentioned = new Set([...out.belief.burningSet, ...out.belief.ambiguous.flat()]);
+      if (t < ARRIVE) {
+        // Before the scout: S2 and S4 are both live explanations and neither is certain.
+        if (mentioned.has('S2') && mentioned.has('S4')) sawAmbiguity = true;
+        expect(out.belief.probability['S2']!).toBeLessThan(0.95);
+        expect(out.belief.confidence).toBeLessThan(0.9);
+      } else {
+        expect(out.belief.suspectSensors).not.toContain('D1:temp'); // the arriving reading is trusted, not an "impossible rise"
+        if (out.belief.burningSet.includes('S2') && !mentioned.has('S4')) {
+          resolvedAt ??= t;
+          expect(out.belief.probability['S4']!).toBeLessThan(0.1);
+        }
+      }
+      temps = forward(five, temps, new Set(['S2']));
+    }
+    expect(sawAmbiguity).toBe(true);
+    expect(resolvedAt).not.toBeNull();
+    expect(resolvedAt!).toBeLessThanOrEqual(ARRIVE + 1);
+  });
 });

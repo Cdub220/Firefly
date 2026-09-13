@@ -32,6 +32,32 @@ const PATH_WARM_C = 60; // ...meaning something within 2 edges reading above thi
 const NO_PATH_GRACE_TICKS = 3; // the initial fire has to start somewhere
 const HISTORY_CAP = FROZEN_TICKS + 4;
 
+/**
+ * Moving sensors. A drone-borne sensor changes spaceId when the drone flies, so its own
+ * history is not a record of one place: the rate-of-change rules judge every reading
+ * against the brain's estimate for the space it now reports from (prevEstimate), never
+ * against the sensor's own previous value, and the frozen rule only looks at the part of
+ * the history since the sensor last moved. A fixed sensor is part of the structure and
+ * cannot move: if its spaceId differs from its previous entry it is judged against its
+ * own last reading (a sensor does not teleport into a hotter room).
+ *
+ * First observations. A space that no sensor reported from last tick has an estimate
+ * that is a hypothesis, not a measurement: the physics rollout of whichever explanation
+ * scored best. The first reading to arrive there (a scout flying into an unsensed room)
+ * is what settles the hypothesis, so it cannot be judged an impossible rise or drop
+ * against the guess it is there to test. The same allowance already applies to unsensed
+ * NEIGHBOURS in the bounds below, and to every space in the first ticks. Stale, frozen,
+ * cold-in-hot-neighbourhood and no-heat-path still apply to it.
+ */
+const ownPrev = (history: SensorHistory, r: Reading): { t: number; temp: number; spaceId: SpaceId } | undefined => {
+  const h = history.get(r.sensorId) ?? [];
+  return h[h.length - 2]; // the last entry is this tick's reading (updateHistory runs first)
+};
+const movedFixed = (history: SensorHistory, r: Reading): { t: number; temp: number; spaceId: SpaceId } | undefined => {
+  const p = ownPrev(history, r);
+  return r.source === 'fixed' && p !== undefined && p.spaceId !== r.spaceId ? p : undefined;
+};
+
 /** Append this tick's readings to the history. Call once per tick, before checking. */
 export function updateHistory(history: SensorHistory, obs: Observation): void {
   for (const r of obs.readings) {
@@ -73,7 +99,9 @@ export function checkConsistency(
     let best: number | undefined;
     for (const r of rs) {
       const h = history.get(r.sensorId) ?? [];
-      const inWindow = h.filter((x) => x.t >= obs.t - FROZEN_TICKS);
+      // Only entries taken in the space the sensor now reports from: a drone's flight is not
+      // a temperature change in either room.
+      const inWindow = h.filter((x) => x.t >= obs.t - FROZEN_TICKS && x.spaceId === r.spaceId);
       if (inWindow.length < 2) continue;
       const move = Math.abs(inWindow[inWindow.length - 1]!.temp - inWindow[0]!.temp);
       best = best === undefined ? move : Math.max(best, move);
@@ -85,6 +113,10 @@ export function checkConsistency(
     const h = history.get(r.sensorId) ?? [];
     const window = h.filter((x) => x.t >= obs.t - FROZEN_TICKS);
     if (window.length < FROZEN_TICKS) continue;
+    // A sensor that moved within the window is not frozen: the streak restarts at the move.
+    // A drone that has sat still for the whole window IS subject to the rule (a stuck
+    // drone lies like a stuck sensor).
+    if (window.some((x) => x.spaceId !== r.spaceId)) continue;
     const flat = window.every((x, i) => i === 0 || Math.abs(x.temp - window[i - 1]!.temp) < FROZEN_EPS_C);
     if (!flat) continue;
     const moves = neighborsOf(r.spaceId)
@@ -109,6 +141,11 @@ export function checkConsistency(
   // ambient for the drop bound). Only warm unsensed spaces get the allowance; an
   // unsensed space the physics puts at ambient with cold surroundings is not a hidden fire.
   const sensedNow = new Set(trusted.map((r) => r.spaceId));
+  const observedLastTick = new Set<SpaceId>();
+  for (const h of history.values()) {
+    for (const x of h) if (x.t === obs.t - 1) observedLastTick.add(x.spaceId);
+  }
+  const firstObservation = (r: Reading): boolean => !observedLastTick.has(r.spaceId) && movedFixed(history, r) === undefined;
   const hiBound: Record<SpaceId, number> = {};
   const loBound: Record<SpaceId, number> = {};
   for (const s of plan.spaces) {
@@ -121,7 +158,12 @@ export function checkConsistency(
     drop(
       new Set(
         trusted
-          .filter((r) => r.temp - (prevEstimate[r.spaceId] ?? plan.ambient) > maxRise(plan, r.spaceId, hiBound) + 3 * SIGMA_C)
+          .filter((r) => {
+            const p = movedFixed(history, r);
+            if (p !== undefined) return r.temp - p.temp > maxRise(plan, r.spaceId, { ...hiBound, [r.spaceId]: p.temp }) + 3 * SIGMA_C;
+            if (firstObservation(r)) return false;
+            return r.temp - (prevEstimate[r.spaceId] ?? plan.ambient) > maxRise(plan, r.spaceId, hiBound) + 3 * SIGMA_C;
+          })
           .map((r) => r.sensorId),
       ),
       'impossible-rise',
@@ -135,7 +177,12 @@ export function checkConsistency(
   drop(
     new Set(
       trusted
-        .filter((r) => (prevEstimate[r.spaceId] ?? plan.ambient) - r.temp > maxDrop(plan, r.spaceId, loBound) + 3 * SIGMA_C)
+        .filter((r) => {
+          const p = movedFixed(history, r);
+          if (p !== undefined) return p.temp - r.temp > maxDrop(plan, r.spaceId, { ...loBound, [r.spaceId]: p.temp }) + 3 * SIGMA_C;
+          if (firstObservation(r)) return false;
+          return (prevEstimate[r.spaceId] ?? plan.ambient) - r.temp > maxDrop(plan, r.spaceId, loBound) + 3 * SIGMA_C;
+        })
         .map((r) => r.sensorId),
     ),
     'impossible-drop',

@@ -22,6 +22,7 @@ import { edgeMap } from '../shared/plan';
 import { candidates, hotSpaces, predict, score } from './hypotheses';
 import { fuelTicks, IGNITE } from './physics';
 import { checkConsistency, updateHistory, type SensorHistory } from './consistency';
+import { planCommands } from './commands';
 import type { Belief, Brain, BrainConfig, Command, Observation, SpaceId } from '../shared/types';
 
 // Default tolerance for undetected liars. NOT the prompt's 2: with one sensor per space
@@ -88,6 +89,7 @@ export function createBrain(config: BrainConfig): Brain {
   let burnTicks = new Map<SpaceId, number>(); // ticks a space has been in the best hypothesis (fuel does not regenerate)
   let agreedStreak = new Map<SpaceId, number>(); // consecutive ticks a space was in every kept hypothesis
   let lastBelief: Belief | null = null; // carried forward under total blackout: last known fire, unconfirmed
+  let prevCommands: Command[] = []; // last tick's commands, handed back to the command hook
   const init = (): void => {
     history = new Map();
     prevEstimate = {};
@@ -100,6 +102,7 @@ export function createBrain(config: BrainConfig): Brain {
     burnTicks = new Map();
     agreedStreak = new Map();
     lastBelief = null;
+    prevCommands = [];
   };
   init();
 
@@ -157,7 +160,8 @@ export function createBrain(config: BrainConfig): Brain {
           confidence: MIN_CONFIDENCE,
         };
         lastBelief = belief;
-        return { belief, commands: [] };
+        prevCommands = planCommands({ plan: config.plan, belief, kept: [new Set(belief.burningSet)], drones: sane.drones, prev: prevCommands });
+        return { belief, commands: prevCommands };
       }
 
       // Seed candidates from hot READINGS and hot ESTIMATES: a fire whose sensors died
@@ -294,7 +298,8 @@ export function createBrain(config: BrainConfig): Brain {
         probability,
       };
       lastBelief = belief;
-      return { belief, commands: [] };
+      prevCommands = planCommands({ plan: config.plan, belief, kept: kept.map((x) => x.set), drones: sane.drones, prev: prevCommands });
+      return { belief, commands: prevCommands };
     },
     reset(): void {
       rng = makeRng(config.seed).fork('brain');

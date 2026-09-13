@@ -12,28 +12,21 @@ The estimator is frozen. The allocator is new code in new files and reads `Belie
 You are working in the Firefly repo as Dean. Before anything else read CLAUDE.md, docs/00-README.md, docs/04-who-does-what.md, and src/shared/types.ts. Respect the directory ownership and lint boundaries in docs/04. Make reasonable assumptions instead of asking questions. Run `npm test && npm run lint && npm run typecheck` before you finish and do not report done unless all three are green. Commit in logical chunks with clear messages. Do not push. Finish by listing (1) what you built, (2) assumptions you made, (3) anything that did not work or that you skipped, (4) any contract change you need from Chase.
 
 CONTEXT: The estimator (src/brain/index.ts, consistency.ts, hypotheses.ts, physics.ts) and
-src/corruption are FROZEN; src/eval/freeze.test.ts fails if they change. step() currently
-returns commands: []. Drone classes: tether (holds a line in a burning space, resource
+src/corruption are FROZEN; src/eval/freeze.test.ts fails if they change. step() already
+calls planCommands({ plan, belief, kept, drones, prev }) in src/brain/commands.ts (the
+unfrozen hook, CP3 prompt 2c), which returns [] today. Drone classes: tether (holds a line in a burning space, resource
 always 1), retardant (coats unburned material, spends resource), scout (pure sensor),
 relay (extends comms; treat as scout for now), hatch (closes doors). Chase's world applies
 these effects; read src/world/drones.ts for the exact semantics but do not import it.
 Read the Command type: { droneId, goTo, task }. Use task strings 'suppress', 'coat',
 'observe', 'close-door', 'refill', 'hold'.
 
-NOTE (added hour 18): if CP3 prompt 2c ran, src/brain/commands.ts already exists with a
-planCommands() hook that index.ts calls. In that case do NOT edit index.ts at all and do not
-record a second hash: fill in commands.ts to call allocate(), and ignore the paragraph below
-about the one-hunk index.ts change.
-
 TASK: src/brain/allocator.ts exporting
   allocate(plan, belief: Belief, hypotheses: Set<SpaceId>[], drones: Drone[], prevCommands: Command[]): Command[]
-and wire it into step() in src/brain/index.ts. That file is frozen for estimator logic,
-so the ONLY permitted change there is replacing the empty commands array with a call to
-allocate(). Keep the diff to that one hunk and say so in the commit message. The freeze
-test diffs index.ts, so update the freeze test to exclude that one hunk by moving the
-allocator call behind a single exported hook function in a NEW file
-src/brain/commands.ts that index.ts calls; then index.ts changes by exactly one import
-and one line, and docs/06-freeze.md gets a note recording the second hash and the reason.
+and make planCommands() in src/brain/commands.ts call it with the hook's inputs
+(kept = hypotheses, prev = prevCommands). Do NOT edit src/brain/index.ts and do not
+record a second hash: the hook was put in place before the freeze so that the allocator
+is new code in new files.
 
 SCORING. For each alive, linked drone and each candidate space s (spaces in burningSet,
 in any ambiguous group, or adjacent to either), compute:
