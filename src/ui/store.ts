@@ -3,30 +3,38 @@
  * the shaped ViewerData plus playback state. Nothing here computes physics or belief.
  */
 import { create } from 'zustand';
-import { DEMO_PLAN, runLoopMulti } from '../loop';
+import { DEMO_PLAN, runLoopMulti, type TickRecord } from '../loop';
 import { createBrain } from '../brain';
 import { createKalmanBrain } from '../brain/kalman';
 import { buildViewerData, type ViewerData } from '../eval/viewerData';
+import { loadPlan } from '../shared/structures';
 import type { CorruptionConfig, StructurePlan } from '../shared/types';
 
 type Corr = Omit<CorruptionConfig, 'seed'>;
 
 type SimState = {
   plan: StructurePlan;
+  planName: string;
   seed: number;
   ticks: number;
   corruption: Corr;
+  /** Shaped for the split view. */
   data: ViewerData | null;
+  /** Raw primary-brain trace for the 3D scene: trace[cursor].truth and .obs are exact. */
+  trace: TickRecord[] | null;
   error: string | null;
   cursor: number;
   playing: boolean;
   speed: number;
   run: () => void;
+  setPlanName: (name: string) => void;
   setSeed: (seed: number) => void;
   setTicks: (ticks: number) => void;
   setCorruption: (patch: Partial<Corr>) => void;
   setCursor: (i: number) => void;
   stepBy: (d: number) => void;
+  /** Advance one tick; stops playback at the end. */
+  tick: () => void;
   toggle: () => void;
   setSpeed: (speed: number) => void;
 };
@@ -44,10 +52,12 @@ const DEFAULT_CORR: Corr = { mode: 'freeze', k: 1, onset: 5, target: [DEMO_PLAN.
 
 export const useSim = create<SimState>((set, get) => ({
   plan: DEMO_PLAN,
+  planName: DEMO_PLAN.name,
   seed: saved.seed ?? 42,
   ticks: saved.ticks ?? 60,
   corruption: saved.corruption ?? DEFAULT_CORR,
   data: null,
+  trace: null,
   error: null,
   cursor: 0,
   playing: false,
@@ -58,10 +68,17 @@ export const useSim = create<SimState>((set, get) => ({
     try {
       const traces = runLoopMulti({ plan, seed, ticks, corruption, brains: { ours: createBrain, kalman: createKalmanBrain }, primary: 'ours' });
       const data = buildViewerData(plan, traces, { seed, corruption });
-      set({ data, error: null, cursor: data.startAt, playing: false });
+      set({ data, trace: traces['ours'] ?? null, error: null, cursor: data.startAt, playing: false });
     } catch (e) {
       set({ error: e instanceof Error ? `${e.message}\n${e.stack ?? ''}` : String(e), playing: false });
     }
+  },
+  setPlanName: (name) => {
+    if (name === get().planName) return;
+    const plan = loadPlan(name);
+    // A corruption target from the old plan is meaningless here; aim at the new ignition space.
+    const target = plan.ignition.length ? [...plan.ignition] : [];
+    set({ plan, planName: name, corruption: { ...get().corruption, target }, data: null, trace: null, cursor: 0, playing: false, error: null });
   },
   setSeed: (seed) => set({ seed }),
   setTicks: (ticks) => set({ ticks }),
@@ -72,6 +89,7 @@ export const useSim = create<SimState>((set, get) => ({
     const next = Math.max(0, Math.min(n - 1, cursor + d));
     set({ cursor: next, playing: get().playing && next < n - 1 });
   },
+  tick: () => get().stepBy(1),
   toggle: () => {
     const { playing, cursor, data } = get(); const n = data?.ticks.length ?? 0;
     if (!data) return;

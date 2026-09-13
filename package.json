@@ -18,6 +18,7 @@
     "viewer": "tsx src/eval/export-viewer.ts"
   },
   "dependencies": {
+    "@react-three/drei": "^10.7.8",
     "@react-three/fiber": "^9.1.2",
     "react": "~19.2.0",
     "react-dom": "~19.2.0",

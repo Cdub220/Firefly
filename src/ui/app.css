@@ -1,0 +1,8 @@
+/* View/plan bar above whichever view is showing. Shares the .fx tokens from split.css. */
+.fx.fx-top { min-height: 0; padding-block: 8px; padding-inline: 20px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--line); }
+.fx-top .fx-brand { font: 600 14px var(--sans); color: var(--uncertain); margin-right: 8px; letter-spacing: 0.04em; }
+.fx-top button { background: transparent; color: var(--ink-2); border: 1px solid transparent; border-radius: 4px; padding: 4px 10px; font: 500 13px var(--sans); cursor: pointer; }
+.fx-top button.on { color: var(--ink); background: var(--panel-2); border-color: var(--line); }
+.fx-top button:hover { color: var(--ink); }
+.fx-top label { margin-left: auto; font-size: 11px; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em; display: inline-flex; align-items: center; gap: 6px; }
+.fx-top select { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 4px 6px; font: 13px var(--sans); }
