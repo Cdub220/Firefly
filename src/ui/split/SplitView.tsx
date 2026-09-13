@@ -1,11 +1,15 @@
 /**
- * Truth | our brain | Kalman, side by side, with a per-tick verdict strip and a chaos
- * mini-panel. All numbers come from the store's traces; nothing here computes belief.
+ * Truth | our brain | Kalman, side by side, with a per-tick verdict strip, a chaos
+ * mini-panel and one-click demo beats (the plan picker is in App's top bar). All numbers come from the store's
+ * traces; nothing here computes belief.
+ *
+ * Recording mode (`?demo=1` or the toggle) keeps: beats row, playback, the three panels,
+ * the strip, and the caption. Keys: 1-5 beats, space plays, arrows step.
  */
-import { useEffect, useMemo } from 'react';
-import { useSim } from '../store';
+import { useEffect, useMemo, useRef } from 'react';
+import { BEATS, fromUrl, useSim } from '../store';
 import type { CorruptionMode } from '../../shared/types';
-import { brainSvg, brainVerdictHtml, geometry, stripSvg, truthSvg, truthVerdictHtml } from './svg';
+import { brainSvg, brainVerdictHtml, geometry, legendText, stripSvg, truthSvg, truthVerdictHtml } from './svg';
 import './split.css';
 
 const MODES: CorruptionMode[] = ['none', 'freeze', 'blind', 'saturate', 'flashover', 'mixed'];
@@ -21,13 +25,27 @@ export function SplitView() {
   const g = useMemo(() => (data ? geometry(data) : null), [data]);
   const rec = data?.ticks[s.cursor];
 
+  // URL presets (?beat=flashover&t=30), applied once after the first data lands.
+  const urlDone = useRef(false);
+  useEffect(() => {
+    if (urlDone.current || !data) return;
+    urlDone.current = true;
+    const u = fromUrl();
+    if (u.beat) s.runBeat(u.beat);
+    if (u.t !== null) s.setCursor(u.t - 1);
+  }, [data, s]);
+
   // Playback runs in App via usePlayback(); this view only reads the cursor.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement | null)?.tagName === 'INPUT') return;
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return; // Cmd/Ctrl combos belong to the browser
       if (e.key === ' ') { e.preventDefault(); s.toggle(); }
       if (e.key === 'ArrowRight') s.stepBy(1);
       if (e.key === 'ArrowLeft') s.stepBy(-1);
+      const beat = BEATS.find((b) => b.hotkey === e.key);
+      if (beat) s.runBeat(beat.key);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -35,53 +53,68 @@ export function SplitView() {
 
   const spaceIds = s.plan.spaces.map((x) => x.id);
   const target = s.corruption.target ?? [];
+  const legend = data ? legendText(data) : '';
 
   return (
-    <div className="fx">
+    <div className={'fx' + (s.demo ? ' demo' : '')}>
       <header>
         <h1>Firefly · truth vs two brains</h1>
-        <div className="cfg">plan={s.plan.name} seed={s.seed} ticks={s.ticks} corruption={JSON.stringify(s.corruption)}</div>
+        {!s.demo && <div className="cfg">plan={s.plan.name} seed={s.seed} ticks={s.ticks} corruption={JSON.stringify(s.corruption)}</div>}
+        <button id="demo" type="button" className="toggle" aria-pressed={s.demo} onClick={() => s.setDemo(!s.demo)}>{s.demo ? 'Exit recording mode' : 'Recording mode'}</button>
       </header>
-      <p className="note">
-        How to read it: each box is one space. The colored bar on top is temperature (slate cold, amber warm, red hot, pale white-hot).
-        The chip at the bottom is what that space’s own sensor reported this tick. In the two brain panels, a solid red border means
-        “believed burning” and a dashed amber MAYBE means the brain cannot rule it in or out. Neither brain can see the truth panel.
-      </p>
+      {s.caption && <p className="caption" aria-live="polite">{s.caption}</p>}
 
-      <div className="controls" role="group" aria-label="scenario">
-        <label>fire starts in
-          <span className="chips">
-            {spaceIds.map((id) => (
-              <button key={id} type="button" aria-pressed={s.ignition === id} onClick={() => s.setIgnition(id)}>{id}</button>
-            ))}
-          </span>
-        </label>
-        <label htmlFor="mode">failure mode
-          <select id="mode" value={s.corruption.mode} onChange={(e) => s.setCorruption({ mode: e.target.value as CorruptionMode })}>
-            {MODES.map((m) => <option key={m} value={m}>{MODE_LABEL[m]}</option>)}
-          </select>
-        </label>
-        <label>which sensors
-          <span className="chips">
-            {spaceIds.map((id) => {
-              const on = target.includes(id);
-              // Deselecting the last chip removes `target` (any sensor); the store handles the empty case.
-              return <button key={id} type="button" aria-pressed={on} onClick={() => s.setCorruption({ target: on ? target.filter((x) => x !== id) : [...target, id] })}>{id}</button>;
-            })}
-          </span>
-        </label>
-        <label htmlFor="k">how many break <input id="k" type="number" min={0} max={8} value={s.corruption.k ?? 1} onChange={(e) => s.setCorruption({ k: Number(e.target.value) })} /></label>
-        <label htmlFor="onset">break at tick <input id="onset" type="number" min={0} max={200} value={s.corruption.onset ?? 5} onChange={(e) => s.setCorruption({ onset: Number(e.target.value) })} /></label>
-        <label htmlFor="seed">seed <input id="seed" type="number" value={s.seed} onChange={(e) => s.setSeed(Number(e.target.value))} /></label>
-        <label htmlFor="ticks">ticks <input id="ticks" type="number" min={5} max={400} value={s.ticks} onChange={(e) => s.setTicks(Number(e.target.value))} /></label>
-        <button id="run" type="button" className="primary" onClick={s.run}>Run</button>
+      <div className="beats" role="group" aria-label="demo beats">
+        {BEATS.map((b) => (
+          <button key={b.key} type="button" aria-pressed={s.beat === b.key} onClick={() => s.runBeat(b.key)}>
+            <kbd>{b.hotkey}</kbd> {b.label}
+          </button>
+        ))}
       </div>
-      <p className="note">
-        Fire starts in the chosen space. Failure mode is how the sensors break: freeze = keeps reporting its last value with an old timestamp;
-        blind = reads room temperature no matter what; saturate = pins at 300° once it gets hotter; flashover = every sensor in a space over 500° dies;
-        mixed = all of those. “Which sensors” limits the breakage to those spaces (empty = any). “How many break” is the budget k for freeze and blind.
-        “Break at tick” is when it starts.
-      </p>
+
+      {!s.demo && (
+        <>
+          <p className="note">
+            How to read it: each box is one space. The colored bar on top is temperature (slate cold, amber warm, red hot, pale white-hot).
+            The chip at the bottom is what that space’s own sensor reported this tick. In the two brain panels, a solid red border means
+            “believed burning” and a dashed amber MAYBE means the brain cannot rule it in or out; P(burning) grades that doubt. Neither brain can see the truth panel.
+          </p>
+
+          <div className="controls" role="group" aria-label="scenario">
+            <label>fire starts in
+              <span className="chips">
+                {spaceIds.map((id) => (
+                  <button key={id} type="button" aria-pressed={s.ignition === id} onClick={() => s.setIgnition(id)}>{id}</button>
+                ))}
+              </span>
+            </label>
+            <label htmlFor="mode">failure mode
+              <select id="mode" value={s.corruption.mode} onChange={(e) => s.setCorruption({ mode: e.target.value as CorruptionMode })}>
+                {MODES.map((m) => <option key={m} value={m}>{MODE_LABEL[m]}</option>)}
+              </select>
+            </label>
+            <label>which sensors
+              <span className="chips">
+                {spaceIds.map((id) => {
+                  const on = target.includes(id);
+                  return <button key={id} type="button" aria-pressed={on} onClick={() => s.setCorruption({ target: on ? target.filter((x) => x !== id) : [...target, id] })}>{id}</button>;
+                })}
+              </span>
+            </label>
+            <label htmlFor="k">how many break <input id="k" type="number" min={0} max={8} value={s.corruption.k ?? 1} onChange={(e) => s.setCorruption({ k: Number(e.target.value) })} /></label>
+            <label htmlFor="onset">break at tick <input id="onset" type="number" min={0} max={200} value={s.corruption.onset ?? 5} onChange={(e) => s.setCorruption({ onset: Number(e.target.value) })} /></label>
+            <label htmlFor="seed">seed <input id="seed" type="number" value={s.seed} onChange={(e) => s.setSeed(Number(e.target.value))} /></label>
+            <label htmlFor="ticks">ticks <input id="ticks" type="number" min={1} max={400} value={s.ticks} onChange={(e) => s.setTicks(Number(e.target.value))} /></label>
+            <button id="run" type="button" className="primary" onClick={s.run}>Run</button>
+          </div>
+          <p className="note">
+            Fire starts in the chosen space. Failure mode is how the sensors break: freeze = keeps reporting its last value with an old timestamp;
+            blind = reads room temperature no matter what; saturate = pins at 300° once it gets hotter; flashover = every sensor in a space over 500° dies;
+            mixed = all of those. “Which sensors” limits the breakage to those spaces (empty = any). “How many break” is the budget k for freeze and blind.
+            “Break at tick” is when it starts.
+          </p>
+        </>
+      )}
 
       {s.error && <pre className="err">{s.error}</pre>}
 
@@ -123,6 +156,7 @@ export function SplitView() {
               );
             })}
           </div>
+          {legend && <p className="legendline">{legend}</p>}
 
           <div className="strip">
             <h3>Every tick, both brains: bar height is confidence, color is whether the burning set matched truth</h3>

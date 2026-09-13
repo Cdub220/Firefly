@@ -45,7 +45,7 @@ The Defense brief names four metrics we must report: **false certainty, estimati
 
 ## Branches
 
-`dean-branch` and `chase-branch`, cut from `main`. Merge to `main` at every checkpoint or sooner when the other person needs it. `main` is always green. Recipe in `docs/04-who-does-what.md` section 5.
+`dean-branch` and `chase-branch`, cut from `main`. Merge to `main` at every checkpoint or sooner when the other person needs it. Exception recorded Sun hour 15: `dean-branch` stays unmerged until CP2 and CP3 are both done, then Dean merges it himself (see `decisions.md`). `main` is always green. Recipe in `docs/04-who-does-what.md` section 5.
 
 ## Division of labor
 

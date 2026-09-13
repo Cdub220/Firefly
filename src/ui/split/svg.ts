@@ -1,30 +1,21 @@
 /**
  * SVG string builders for the split view. Pure functions of ViewerData; no React, no physics.
- * Mirrors the logic in src/eval/viewer.template.html so the live UI and the exported
- * HTML look identical.
+ * Positions come from `data.layout` (src/eval/layout.ts, computed once per run), so the
+ * live UI and the exported HTML (src/eval/viewer.template.html, which mirrors the drawing
+ * code in plain JS) render from identical geometry.
  */
-import type { ViewerBelief, ViewerData, ViewerTick } from '../../eval/viewerData';
+import type { Layout, ViewerBelief, ViewerData, ViewerTick } from '../../eval/viewerData';
 
 export const C = {
   ground: '#0e1116', panel: '#151a21', panel2: '#1b212a', line: '#2a3240', ink: '#e6eaf0', ink2: '#aab4c3', muted: '#6f7b8c',
-  wrong: '#ff5c5c', uncertain: '#f0b429', ok: '#5dd39e', stale: '#ff8a5c', cold: '#3a4656',
+  wrong: '#ff5c5c', uncertain: '#f0b429', ok: '#5dd39e', stale: '#ff8a5c', cold: '#3a4656', shaft: '#8fa3bf',
 };
 
-type Pos = Record<string, { x: number; y: number }>;
-export type Geometry = { pos: Pos; W: number; H: number; CW: number; CH: number };
+export type Geometry = Layout;
 
+/** The run's layout. Kept as a function so callers read as before; the work is in buildViewerData. */
 export function geometry(data: ViewerData): Geometry {
-  const ids = data.plan.spaces.map((s) => s.id);
-  const ring: Record<string, [number, number]> = { S1: [0, 0], S2: [1, 0], S3: [2, 0], S6: [0, 1], S5: [1, 1], S4: [2, 1] };
-  const pos: Pos = {};
-  ids.forEach((id, i) => {
-    const fixed = ids.length === 6 ? ring[id] : undefined;
-    const col = fixed ? fixed[0] : i % 3, row = fixed ? fixed[1] : Math.floor(i / 3);
-    pos[id] = { x: 12 + col * 146, y: 12 + row * 134 };
-  });
-  const CW = 104, CH = 100;
-  const cols = Math.min(3, ids.length), rows = Math.ceil(ids.length / 3);
-  return { pos, CW, CH, W: 12 + (cols - 1) * 146 + CW + 12, H: 12 + (rows - 1) * 134 + CH + 12 };
+  return data.layout;
 }
 
 const hex = (h: string): number[] => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
@@ -40,18 +31,65 @@ export function tempColor(T: number, ambient: number): string {
 }
 const esc = (s: unknown): string => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]!);
 
+/** Font sizes at this scale. The temperature never drops below 16px. */
+export function fonts(g: Geometry): { temp: number; id: number; chip: number; tag: number } {
+  const s = g.scale;
+  return { temp: Math.max(16, Math.round(24 * s)), id: Math.max(10, Math.round(12 * s)), chip: Math.max(9, Math.round(10.5 * s * 10) / 10), tag: Math.max(8, Math.round(10 * s)) };
+}
+/** Inline font-size only when scaled, so the full-size SVG string is unchanged. */
+const fs = (g: Geometry, px: number): string => (g.scale === 1 ? '' : ` font-size="${px}px"`);
+/** Below this scale the cell is too narrow for id + tag: only WRONG / MISS are written out. */
+export const COMPACT_BELOW = 0.85;
+export const isCompact = (g: Geometry): boolean => g.scale < COMPACT_BELOW;
+const compactTag = (tag: string): string => (tag === 'WRONG' ? 'WRONG' : tag === 'MISSED' ? 'MISS' : '');
+
+const levelMap = (data: ViewerData): Map<string, number> => new Map(data.plan.spaces.map((s) => [s.id, s.level]));
 export function edgeLines(data: ViewerData, g: Geometry): string {
-  return data.plan.edges.map((e) => {
+  const levelOf = levelMap(data);
+  const detour = new Map(g.detours.map((d) => [`${d.a}|${d.b}`, d.depth]));
+  const same = data.plan.edges.map((e) => {
+    // A cross-level edge is a connector; a same-level edge of any kind is drawn here.
+    if (levelOf.get(e.a) !== levelOf.get(e.b)) return '';
     const a = g.pos[e.a], b = g.pos[e.b]; if (!a || !b) return '';
+    const depth = detour.get(`${e.a}|${e.b}`);
+    if (depth !== undefined) {
+      // Bracket below the row: the straight line would pass through another cell.
+      const y = Math.max(a.y, b.y) + g.CH + depth;
+      return `<path class="edge ${e.kind}" fill="none" d="M${a.x + g.CW / 2} ${a.y + g.CH} V${y} H${b.x + g.CW / 2} V${b.y + g.CH}"/>`;
+    }
     return `<line class="edge ${e.kind}" x1="${a.x + g.CW / 2}" y1="${a.y + g.CH / 2}" x2="${b.x + g.CW / 2}" y2="${b.y + g.CH / 2}"/>`;
   }).join('');
+  const vertical = g.vertical.map((v) => `<line class="edge ${v.kind}" x1="${v.x1}" y1="${v.y1}" x2="${v.x2}" y2="${v.y2}"/>`).join('');
+  return same + vertical;
 }
 export function edgeLabels(data: ViewerData, g: Geometry): string {
+  if (!g.labelEdges) return '';
+  const levelOf = levelMap(data);
   return data.plan.edges.map((e) => {
+    if (levelOf.get(e.a) !== levelOf.get(e.b)) return '';
     const a = g.pos[e.a], b = g.pos[e.b]; if (!a || !b) return '';
     const mx = (a.x + b.x) / 2 + g.CW / 2, my = (a.y + b.y) / 2 + g.CH / 2, txt = `${e.kind} ${e.rate}`, w = txt.length * 5.6 + 10;
     return `<rect x="${mx - w / 2}" y="${my - 7}" width="${w}" height="14" rx="7" fill="${C.ground}" stroke="${C.line}"/><text class="edge-lbl" x="${mx}" y="${my + 3.5}" text-anchor="middle">${esc(txt)}</text>`;
   }).join('');
+}
+/** "LEVEL n" at the left of each band (multi-level plans only). */
+export function bandLabels(g: Geometry): string {
+  return g.bands.map((b) => `<text class="band" x="${g.labelW - 8}" y="${b.y + 14}" text-anchor="end">${esc(b.label)}</text>` +
+    `<line class="band-line" x1="${g.labelW}" y1="${b.y - 6}" x2="${g.labelW}" y2="${b.y + b.h + 6}"/>`).join('');
+}
+/** One line under the panel when edge labels are not drawn. */
+export function legendText(data: ViewerData): string {
+  const parts: string[] = [];
+  if (isCompact(data.layout)) parts.push('solid red border: burning', 'dashed amber: maybe', 'bright red: wrong', 'P: P(burning)');
+  if (data.layout.detours.length) parts.push('bracket under a row: a link between non-adjacent cells');
+  if (data.layout.labelEdges) return parts.join(' · ');
+  const kinds = new Set(data.plan.edges.map((e) => e.kind));
+  if (kinds.has('door')) parts.push('door: thin line');
+  if (kinds.has('passage')) parts.push('passage: thick line');
+  if (kinds.has('bulkhead')) parts.push('bulkhead: dashed');
+  if (kinds.has('floor')) parts.push('floor: vertical line between levels');
+  if (kinds.has('shaft')) parts.push('shaft: bright vertical line');
+  return parts.join(' · ');
 }
 
 export type CellOpts = {
@@ -61,30 +99,37 @@ export type CellOpts = {
   suspect?: boolean; fuel?: number; prob?: number;
 };
 export function cell(id: string, T: number, ambient: number, g: Geometry, o: CellOpts): string {
-  const p = g.pos[id]!, { CW, CH } = g, barCol = tempColor(T, ambient), ink = C.ink;
+  const p = g.pos[id]!, { CW, CH } = g, barCol = tempColor(T, ambient), ink = C.ink, f = fonts(g);
   let stroke = C.cold, sw = 1.5, dash = '';
   if (o.state === 'burning' || o.state === 'believed') { stroke = '#e4572e'; sw = 3; }
   if (o.state === 'ambiguous') { stroke = C.uncertain; sw = 2.5; dash = 'stroke-dasharray="6 4"'; }
   if (o.verdict === 'wrong') { stroke = C.wrong; sw = 3.5; dash = ''; }
-  const tag = o.tag ? `<text class="tag" x="${p.x + CW - 7}" y="${p.y + 22}" text-anchor="end" fill="${o.tagColor ?? stroke}">${esc(o.tag)}</text>` : '';
+  // Compact cells cannot fit id + tag on one line: WRONG / MISS become a badge on the
+  // temperature bar at the top right, and other tags are carried by the border alone.
+  const tagText = o.tag ? (isCompact(g) ? compactTag(o.tag) : o.tag) : '';
+  const tag = !tagText ? '' : isCompact(g)
+    ? `<rect x="${p.x + CW - 36}" y="${p.y + 1}" width="35" height="9" rx="2" fill="${o.tagColor ?? stroke}"/><text class="tag" x="${p.x + CW - 18.5}" y="${p.y + 8}" text-anchor="middle" fill="${C.ground}" font-size="7px">${esc(tagText)}</text>`
+    : `<text class="tag" x="${p.x + CW - 7}" y="${p.y + 22 * g.scale}" text-anchor="end" fill="${o.tagColor ?? stroke}"${fs(g, f.tag)}>${esc(tagText)}</text>`;
   let chip = '';
   if (o.reading) {
     const r = o.reading;
     const missing = 'missing' in r;
     const col = missing ? C.muted : r.stale ? C.stale : r.lying ? C.uncertain : C.ok;
-    const txt = missing ? 'no reading' : `${r.sensorId} ${Math.round(r.temp)}° t${r.t}`;
+    // At reduced size the chip keeps only the reading value; the sensor id and tick go.
+    const txt = missing ? 'no reading' : g.scale === 1 ? `${r.sensorId} ${Math.round(r.temp)}° t${r.t}` : `${Math.round(r.temp)}°`;
     chip = `<rect x="${p.x + 5}" y="${p.y + CH - 21}" width="${CW - 10}" height="16" rx="3" fill="${C.ground}" stroke="${C.line}"/>` +
-      `<text class="chip" x="${p.x + CW / 2}" y="${p.y + CH - 9.5}" text-anchor="middle" fill="${col}" ${o.suspect ? 'text-decoration="line-through"' : ''}>${esc(txt)}${o.suspect ? ' ✕' : ''}</text>`;
+      `<text class="chip" x="${p.x + CW / 2}" y="${p.y + CH - 9.5}" text-anchor="middle" fill="${col}"${fs(g, f.chip)} ${o.suspect ? 'text-decoration="line-through"' : ''}>${esc(txt)}${o.suspect ? ' ✕' : ''}</text>`;
   }
+  const subY = p.y + 68 * g.scale;
   const sub = o.fuel != null
-    ? `<text class="chip" x="${p.x + CW / 2}" y="${p.y + 68}" text-anchor="middle" fill="${o.fuel <= 0 ? C.stale : C.ink2}">fuel ${Math.round(o.fuel * 100)}%</text>`
+    ? `<text class="chip" x="${p.x + CW / 2}" y="${subY}" text-anchor="middle" fill="${o.fuel <= 0 ? C.stale : C.ink2}"${fs(g, f.chip)}>fuel ${Math.round(o.fuel * 100)}%</text>`
     : o.prob != null
-      ? `<text class="chip" x="${p.x + CW / 2}" y="${p.y + 68}" text-anchor="middle" fill="${C.ink2}">P(burning) ${Math.round(o.prob * 100)}%</text>`
+      ? `<text class="chip" x="${p.x + CW / 2}" y="${subY}" text-anchor="middle" fill="${C.ink2}"${fs(g, f.chip)}>${isCompact(g) ? 'P' : 'P(burning)'} ${Math.round(o.prob * 100)}%</text>`
       : '';
   return `<g><rect x="${p.x}" y="${p.y}" width="${CW}" height="${CH}" rx="5" fill="${C.panel2}" stroke="${stroke}" stroke-width="${sw}" ${dash}/>` +
     `<rect x="${p.x + 1}" y="${p.y + 1}" width="${CW - 2}" height="7" rx="3" fill="${barCol}"/>` +
-    `<text class="id" x="${p.x + 8}" y="${p.y + 22}" fill="${ink}">${esc(id)}</text>${tag}` +
-    `<text class="temp" x="${p.x + CW / 2}" y="${p.y + 52}" text-anchor="middle" fill="${ink}">${Math.round(T)}°</text>${sub}${chip}</g>`;
+    `<text class="id" x="${p.x + 8}" y="${p.y + 22 * g.scale}" fill="${ink}"${fs(g, f.id)}>${esc(id)}</text>${tag}` +
+    `<text class="temp" x="${p.x + CW / 2}" y="${p.y + 52 * g.scale}" text-anchor="middle" fill="${ink}"${fs(g, f.temp)}>${Math.round(T)}°</text>${sub}${chip}</g>`;
 }
 
 export type Verdict = { exact: boolean; covered: boolean; extra: string[]; state: 'ok' | 'wrong' | 'unc' };
@@ -105,6 +150,9 @@ function readingsBySpace(rec: ViewerTick): Record<string, ViewerTick['readings']
   return m;
 }
 
+const frame = (data: ViewerData, g: Geometry, label: string, cells: string): string =>
+  `<svg viewBox="0 0 ${g.W} ${g.H}" role="img" aria-label="${esc(label)}">${bandLabels(g)}${edgeLines(data, g)}${cells}${edgeLabels(data, g)}</svg>`;
+
 export function truthSvg(data: ViewerData, g: Geometry, rec: ViewerTick): string {
   const rb = readingsBySpace(rec);
   const cells = data.plan.spaces.map(({ id }) => {
@@ -112,7 +160,7 @@ export function truthSvg(data: ViewerData, g: Geometry, rec: ViewerTick): string
     const reading = r ? { sensorId: r.sensorId, temp: r.temp, t: r.t, stale: r.t < rec.t, lying: Math.abs(r.temp - tr.temp) > 30 } : { missing: true as const };
     return cell(id, tr.temp, data.ambient, g, { state: tr.burning ? 'burning' : '', tag: tr.burning ? 'BURNING' : out ? 'BURNED OUT' : '', ...(out ? { tagColor: C.stale } : {}), reading, fuel: tr.fuel });
   }).join('');
-  return `<svg viewBox="0 0 ${g.W} ${g.H}" role="img" aria-label="ground truth">${edgeLines(data, g)}${cells}${edgeLabels(data, g)}</svg>`;
+  return frame(data, g, 'ground truth', cells);
 }
 
 export function brainSvg(data: ViewerData, g: Geometry, rec: ViewerTick, name: string): string {
@@ -129,7 +177,7 @@ export function brainSvg(data: ViewerData, g: Geometry, rec: ViewerTick, name: s
     if (b.probability && b.probability[id] != null) o.prob = b.probability[id];
     return cell(id, T, data.ambient, g, o);
   }).join('');
-  return `<svg viewBox="0 0 ${g.W} ${g.H}" role="img" aria-label="${esc(name)} belief">${edgeLines(data, g)}${cells}${edgeLabels(data, g)}</svg>`;
+  return frame(data, g, `${name} belief`, cells);
 }
 
 export function brainVerdictHtml(rec: ViewerTick, name: string): string {

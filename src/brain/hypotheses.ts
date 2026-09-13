@@ -27,16 +27,23 @@ const keyOf = (s: Set<SpaceId>): string => [...s].sort().join(',');
  * Enumerate candidate burning sets around the previous belief: the previous set, grow by
  * one neighbor, shrink by one space, any single trusted-hot space, and each trusted-hot
  * space with each one of its neighbors. Fire grows to neighbors; the space is small.
+ *
+ * `forced` spaces are unioned into EVERY candidate: a space whose trusted sensor has read
+ * above ignition for several consecutive ticks is burning by the structure's physics
+ * (fuel plus ignition temperature sustains itself), and no hypothesis may omit it. The
+ * caller decides the streak; a space whose sensor is suspect is never forced.
  */
 export function candidates(
   plan: StructurePlan,
   prevBurning: Set<SpaceId>,
   trustedHot: SpaceId[],
+  forced: Set<SpaceId> = new Set(),
 ): Set<SpaceId>[] {
   const edges = edgeMap(plan);
   const neighborsOf = (id: SpaceId): SpaceId[] => (edges.get(id) ?? []).map((e) => e.b);
   const out = new Map<string, Set<SpaceId>>();
-  const add = (s: Set<SpaceId>): void => {
+  const add = (raw: Set<SpaceId>): void => {
+    const s = forced.size ? new Set([...raw, ...forced]) : raw;
     const k = keyOf(s);
     if (!out.has(k)) out.set(k, s);
   };
@@ -60,7 +67,9 @@ export function candidates(
     }
   }
 
-  const prevSize = prevBurning.size;
+  // "Closest in size to the previous set" is measured against the previous set as it
+  // would be reported now, i.e. with the forced spaces in it.
+  const prevSize = new Set([...prevBurning, ...forced]).size;
   return [...out.values()]
     .sort((a, b) => Math.abs(a.size - prevSize) - Math.abs(b.size - prevSize) || keyOf(a).localeCompare(keyOf(b)))
     .slice(0, MAX_CANDIDATES);
@@ -71,6 +80,14 @@ export function candidates(
  * to the present. Rolling from t-steps to t (rather than past the present) keeps a
  * model-exact hypothesis at residual ~0 while still accumulating enough generation that
  * a fire's leakage into neighboring readings separates it from "that sensor lies".
+ *
+ * Known limitation, probed and left alone before the freeze: the hypothesis burns for the
+ * whole window, so a neighbor that ignited one tick ago is over-predicted by two ticks
+ * of generation, the sparse-corruption drop excuses that in every hypothesis alike, and
+ * for a few ticks the parent fire (if its own sensor is dead) falls to MAYBE rather than
+ * certain. Burning each space only since the brain first believed it was tried: it
+ * removes the very leakage signal that separates "just ignited" from "not burning", and
+ * a clean run then never earns confidence. The honest MAYBE is the better failure.
  */
 export function predict(
   plan: StructurePlan,

@@ -9,7 +9,7 @@
  * (`npm run sim`), it prints truth and both brains' beliefs, one line per tick.
  */
 import { createWorld } from './world';
-import { createCorruptor } from './corruption';
+import { createCorruptor, DEFAULT_CORRUPTION } from './corruption';
 import { createBrain } from './brain';
 import { createKalmanBrain } from './brain/kalman';
 import demoPlan from '../data/structures/demo-6.json';
@@ -25,7 +25,23 @@ export type TickRecord = {
   obs: Observation; // post-corruption, i.e. exactly what the brain saw
   belief: Belief;
   commands: Command[];
+  /** Wall-clock milliseconds spent in brain.step for this tick (performance.now around the call only). */
+  stepMs: number;
+  /**
+   * The corruption onset the loop ran with (CorruptionConfig.onset, default 5), or null
+   * when the mode is 'none'. Carried on every record so a trace is self-describing for
+   * the metrics. (Additive, Dean, CP3 prompt 1.)
+   */
+  onset: number | null;
 };
+
+/** The onset a corruption config implies for the metrics window: null for a clean run. */
+export function onsetOf(corruption: Omit<CorruptionConfig, 'seed'> | undefined): number | null {
+  if (!corruption || corruption.mode === 'none') return null;
+  return corruption.onset ?? DEFAULT_CORRUPTION.onset;
+}
+
+const now = (): number => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
 export type BrainFactory = (cfg: BrainConfig) => Brain;
 
@@ -46,14 +62,17 @@ export function runLoop(cfg: LoopConfig): TickRecord[] {
   const makeBrain = cfg.brain ?? createBrain;
   const brain = makeBrain({ plan: cfg.plan, seed: cfg.seed });
 
+  const onset = onsetOf(cfg.corruption);
   const trace: TickRecord[] = [];
   let commands: Command[] = [];
   for (let i = 0; i < cfg.ticks; i++) {
     const { truth, obs } = world.tick(commands);
     const seen = corruptor.apply(obs);
+    const t0 = now();
     const out = brain.step(seen);
+    const stepMs = now() - t0;
     commands = out.commands;
-    const rec: TickRecord = { t: truth.t, truth, obs: seen, belief: out.belief, commands };
+    const rec: TickRecord = { t: truth.t, truth, obs: seen, belief: out.belief, commands, stepMs, onset };
     trace.push(rec);
     cfg.onTick?.(rec);
   }
@@ -84,6 +103,7 @@ export function runLoopMulti(cfg: MultiLoopConfig): Record<string, TickRecord[]>
     brain: cfg.brains[name]!({ plan: cfg.plan, seed: cfg.seed }),
   }));
 
+  const onset = onsetOf(cfg.corruption);
   const traces: Record<string, TickRecord[]> = Object.fromEntries(names.map((n) => [n, []]));
   let commands: Command[] = [];
   for (let i = 0; i < cfg.ticks; i++) {
@@ -93,8 +113,10 @@ export function runLoopMulti(cfg: MultiLoopConfig): Record<string, TickRecord[]>
       // Each brain gets its own deep copy: byte-identical inputs as a guarantee, and a
       // brain that mutates its observation cannot contaminate the others or the traces.
       const own = structuredClone(seen);
+      const t0 = now();
       const out = brain.step(own);
-      const rec: TickRecord = { t: truth.t, truth, obs: own, belief: out.belief, commands: out.commands };
+      const stepMs = now() - t0;
+      const rec: TickRecord = { t: truth.t, truth, obs: own, belief: out.belief, commands: out.commands, stepMs, onset };
       traces[name]!.push(rec);
       if (name === primary) {
         commands = out.commands;

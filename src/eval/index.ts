@@ -3,7 +3,7 @@
  * TODO(Dean): sweep corruption location, correlation structure, k; run Kalman baseline on
  * identical seeds; emit a table.
  */
-import { DEMO_PLAN, runLoop } from '../loop';
+import { DEMO_PLAN, runLoop, onsetOf } from '../loop';
 import { computeMetrics } from './metrics';
 
 export { computeMetrics } from './metrics';
@@ -20,5 +20,7 @@ if (isMain) {
   const seed = num('--seed', 42);
   const ticks = num('--ticks', 200);
   const trace = runLoop({ plan: DEMO_PLAN, seed, ticks });
-  console.log(JSON.stringify({ plan: DEMO_PLAN.name, seed, ticks, ...computeMetrics(trace) }, null, 2));
+  // A clean run has no onset; the window is the whole trace, which starts at tick 1.
+  const onset = onsetOf(undefined) ?? trace[0]?.t ?? 1;
+  console.log(JSON.stringify({ plan: DEMO_PLAN.name, seed, ticks, onset, ...computeMetrics(trace, { onset }) }, null, 2));
 }

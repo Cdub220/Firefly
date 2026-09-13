@@ -15,7 +15,17 @@ export const GEN_RATE = 0.25; // fraction of (FLAME_TEMP - T) a burning space cl
 export const FLAME_TEMP = 900; // temperature a compartment fire plateaus near
 export const COOL = 0.02; // fraction of (ambient - T) every space loses per tick
 export const IGNITE = 250; // unburned space with fuel can ignite at or above this
-export const FUEL_HAZARD_MULT = 1.5; // 'fuel' hazard spaces generate heat this much faster
+export const FUEL_HAZARD_MULT = 1.5; // 'fuel' hazard spaces generate heat (and burn fuel) this much faster
+export const BURN = 0.02; // fraction of a space's fuel load a fire consumes per tick
+
+/**
+ * How many ticks a space can sustain a fire on a full fuel load, by hazard. The brain
+ * cannot see fuel; it assumes the structure's nominal load and burn rate.
+ */
+export function fuelTicks(plan: StructurePlan, spaceId: SpaceId): number {
+  const hazard = plan.spaces.find((s) => s.id === spaceId)?.hazard ?? 'none';
+  return 1 / (BURN * (hazard === 'fuel' ? FUEL_HAZARD_MULT : 1));
+}
 export const ORDNANCE_COOKOFF_HEAT = 150; // one-off jump a neighbor of 'ordnance' can see
 export const TETHER_COOL = 0.1; // extra cooling per tether working a space
 export const MAX_TETHERS = 2; // most units that plausibly work one space at once

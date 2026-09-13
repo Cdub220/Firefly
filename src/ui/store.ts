@@ -4,20 +4,37 @@
  * corrupted observation stream (runLoopMulti) and holds the raw traces plus the shaped
  * ViewerData the split view renders. Nothing here computes physics or belief.
  *
+ * Plans are picked by name from src/shared/structures.ts; `plan` is derived from
+ * `planName`. Demo beats set the whole scenario in one click (and one key) and carry a
+ * caption for the video. Recording mode (`?demo=1` or the toggle) hides the tuning
+ * controls. All of that is state here so it is testable under node.
+ *
  * Playback lives in one place: usePlayback() in src/ui/usePlayback.ts, mounted once by App.
  */
 import { create } from 'zustand';
-import { DEMO_PLAN, runLoopMulti, type BrainFactory, type TickRecord } from '../loop';
+import { runLoop, runLoopMulti, type BrainFactory, type TickRecord } from '../loop';
 import { createBrain } from '../brain';
 import { createKalmanBrain } from '../brain/kalman';
 import { buildViewerData, type ViewerData } from '../eval/viewerData';
-import { isPlanName, loadPlan } from '../shared/structures';
-import type { CorruptionConfig, StructurePlan } from '../shared/types';
+import { edgeMap } from '../shared/plan';
+import { isPlanName, loadPlan, PLAN_NAMES } from '../shared/structures';
+import type { CorruptionConfig, SpaceId, StructurePlan } from '../shared/types';
 
 export type Corr = Omit<CorruptionConfig, 'seed'>;
 /** A partial where undefined is allowed and means "remove this key". */
 export type CorrPatch = { [K in keyof Corr]?: Corr[K] | undefined };
 export type Brains = 'ours' | 'both';
+
+export type Beat = 'clean' | 'freeze' | 'blind' | 'flashover' | 'building';
+export const BEATS: ReadonlyArray<{ key: Beat; label: string; hotkey: string }> = [
+  { key: 'clean', label: 'Clean', hotkey: '1' },
+  { key: 'freeze', label: "Freeze the fire's sensor", hotkey: '2' },
+  { key: 'blind', label: 'Blind the neighbor', hotkey: '3' },
+  { key: 'flashover', label: 'Flashover', hotkey: '4' },
+  { key: 'building', label: 'Different building', hotkey: '5' },
+];
+const BEAT_ONSET = 5;
+const NEIGHBOR_PROBE_TICKS = 10; // "hottest neighbor" is read off a clean run at this tick
 
 /** Pure: apply a CorrPatch to a Corr. Exported for tests. */
 export function applyCorruptionPatch(base: Corr, patch: CorrPatch): Corr {
@@ -56,7 +73,13 @@ export type SimState = {
   cursor: number;
   playing: boolean;
   speed: number;
+  /** Recording mode: hides the scenario controls and the how-to-read notes. */
+  demo: boolean;
+  /** One sentence under the header, set by the last demo beat. */
+  caption: string;
+  beat: Beat | null;
   run: () => void;
+  runBeat: (beat: Beat) => void;
   setPlan: (name: string) => void;
   /** Alias of setPlan. */
   setPlanName: (name: string) => void;
@@ -70,6 +93,7 @@ export type SimState = {
    */
   setCorruption: (patch: CorrPatch) => void;
   setBrains: (brains: Brains) => void;
+  setDemo: (on: boolean) => void;
   play: () => void;
   pause: () => void;
   toggle: () => void;
@@ -142,89 +166,211 @@ export function coerceCorruption(raw: unknown, fallback: Corr): Corr {
   return out;
 }
 
+/** URL presets for filming: ?demo=1 hides the controls, ?plan=<name> picks the structure, ?beat=<key> runs a beat on load, ?t=<tick> scrubs there. */
+export function fromUrl(search?: string): { demo: boolean; beat: Beat | null; t: number | null; plan: string | null } {
+  try {
+    const q = new URLSearchParams(search ?? window.location.search);
+    const beat = q.get('beat');
+    const t = q.get('t');
+    const plan = q.get('plan');
+    return {
+      demo: q.get('demo') === '1',
+      beat: BEATS.some((b) => b.key === beat) ? (beat as Beat) : null,
+      t: t !== null && Number.isFinite(Number(t)) ? Number(t) : null,
+      plan: plan !== null && isPlanName(plan) ? plan : null,
+    };
+  } catch {
+    return { demo: false, beat: null, t: null, plan: null };
+  }
+}
+
+/** Why a run cannot happen, as one sentence for the page, or null. */
+export function validateRun(plan: StructurePlan, ignition: string, ticks: number): string | null {
+  if (plan.spaces.length === 0) return `plan "${plan.name}" has no spaces.`;
+  if (!plan.spaces.some((s) => s.id === ignition)) return `ignition space "${ignition}" is not in plan "${plan.name}" (spaces: ${plan.spaces.map((s) => s.id).join(', ')}).`;
+  if (plan.sensors.length === 0) return `plan "${plan.name}" has no sensors: the brains would see nothing. Add fixed sensors to the plan file.`;
+  if (!Number.isFinite(ticks) || ticks < 1) return `ticks must be at least 1 (got ${ticks}).`;
+  return null;
+}
+
+/** The ignition space's neighbor that is hottest at tick 10 of a clean run. Null if it has none. */
+export function hottestNeighbor(plan: StructurePlan, ignition: string, seed = 42): SpaceId | null {
+  const neighbors = (edgeMap(plan).get(ignition) ?? []).map((e) => e.b);
+  if (neighbors.length === 0) return null;
+  const trace = runLoop({ plan: { ...plan, ignition: [ignition] }, seed, ticks: NEIGHBOR_PROBE_TICKS, brain: createBrain });
+  const last = trace[trace.length - 1];
+  const temp = new Map(last?.truth.spaces.map((s) => [s.id, s.temp]) ?? []);
+  return [...neighbors].sort((a, b) => (temp.get(b) ?? -Infinity) - (temp.get(a) ?? -Infinity) || a.localeCompare(b))[0] ?? null;
+}
+
+/** The name after `current` in `names`, wrapping; `current` itself if unlisted or the list is empty. */
+export function nextIn(names: readonly string[], current: string): string {
+  if (names.length === 0) return current;
+  const i = names.indexOf(current);
+  return names[(i + 1) % names.length] ?? current;
+}
+export function nextPlanName(current: string): string {
+  return nextIn(PLAN_NAMES, current);
+}
+
+/** Everything a beat sets, as data. Pure; exported for tests. */
+export function beatConfig(
+  beat: Beat,
+  cur: { planName: string; plan: StructurePlan; ignition: string; corruption: Corr; seed: number },
+): { planName: string; ignition: string; corruption: Corr; caption: string } {
+  const { plan, planName, seed } = cur;
+  const ignition = sanitizeIgnition(cur.ignition, plan);
+  switch (beat) {
+    case 'clean':
+      return { planName, ignition, corruption: { mode: 'none' }, caption: 'Every sensor is honest. Both brains track the fire; the difference is how each earns its confidence.' };
+    case 'freeze':
+      return {
+        planName, ignition, corruption: { mode: 'freeze', k: 1, onset: BEAT_ONSET, target: [ignition] },
+        caption: `The sensor in the burning room (${ignition}) froze at tick ${BEAT_ONSET}. Watch the right panel stay at 0.97 while the fire moves.`,
+      };
+    case 'blind': {
+      const nb = hottestNeighbor(plan, ignition, seed) ?? ignition;
+      return {
+        planName, ignition, corruption: { mode: 'blind', k: 1, onset: BEAT_ONSET, target: [nb] },
+        caption: `Smoke blinded the sensor next door (${nb}) at tick ${BEAT_ONSET}: it reads room temperature beside a fire. Ours flags it; Kalman believes it.`,
+      };
+    }
+    case 'flashover':
+      return {
+        planName, ignition, corruption: { mode: 'flashover', onset: BEAT_ONSET },
+        caption: `From tick ${BEAT_ONSET}, every sensor in a space over 500° dies. The hotter the fire, the less the brains can see. One of them says so.`,
+      };
+    case 'building': {
+      const nextName = nextPlanName(planName);
+      const next = loadPlan(nextName);
+      const nextIgnition = sanitizeIgnition(undefined, next);
+      const base: Corr = { ...cur.corruption };
+      const retargeted: Corr = base.mode === 'blind'
+        ? { ...base, target: [hottestNeighbor(next, nextIgnition, seed) ?? nextIgnition] }
+        : base.target === undefined ? base : { ...base, target: [nextIgnition] };
+      const corruption = sanitizeCorruption(retargeted, next);
+      const same = nextName === planName;
+      return {
+        planName: nextName, ignition: nextIgnition, corruption,
+        caption: same
+          ? `Only one structure is loaded (${planName}); the same brains and failure mode run again on it. Nothing here is specific to this building.`
+          : `Same brains, same failure mode (${base.mode}), different structure: ${nextName}. Nothing retrained; the plan is a JSON file.`,
+      };
+    }
+  }
+}
+
 const saved = load();
-const initialPlan: StructurePlan = saved.planName !== undefined && isPlanName(saved.planName) ? loadPlan(saved.planName) : DEMO_PLAN;
-const DEFAULT_CORR: Corr = { mode: 'freeze', k: 1, onset: 5, target: [...initialPlan.ignition] };
+const urlPlan = fromUrl().plan;
+const initialPlanName: string = urlPlan ?? (saved.planName !== undefined && isPlanName(saved.planName) ? saved.planName : (PLAN_NAMES[0] ?? 'demo-6'));
+const initialPlan: StructurePlan = loadPlan(initialPlanName);
+const DEFAULT_CORR: Corr = { mode: 'freeze', k: 1, onset: BEAT_ONSET, target: [...initialPlan.ignition] };
 const isBrains = (v: unknown): v is Brains => v === 'ours' || v === 'both';
 
-export const useSim = create<SimState>((set, get) => ({
-  plan: initialPlan,
-  planName: initialPlan.name,
-  ignition: sanitizeIgnition(saved.ignition, initialPlan),
-  seed: typeof saved.seed === 'number' && Number.isFinite(saved.seed) ? Math.round(saved.seed) : 42,
-  ticks: typeof saved.ticks === 'number' && Number.isFinite(saved.ticks) && saved.ticks >= 1 ? Math.round(saved.ticks) : 60,
-  corruption: sanitizeCorruption(saved.corruption === undefined ? DEFAULT_CORR : coerceCorruption(saved.corruption, DEFAULT_CORR), initialPlan),
-  brains: isBrains(saved.brains) ? saved.brains : 'both',
-  traces: {},
-  primary: PRIMARY,
-  data: null,
-  trace: null,
-  error: null,
-  cursor: 0,
-  playing: false,
-  speed: 4,
-
-  run: () => {
+export const useSim = create<SimState>((set, get) => {
+  /** Run the current scenario. Shared by run() and runBeat(). */
+  const execute = (): void => {
     const { plan: base, planName, seed, ticks, brains } = get();
     const corruption = sanitizeCorruption(get().corruption, base);
     const ignition = sanitizeIgnition(get().ignition, base);
     if (corruption !== get().corruption || ignition !== get().ignition) set({ corruption, ignition });
     save({ planName, seed, ticks, corruption, ignition, brains });
+    const why = validateRun(base, ignition, ticks);
+    if (why) {
+      set({ error: `Cannot run: ${why}`, data: null, trace: null, playing: false });
+      return;
+    }
     // The plan file says where the fire starts; the picker overrides it for demos.
     const plan: StructurePlan = { ...base, ignition: [ignition] };
     try {
-      if (!Number.isFinite(ticks) || ticks < 1) throw new Error(`ticks must be at least 1 (got ${ticks})`);
       const traces = runLoopMulti({ plan, seed, ticks, corruption, brains: BRAIN_FACTORIES[brains], primary: PRIMARY });
       const data = buildViewerData(plan, traces, { seed, corruption });
+      if (data.ticks.length === 0) throw new Error('the run produced no ticks');
       const trace = traces[PRIMARY] ?? null;
       // Open two ticks before the failure begins (data.startAt) so the demo starts where it
       // matters, but never past the end of a short run.
       const cursor = Math.max(0, Math.min(data.startAt, (trace?.length ?? 1) - 1));
       set({ traces, data, trace, error: null, cursor, playing: false });
     } catch (e) {
-      set({ error: e instanceof Error ? `${e.message}\n${e.stack ?? ''}` : String(e), playing: false });
+      set({ error: e instanceof Error ? `${e.message}\n${e.stack ?? ''}` : String(e), data: null, trace: null, playing: false });
     }
-  },
+  };
+  /** Any manual change means the last beat's caption no longer describes what is shown. */
+  const clearBeat = (): { beat: null; caption: '' } => ({ beat: null, caption: '' });
 
-  setPlan: (name) => {
-    if (name === get().planName) return;
-    const plan = loadPlan(name);
-    // A corruption target from the old plan is meaningless here; aim at the new ignition space.
-    const corruption = sanitizeCorruption({ ...get().corruption, target: [...plan.ignition] }, plan);
-    const ignition = sanitizeIgnition(undefined, plan);
-    set({ plan, planName: name, ignition, corruption, traces: {}, data: null, trace: null, cursor: 0, playing: false, error: null });
-  },
-  setPlanName: (name) => get().setPlan(name),
-  setSeed: (seed) => { if (Number.isFinite(seed)) set({ seed: Math.round(seed) }); },
-  setIgnition: (ignition) => set({ ignition }),
-  setTicks: (ticks) => { if (Number.isFinite(ticks)) set({ ticks: Math.max(1, Math.round(ticks)) }); },
-  setCorruption: (patch) => set({ corruption: applyCorruptionPatch(get().corruption, patch) }),
-  setBrains: (brains) => set({ brains }),
+  return {
+    plan: initialPlan,
+    planName: initialPlanName,
+    ignition: sanitizeIgnition(saved.ignition, initialPlan),
+    seed: typeof saved.seed === 'number' && Number.isFinite(saved.seed) ? Math.round(saved.seed) : 42,
+    ticks: typeof saved.ticks === 'number' && Number.isFinite(saved.ticks) && saved.ticks >= 1 ? Math.round(saved.ticks) : 60,
+    corruption: sanitizeCorruption(saved.corruption === undefined ? DEFAULT_CORR : coerceCorruption(saved.corruption, DEFAULT_CORR), initialPlan),
+    brains: isBrains(saved.brains) ? saved.brains : 'both',
+    traces: {},
+    primary: PRIMARY,
+    data: null,
+    trace: null,
+    error: null,
+    cursor: 0,
+    playing: false,
+    speed: 4,
+    demo: fromUrl().demo,
+    caption: '',
+    beat: null,
 
-  play: () => {
-    const { cursor, trace } = get();
-    const n = trace?.length ?? 0;
-    if (n === 0) return;
-    set({ playing: true, cursor: cursor >= n - 1 ? 0 : cursor });
-  },
-  pause: () => set({ playing: false }),
-  toggle: () => (get().playing ? get().pause() : get().play()),
-  step: (delta) => {
-    const { cursor, trace } = get();
-    const n = trace?.length ?? 0;
-    if (n === 0) return;
-    const next = Math.max(0, Math.min(n - 1, cursor + delta));
-    set({ cursor: next, playing: get().playing && next < n - 1 });
-  },
-  stepBy: (delta) => get().step(delta),
-  tick: () => get().step(1),
-  setCursor: (i) => {
-    if (!Number.isFinite(i)) return;
-    const n = get().trace?.length ?? 0;
-    set({ cursor: Math.max(0, Math.min(n - 1, Math.round(i))) });
-  },
-  setSpeed: (speed) => { if (Number.isFinite(speed) && speed > 0) set({ speed }); },
-}));
+    run: () => {
+      // A manual run is not a beat: the caption would describe a scenario no longer shown.
+      if (get().beat !== null || get().caption !== '') set(clearBeat());
+      execute();
+    },
+    runBeat: (beat) => {
+      const { planName, plan, ignition, corruption, seed } = get();
+      const cfg = beatConfig(beat, { planName, plan, ignition, corruption, seed });
+      set({ planName: cfg.planName, plan: loadPlan(cfg.planName), ignition: cfg.ignition, corruption: cfg.corruption, caption: cfg.caption, beat });
+      execute();
+    },
+
+    setPlan: (name) => {
+      if (name === get().planName) return;
+      const plan = loadPlan(name);
+      // A corruption target from the old plan is meaningless here; aim at the new ignition space.
+      const corruption = sanitizeCorruption({ ...get().corruption, target: [...plan.ignition] }, plan);
+      const ignition = sanitizeIgnition(undefined, plan);
+      set({ plan, planName: name, ignition, corruption, traces: {}, data: null, trace: null, cursor: 0, playing: false, error: null, ...clearBeat() });
+    },
+    setPlanName: (name) => get().setPlan(name),
+    setSeed: (seed) => { if (Number.isFinite(seed)) set({ seed: Math.round(seed), ...clearBeat() }); },
+    setIgnition: (ignition) => set({ ignition, ...clearBeat() }),
+    setTicks: (ticks) => { if (Number.isFinite(ticks)) set({ ticks: Math.max(1, Math.round(ticks)), ...clearBeat() }); },
+    setCorruption: (patch) => set({ corruption: applyCorruptionPatch(get().corruption, patch), ...clearBeat() }),
+    setBrains: (brains) => set({ brains, ...clearBeat() }),
+    setDemo: (on) => set({ demo: on }),
+
+    play: () => {
+      const { cursor, trace } = get();
+      const n = trace?.length ?? 0;
+      if (n === 0) return;
+      set({ playing: true, cursor: cursor >= n - 1 ? 0 : cursor });
+    },
+    pause: () => set({ playing: false }),
+    toggle: () => (get().playing ? get().pause() : get().play()),
+    step: (delta) => {
+      const { cursor, trace } = get();
+      const n = trace?.length ?? 0;
+      if (n === 0) return;
+      const next = Math.max(0, Math.min(n - 1, cursor + delta));
+      set({ cursor: next, playing: get().playing && next < n - 1 });
+    },
+    stepBy: (delta) => get().step(delta),
+    tick: () => get().step(1),
+    setCursor: (i) => {
+      if (!Number.isFinite(i)) return;
+      const n = get().trace?.length ?? 0;
+      set({ cursor: Math.max(0, Math.min(n - 1, Math.round(i))) });
+    },
+    setSpeed: (speed) => { if (Number.isFinite(speed) && speed > 0) set({ speed }); },
+  };
+});
 
 /** The primary brain's record at the cursor, or undefined before a run. */
 export const useCurrent = (): TickRecord | undefined => useSim((s) => s.traces[s.primary]?.[s.cursor]);

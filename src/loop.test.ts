@@ -15,10 +15,12 @@ describe('runLoop', () => {
     expect(last.obs.readings.length).toBeGreaterThan(0);
   });
 
-  it('is deterministic: seed 42 twice gives identical traces', () => {
+  it('is deterministic: seed 42 twice gives identical traces (stepMs is wall-clock and excluded)', () => {
     const a = runLoop({ plan: DEMO_PLAN, seed: 42, ticks: 50 });
     const b = runLoop({ plan: DEMO_PLAN, seed: 42, ticks: 50 });
-    expect(JSON.stringify(a)).toBe(JSON.stringify(b));
+    const strip = (trace: typeof a) => JSON.stringify(trace.map(({ stepMs: _ms, ...rest }) => rest));
+    expect(strip(a)).toBe(strip(b));
+    for (const r of a) expect(r.stepMs).toBeGreaterThanOrEqual(0);
   });
 
   it('different seeds give different sensor noise', () => {

@@ -1,62 +1,134 @@
 /**
  * src/eval — owned by Dean.
  *
- * The four metrics the Defense brief names. v0 implements estimation error and a
- * placeholder false-certainty; time-to-recovery and compute cost are TODO(Dean).
+ * The four metrics the Defense brief names (false certainty, estimation error, time to
+ * recovery, computation cost) plus the two operational ones (wrong dispatch, ambiguity
+ * coverage) and the calibration numbers (Brier, per-space FPR/FNR). Pure: a trace in,
+ * numbers out. Every windowed metric counts ticks with t >= onset.
  */
 import type { TickRecord } from '../loop';
 
 export type Metrics = {
-  /** Mean absolute temp error over spaces and ticks (celsius). */
+  /** Mean |estimate - truth temp| over spaces and ticks >= onset (celsius). */
   estimationError: number;
   /**
-   * Fraction of ticks AFTER corruption onset where the brain reported confidence >=
-   * threshold AND its burningSet differed from truth. The number a Kalman baseline gets
-   * wrong: confidently naming the wrong fire.
+   * Fraction of ticks >= onset where the brain reported confidence >= threshold AND its
+   * burningSet differed from truth (sets compared as sorted id lists). The number a
+   * Kalman baseline gets wrong: confidently naming the wrong fire.
    */
   falseCertainty: number;
   /**
-   * Fraction of ticks after onset where the true burning set is a subset of
+   * Fraction of ticks >= onset where the true burning set is a subset of
    * (burningSet union every ambiguous group). High coverage with low false certainty is
    * the claim: when we are unsure, the truth is inside the set we report.
    */
   ambiguityCoverage: number;
-  /** Ticks from first corruption onset to belief re-matching truth. TODO(Dean): CP3. */
+  /**
+   * Ticks from onset until the first tick where burningSet == truth for 5 consecutive
+   * ticks (the first of those five, minus onset). null if that never happens.
+   */
   timeToRecovery: number | null;
-  /** Wall-clock ms per brain.step, averaged. TODO(Dean): instrument in loop for CP3. */
-  computeMsPerTick: number | null;
+  /** Mean wall-clock ms per brain.step over the whole trace. */
+  computeMsPerTick: number;
+  /**
+   * Fraction of ticks >= onset where burningSet contains a space that is NOT burning in
+   * truth AND is not in any ambiguous group: a drone sent to the wrong floor with no
+   * hedge. The operational cost of a wrong answer.
+   */
+  wrongDispatch: number;
+  /**
+   * Calibration: mean over spaces and ticks >= onset of (probability - truthBurning)^2,
+   * truthBurning being 1 or 0. Lower is better. A brain that says 0.5 when it is right
+   * half the time scores 0.25; one that says 0.97 and is wrong scores ~0.94 on that space.
+   */
+  brierScore: number;
+  /** Fraction of (space, tick >= onset) pairs NOT burning in truth where probability >= 0.5. */
+  falsePositiveRate: number;
+  /** Fraction of (space, tick >= onset) pairs burning in truth where probability < 0.5. */
+  falseNegativeRate: number;
 };
 
-export function computeMetrics(
-  trace: TickRecord[],
-  confidenceThreshold = 0.9,
-  onset = 0,
-): Metrics {
+export type MetricsOptions = {
+  /** First tick of the evaluation window. Use the corruption onset; 0 for a clean run. */
+  onset: number;
+  /** Confidence at or above which a wrong burningSet counts as false certainty. Default 0.9. */
+  confidenceThreshold?: number;
+};
+
+const PROB_DECISION = 0.5; // probability at or above this counts as "called burning"
+const RECOVERY_TICKS = 5; // consecutive exact matches that count as recovered
+
+/** Sets compared as sorted id lists, exactly as specified (a duplicate id is a difference). */
+const sortedKey = (ids: readonly string[]): string => [...ids].sort().join(',');
+const sameSet = (a: readonly string[], b: readonly string[]): boolean => sortedKey(a) === sortedKey(b);
+
+export function computeMetrics(trace: TickRecord[], opts: MetricsOptions): Metrics {
+  const onset = opts.onset;
+  const threshold = opts.confidenceThreshold ?? 0.9;
   let errSum = 0;
   let errN = 0;
   let falseCertain = 0;
   let covered = 0;
+  let wrong = 0;
   let windowN = 0;
+  let brierSum = 0;
+  let brierN = 0;
+  let fp = 0;
+  let negatives = 0;
+  let fn = 0;
+  let positives = 0;
+  let msSum = 0;
+  const exact: boolean[] = []; // per windowed tick, in order
+  const windowTicks: number[] = [];
   for (const rec of trace) {
+    msSum += rec.stepMs;
+    if (rec.t < onset) continue;
+    windowN += 1;
+    windowTicks.push(rec.t);
     for (const s of rec.truth.spaces) {
       errSum += Math.abs((rec.belief.estimate[s.id] ?? 0) - s.temp);
       errN += 1;
     }
-    if (rec.t < onset) continue;
-    windowN += 1;
     const truthBurning = rec.truth.spaces.filter((s) => s.burning).map((s) => s.id);
-    const beliefSet = new Set(rec.belief.burningSet);
-    const sameSet =
-      truthBurning.length === beliefSet.size && truthBurning.every((id) => beliefSet.has(id));
-    if (rec.belief.confidence >= confidenceThreshold && !sameSet) falseCertain += 1;
-    const reported = new Set([...rec.belief.burningSet, ...rec.belief.ambiguous.flat()]);
+    const truthSet = new Set(truthBurning);
+    const isExact = sameSet(truthBurning, rec.belief.burningSet);
+    exact.push(isExact);
+    if (rec.belief.confidence >= threshold && !isExact) falseCertain += 1;
+    const ambiguous = new Set(rec.belief.ambiguous.flat());
+    const reported = new Set([...rec.belief.burningSet, ...ambiguous]);
     if (truthBurning.every((id) => reported.has(id))) covered += 1;
+    if (rec.belief.burningSet.some((id) => !truthSet.has(id) && !ambiguous.has(id))) wrong += 1;
+    for (const s of rec.truth.spaces) {
+      // A brain that reports no probability is scored as if it said 0 everywhere.
+      const p = rec.belief.probability?.[s.id] ?? 0;
+      const y = s.burning ? 1 : 0;
+      brierSum += (p - y) * (p - y);
+      brierN += 1;
+      if (s.burning) {
+        positives += 1;
+        if (p < PROB_DECISION) fn += 1;
+      } else {
+        negatives += 1;
+        if (p >= PROB_DECISION) fp += 1;
+      }
+    }
+  }
+  let timeToRecovery: number | null = null;
+  for (let i = 0; i + RECOVERY_TICKS <= exact.length; i++) {
+    if (exact.slice(i, i + RECOVERY_TICKS).every(Boolean)) {
+      timeToRecovery = windowTicks[i]! - onset;
+      break;
+    }
   }
   return {
     estimationError: errN ? errSum / errN : 0,
     falseCertainty: windowN ? falseCertain / windowN : 0,
     ambiguityCoverage: windowN ? covered / windowN : 0,
-    timeToRecovery: null,
-    computeMsPerTick: null,
+    timeToRecovery,
+    computeMsPerTick: trace.length ? msSum / trace.length : 0,
+    wrongDispatch: windowN ? wrong / windowN : 0,
+    brierScore: brierN ? brierSum / brierN : 0,
+    falsePositiveRate: negatives ? fp / negatives : 0,
+    falseNegativeRate: positives ? fn / positives : 0,
   };
 }
