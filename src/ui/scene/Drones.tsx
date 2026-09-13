@@ -11,7 +11,7 @@ import { useFrame } from '@react-three/fiber';
 import { Line } from '@react-three/drei';
 import { Group, Quaternion, Vector3 } from 'three';
 import type { TickRecord } from '../../loop';
-import type { Drone, SpaceId, StructurePlan } from '../../shared/types';
+import type { Drone, DroneId, SpaceId, StructurePlan } from '../../shared/types';
 import { DRONE_LIFT, DRONE_STYLE, nearestResupply, ringOffsets, slotsBySpace, taskColor } from '../droneLayout';
 import type { Layout, Pos } from '../layout';
 import { BOX } from './Scene';
@@ -29,6 +29,8 @@ type Props = {
   /** Ticks per second, to time the glide. */
   speed: number;
   shown: (id: SpaceId) => boolean;
+  /** Drones whose command arrows are drawn thick (a hedge). */
+  thick?: ReadonlySet<DroneId> | undefined;
 };
 
 /** World position of a drone slot above a space. */
@@ -97,7 +99,7 @@ function Arrow({ from, to, color, faded, thick }: { from: Pos; to: Pos; color: s
   );
 }
 
-export function Drones({ plan, layout, rec, prev, playing, speed, shown }: Props) {
+export function Drones({ plan, layout, rec, prev, playing, speed, shown, thick }: Props) {
   // Glide progress 0..1 since the cursor last changed; snaps to 1 when not playing.
   const progress = useRef(1);
   const startedAt = useRef(0);
@@ -142,7 +144,7 @@ export function Drones({ plan, layout, rec, prev, playing, speed, shown }: Props
           <group key={d.id}>
             <DroneMesh d={d} pos={pos} from={from} progress={progress} hoseTo={hoseTo} />
             {c && goToPos && shown(c.goTo) && c.goTo !== d.at && (
-              <Arrow from={pos} to={{ x: goToPos.x, y: goToPos.y + BOX.h / 2 + DRONE_LIFT, z: goToPos.z }} color={taskColor(c.task)} faded={false} />
+              <Arrow from={pos} to={{ x: goToPos.x, y: goToPos.y + BOX.h / 2 + DRONE_LIFT, z: goToPos.z }} color={taskColor(c.task)} faded={false} thick={thick?.has(d.id) ?? false} />
             )}
             {c && goToPos && c.goTo === d.at && (
               // Arrived: a short faded stub pointing down at the space.
