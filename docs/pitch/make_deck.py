@@ -77,10 +77,10 @@ s=slide(); eyebrow(s,"02","Who pays",y=Inches(0.6))
 headline(s,[("Three bills, one missing capability.",INK)],y=Inches(1.0),size=40)
 columns(s,[("US Navy","$4B","15 major warship fires, 2008–2020. Two ships lost.",ORANGE),
            ("Building owners","$3.6B/yr","8% of US fires. 20% of all the damage.",ORANGE),
-           ("Data centers","$14k/min","Downtime. Fire drives over half of claim severity.",ORANGE),
-           ("Firefighters","23 min","Extra time a small crew needs in a high-rise. 62 died on duty in 2024.",BLUE)],Inches(3.0))
+           ("Data centers","$14k/min","Every minute offline. Fire is the biggest single cause of data-center insurance losses.",ORANGE),
+           ("Firefighters","23 min","Extra minutes a small crew spends climbing, hauling, and finding the fire before water is on it. The gap Firefly closes. 62 died on duty in 2024.",BLUE)],Inches(3.0))
 footer(s,"NFPA 2024 Fire Loss · GAO-23-105481 · NIST high-rise field experiments · EMA Research · Allianz Commercial")
-notes(s,"The Navy lost four billion dollars to fifteen warship fires, and two of the ships with it. Commercial buildings: eight percent of US fires, twenty percent of the damage. A data center loses fourteen thousand dollars a minute. ‖ And firefighters — a small crew needs twenty-three extra minutes to work a high-rise. They're not fighting yet. They're still looking.")
+notes(s,"The Navy lost four billion dollars to fifteen warship fires, and two of the ships with it. Commercial buildings: eight percent of US fires, twenty percent of the damage. A data center loses fourteen thousand dollars a minute offline, and fire is the biggest single cause of its insurance losses. ‖ And firefighters. NIST timed real crews in a thirteen-story building. A small crew needed twenty-three extra minutes before water was on the fire, and most of that is climbing, hauling, and finding it. That is the window Firefly is built to close.")
 
 # 4 bonhomme richard
 s=slide(); eyebrow(s,"03","USS Bonhomme Richard · 2020")
