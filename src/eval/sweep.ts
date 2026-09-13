@@ -206,7 +206,7 @@ const ttrText = (a: Aggregate): string => (a.timeToRecovery === null ? `never (0
 /** Plain fixed-width text: it goes in a video. */
 export function formatSummary(aggs: Aggregate[]): string {
   const cols = ['plan', 'mode', 'k', 'target', 'brain', 'falseCert', 'coverage', 'wrongDisp', 'err C', 'ttr', 'ms/tick'];
-  const widths = [12, 10, 2, 9, 7, 10, 9, 10, 7, 16, 8];
+  const widths = [12, 10, 3, 9, 7, 10, 9, 10, 7, 16, 8];
   const line = (cells: string[]): string => cells.map((c, i) => (i < 5 ? c.padEnd(widths[i]!) : c.padStart(widths[i]!))).join(' ');
   const out = [line(cols)];
   const sorted = [...aggs].sort((a, b) =>
@@ -221,6 +221,14 @@ export function formatSummary(aggs: Aggregate[]): string {
   }
   return out.join('\n');
 }
+
+/**
+ * What the k axis can and cannot show, printed under the table so a repeated row is not
+ * read as evidence: k is the freeze/blind budget, spent only when the corruptor chooses
+ * its own victims (target random). With a single named target space there is one sensor
+ * to break, and saturate / flashover follow the fire regardless of k.
+ */
+export const K_NOTE = 'note: k (freeze/blind budget) only changes the freeze, blind and mixed cells with target=random; with a named target there is one sensor to break, and saturate/flashover ignore k, so those k=1/2/3 rows are identical by construction.';
 
 export function formatLosses(losses: ReturnType<typeof whereOursLoses>): string {
   const out = ['WHERE OURS LOSES'];
@@ -294,10 +302,14 @@ export function parseSweepArgs(argv: string[]): SweepOptions {
   if (ticks !== undefined) opts.ticks = Number(ticks);
   const out = get('--out');
   if (out !== undefined) opts.outDir = out;
-  for (const [name, v] of [['k', opts.ks], ['seeds', opts.seeds]] as const) {
-    if (v.length === 0 || v.some((x) => !Number.isFinite(x))) throw new Error(`--${name}: expected numbers`);
+  // Fail loudly: a typo must not become NaN in the results or an empty grid on disk.
+  for (const [name, v] of [['plans', opts.plans], ['modes', opts.modes], ['targets', opts.targets]] as const) {
+    if (v.length === 0) throw new Error(`--${name}: expected at least one value`);
   }
-  if (!Number.isFinite(opts.ticks) || opts.ticks < 1) throw new Error('--ticks: expected a positive number');
+  if (opts.ks.length === 0 || opts.ks.some((x) => !Number.isInteger(x) || x < 1)) throw new Error('--k: expected positive integers');
+  if (opts.seeds.length === 0 || opts.seeds.some((x) => !Number.isInteger(x))) throw new Error('--seeds: expected integers, e.g. 1..10 or 1,3,5');
+  if (!Number.isInteger(opts.onset) || opts.onset < 0) throw new Error('--onset: expected a non-negative integer');
+  if (!Number.isInteger(opts.ticks) || opts.ticks < 1) throw new Error('--ticks: expected a positive integer');
   return opts;
 }
 
@@ -322,6 +334,8 @@ if (isMain) {
   const aggs = aggregate(result.rows);
   console.log('');
   console.log(formatSummary(aggs));
+  console.log('');
+  console.log(K_NOTE);
   console.log('');
   console.log(formatLosses(whereOursLoses(aggs)));
   const paths = writeResults(result, opts.outDir);

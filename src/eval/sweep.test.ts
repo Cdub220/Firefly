@@ -90,6 +90,15 @@ describe('sweep', () => {
     expect(() => parseSweepArgs(['--modes', 'none'])).toThrow(/--modes/);
     expect(() => parseSweepArgs(['--targets', 'middle'])).toThrow(/--targets/);
     expect(() => parseSweepArgs(['--k', 'x'])).toThrow(/--k/);
+    expect(() => parseSweepArgs(['--k', '0'])).toThrow(/--k/);
+    expect(() => parseSweepArgs(['--k', '1.5'])).toThrow(/--k/);
     expect(() => parseSweepArgs(['--ticks', '0'])).toThrow(/--ticks/);
+    expect(() => parseSweepArgs(['--onset', 'x'])).toThrow(/--onset/);
+    expect(() => parseSweepArgs(['--onset', '-1'])).toThrow(/--onset/);
+    expect(() => parseSweepArgs(['--seeds', 'a,b'])).toThrow(/--seeds/);
+    expect(() => parseSweepArgs(['--plans', ''])).toThrow(/--plans/);
+    expect(() => parseSweepArgs(['--modes', ''])).toThrow(/--modes/);
+    expect(() => parseSweepArgs(['--targets', ''])).toThrow(/--targets/);
+    expect(parseSweepArgs(['--onset', '0']).onset).toBe(0);
   });
 });
