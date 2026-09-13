@@ -35,9 +35,18 @@ export function App() {
   const setPlanName = useSim((s) => s.setPlanName);
   const setCursor = useSim((s) => s.setCursor);
   const [pending, setPending] = useState<number | null>(url.t);
+  // The URL plan is applied once; after that the select owns it.
+  const [pendingPlan, setPendingPlan] = useState<string | null>(url.plan);
 
-  useEffect(() => { if (url.plan && isPlanName(url.plan) && url.plan !== planName) setPlanName(url.plan); }, [url.plan, planName, setPlanName]);
-  useEffect(() => { if (!hasData) run(); }, [hasData, run]);
+  useEffect(() => {
+    if (pendingPlan === null) return;
+    if (isPlanName(pendingPlan) && pendingPlan !== planName) setPlanName(pendingPlan);
+    setPendingPlan(null);
+  }, [pendingPlan, planName, setPlanName]);
+  useEffect(() => {
+    // Read the store directly so StrictMode's double effect does not run the sim twice.
+    if (pendingPlan === null && useSim.getState().data == null) run();
+  }, [hasData, pendingPlan, run]);
   useEffect(() => {
     // `t` is a tick number; trace[i] holds tick i + 1.
     if (hasData && pending !== null) { setCursor(pending - 1); setPending(null); }

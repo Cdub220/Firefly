@@ -56,6 +56,8 @@ export function SceneView() {
 
       {s.error && <pre className="err">{s.error}</pre>}
 
+      <p className="note">Truth only. Box color is temperature (slate → amber → red at 400 °C → white-hot at 600). Pulsing boxes are burning. Lines are heat paths: gray doors and passages, dim bulkheads, blue floors and shafts; a dim red line is a door that has shut. Spheres are fixed sensors as the brain sees them this tick: green reporting, amber lying by more than 30 °C, red silent.</p>
+
       <div className="scene-body">
         <div className="scene-canvas">
           {frame ? <Scene plan={s.plan} frame={frame} maxLevel={maxLevel} /> : <div className="scene-empty">Press Run.</div>}
@@ -105,7 +107,6 @@ export function SceneView() {
           )}
         </details>
       </div>
-      <p className="note">Truth only. Box color is temperature (slate → amber → red at 400 °C → white-hot at 600). Pulsing boxes are burning. Lines are heat paths: gray doors and passages, dim bulkheads, blue floors and shafts; a dim red line is a door that has shut. Spheres are fixed sensors as the brain sees them this tick: green reporting, amber lying by more than 30 °C, red silent.</p>
     </div>
   );
 }

@@ -12,6 +12,14 @@ describe('truthFrame', () => {
     for (const s of DEMO_PLAN.sensors) expect(f.sensors[s.id]).toBe('ok');
   });
 
+  it('a door is open if either side lists the other, closed only when neither does', () => {
+    const base = { temps: {}, burning: {}, sensors: {} };
+    expect(isDoorOpen({ ...base, doorsOpen: { A: ['B'], B: [] } }, 'A', 'B')).toBe(true);
+    expect(isDoorOpen({ ...base, doorsOpen: { A: [], B: ['A'] } }, 'A', 'B')).toBe(true);
+    expect(isDoorOpen({ ...base, doorsOpen: { A: [], B: [] } }, 'A', 'B')).toBe(false);
+    expect(isDoorOpen({ ...base, doorsOpen: {} }, 'A', 'B')).toBe(false);
+  });
+
   it('marks a frozen sensor lying once its stale value drifts, and a missing sensor dead', () => {
     const trace = runLoop({ plan: DEMO_PLAN, seed: 1, ticks: 40, corruption: { mode: 'freeze', k: 1, onset: 3, target: ['S3'] } });
     const late = truthFrame(trace[39]!, DEMO_PLAN);

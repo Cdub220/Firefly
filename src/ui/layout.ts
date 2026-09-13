@@ -15,8 +15,8 @@ export type Layout = Record<SpaceId, Pos>;
 export const LEVEL_SPACING = 3;
 /** Grid pitch. Boxes are 2 wide, so 3.6 leaves a gap the edge lines can be seen in. */
 export const CELL_SPACING = 3.6;
-/** Same-level spaces never sit closer than this after layout. Boxes are 2 wide. */
-export const MIN_SEPARATION = 2.2;
+/** Same-level spaces never sit closer than this after layout. Boxes are 2 wide, so 2 * sqrt(2) keeps diagonal neighbours apart. */
+export const MIN_SEPARATION = 2.85;
 const FORCE_ITERATIONS = 50;
 const GRID_ID = /^L(\d+)-([A-Z])(\d+)$/;
 
@@ -146,7 +146,10 @@ export function computeLayout(plan: StructurePlan): Layout {
     return r;
   };
   for (const e of plan.edges) {
-    if (levelOf.get(e.a) !== undefined && levelOf.get(e.a) !== levelOf.get(e.b)) parent.set(find(e.a), find(e.b));
+    const la = levelOf.get(e.a);
+    const lb = levelOf.get(e.b);
+    if (la === undefined || lb === undefined || la === lb) continue; // unknown ids and same-level edges do not form columns
+    parent.set(find(e.a), find(e.b));
   }
   const groupsById = new Map<SpaceId, { members: SpaceId[]; levels: Set<number>; x: number; z: number }>();
   for (const s of plan.spaces) {

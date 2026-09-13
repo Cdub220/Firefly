@@ -83,7 +83,11 @@ export const useSim = create<SimState>((set, get) => ({
   setSeed: (seed) => set({ seed }),
   setTicks: (ticks) => set({ ticks }),
   setCorruption: (patch) => set({ corruption: { ...get().corruption, ...patch } }),
-  setCursor: (i) => { const n = get().data?.ticks.length ?? 0; set({ cursor: Math.max(0, Math.min(n - 1, i)) }); },
+  setCursor: (i) => {
+    if (!Number.isFinite(i)) return;
+    const n = get().data?.ticks.length ?? 0;
+    set({ cursor: Math.max(0, Math.min(n - 1, Math.round(i))) });
+  },
   stepBy: (d) => {
     const { cursor, data } = get(); const n = data?.ticks.length ?? 0;
     const next = Math.max(0, Math.min(n - 1, cursor + d));
