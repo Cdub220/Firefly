@@ -8,6 +8,7 @@ import { ScenarioPanel } from '../panels/ScenarioPanel';
 import { ChaosPanel } from '../panels/ChaosPanel';
 import { Scene } from './Scene';
 import { truthFrame } from './frame';
+import { droneRows } from '../droneLayout';
 import '../split/split.css';
 import '../panels/panels.css';
 import './scene.css';
@@ -15,6 +16,7 @@ import './scene.css';
 export function SceneView() {
   const s = useSim();
   const rec = s.trace?.[s.cursor];
+  const prev = s.cursor > 0 ? s.trace?.[s.cursor - 1] : undefined;
   const levels = useMemo(() => [...new Set(s.plan.spaces.map((x) => x.level))].sort((a, b) => a - b), [s.plan]);
   const [maxLevel, setMaxLevel] = useState<number>(levels[levels.length - 1] ?? 1);
   useEffect(() => { setMaxLevel(levels[levels.length - 1] ?? 1); }, [levels]);
@@ -43,9 +45,9 @@ export function SceneView() {
           </div>
           {s.error && <pre className="err">{s.error}</pre>}
           <div className="scene-canvas">
-            {frame ? <Scene plan={s.plan} frame={frame} maxLevel={maxLevel} /> : <div className="scene-empty">Press Run.</div>}
+            {frame && rec ? <Scene plan={s.plan} frame={frame} maxLevel={maxLevel} drones={{ rec, prev, playing: s.playing, speed: s.speed }} /> : <div className="scene-empty">Press Run.</div>}
           </div>
-          <p className="note">Truth only. Box color is temperature (slate → amber → red at 400 °C → white-hot at 600). Pulsing boxes are burning. Lines are heat paths: gray doors and passages, dim bulkheads, blue floors and shafts; a dim red line is a door that has shut. Spheres are fixed sensors as the brain sees them this tick: green reporting, amber lying by more than 30 °C, red silent.</p>
+          <p className="note">Truth only. Box color is temperature (slate → amber → red at 400 °C → white-hot at 600). Pulsing boxes are burning. Lines are heat paths: gray doors and passages, dim bulkheads, blue floors and shafts; a dim red line is a door that has shut. Spheres are fixed sensors as the brain sees them this tick: green reporting, amber lying by more than 30 °C, red silent. Drones ring above their space: cyan cylinder tether (dashed hose to resupply), green retardant, white scout, yellow relay, orange hatch; the bar beneath is resource; a gray X is where one died. Arrows are the brain's commands, coloured by task, faded on arrival.</p>
         </main>
 
         <aside className="scene-right scene-side">
@@ -80,12 +82,14 @@ export function SceneView() {
                   </div>
                 );
               })}
-              <h3>Drones</h3>
-              <table>
-                <thead><tr><th>id</th><th>class</th><th>at</th><th>res</th><th>alive</th></tr></thead>
+              <h3>Drones <span className="sub">truth · what the brain saw · its command</span></h3>
+              <table className="drones">
+                <thead><tr><th>id</th><th>class</th><th>at</th><th>seen</th><th>goTo</th><th>task</th><th>res</th><th>alive</th></tr></thead>
                 <tbody>
-                  {rec.truth.drones.map((d) => (
-                    <tr key={d.id} className={d.alive ? '' : 'dead'}><td>{d.id}</td><td>{d.class}</td><td>{d.at}</td><td>{d.resource.toFixed(2)}</td><td>{d.alive ? '●' : '✕'}</td></tr>
+                  {droneRows(rec).map((r) => (
+                    <tr key={r.id} className={[r.alive ? '' : 'dead', r.stale ? 'stale' : ''].join(' ').trim()} title={r.stale ? 'the brain’s view of this drone differs from truth' : undefined}>
+                      <td>{r.id}</td><td>{r.class}</td><td>{r.at}</td><td>{r.seenAt ?? '–'}</td><td>{r.goTo ?? ''}{r.arrived ? ' ✓' : ''}</td><td>{r.task ?? ''}</td><td>{r.resource.toFixed(2)}</td><td>{r.alive ? '●' : '✕'}</td>
+                    </tr>
                   ))}
                 </tbody>
               </table>

@@ -7,9 +7,11 @@ import { useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Html, Line, OrbitControls } from '@react-three/drei';
 import type { MeshStandardMaterial } from 'three';
+import type { TickRecord } from '../../loop';
 import type { Edge, SpaceId, StructurePlan } from '../../shared/types';
 import { layoutBounds, layoutFor, type Pos } from '../layout';
 import { EDGE_COLORS, SENSOR_COLORS, tempHex } from './color';
+import { Drones } from './Drones';
 import { isDoorOpen, type SceneFrame } from './frame';
 
 export const BOX = { w: 2, h: 1.4, d: 2 } as const;
@@ -53,9 +55,11 @@ export type SceneProps = {
   frame: SceneFrame;
   /** Hide every level above this one so you can look inside. Default: show all. */
   maxLevel?: number;
+  /** Drones and commands to draw, with the previous tick for smooth movement. Omit for none. */
+  drones?: { rec: TickRecord; prev: TickRecord | undefined; playing: boolean; speed: number };
 };
 
-export function Scene({ plan, frame, maxLevel }: SceneProps) {
+export function Scene({ plan, frame, maxLevel, drones }: SceneProps) {
   const layout = layoutFor(plan);
   const bounds = useMemo(() => layoutBounds(layout), [layout]);
   const levelOf = useMemo(() => new Map(plan.spaces.map((s) => [s.id, s.level])), [plan]);
@@ -101,6 +105,8 @@ export function Scene({ plan, frame, maxLevel }: SceneProps) {
           />
         );
       })}
+
+      {drones && <Drones plan={plan} layout={layout} rec={drones.rec} prev={drones.prev} playing={drones.playing} speed={drones.speed} shown={shown} />}
 
       {plan.sensors.map((f) => {
         if (!shown(f.spaceId)) return null;
