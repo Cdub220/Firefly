@@ -31,5 +31,7 @@ describe('containment', () => {
     // The null run equals a plain open-loop run.
     const open = runLoop({ plan: DEMO_PLAN, seed: 1, ticks: 40 });
     expect(run.nullAllocator.map((r) => r.truth)).toEqual(open.map((r) => r.truth));
+    // ...in belief too: the null-allocator brain does not assume its stripped commands were obeyed.
+    expect(run.nullAllocator.map((r) => r.belief)).toEqual(open.map((r) => r.belief));
   });
 });

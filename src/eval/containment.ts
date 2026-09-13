@@ -13,7 +13,9 @@ import { runLoop, type BrainFactory, type LoopConfig, type TickRecord } from '..
 export const withoutCommands =
   (factory: BrainFactory): BrainFactory =>
   (cfg) => {
-    const inner = factory(cfg);
+    // The wrapped brain must not assume its stripped commands were obeyed (a tether it told
+    // to suppress is not suppressing), so it runs as an open-loop brain.
+    const inner = factory({ ...cfg, dispatch: false });
     return {
       step: (obs) => ({ belief: inner.step(obs).belief, commands: [] }),
       reset: () => inner.reset(),
