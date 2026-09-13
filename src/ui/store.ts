@@ -13,6 +13,7 @@ type Corr = Omit<CorruptionConfig, 'seed'>;
 
 type SimState = {
   plan: StructurePlan;
+  ignition: string;
   seed: number;
   ticks: number;
   corruption: Corr;
@@ -23,6 +24,7 @@ type SimState = {
   speed: number;
   run: () => void;
   setSeed: (seed: number) => void;
+  setIgnition: (id: string) => void;
   setTicks: (ticks: number) => void;
   setCorruption: (patch: Partial<Corr>) => void;
   setCursor: (i: number) => void;
@@ -32,10 +34,11 @@ type SimState = {
 };
 
 const KEY = 'firefly.split.v1';
-function load(): Partial<Pick<SimState, 'seed' | 'ticks' | 'corruption'>> {
-  try { const raw = localStorage.getItem(KEY); return raw ? (JSON.parse(raw) as Partial<Pick<SimState, 'seed' | 'ticks' | 'corruption'>>) : {}; } catch { return {}; }
+type Saved = Partial<Pick<SimState, 'seed' | 'ticks' | 'corruption' | 'ignition'>>;
+function load(): Saved {
+  try { const raw = localStorage.getItem(KEY); return raw ? (JSON.parse(raw) as Saved) : {}; } catch { return {}; }
 }
-function save(s: Pick<SimState, 'seed' | 'ticks' | 'corruption'>): void {
+function save(s: Saved): void {
   try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { /* ignore */ }
 }
 
@@ -44,6 +47,7 @@ const DEFAULT_CORR: Corr = { mode: 'freeze', k: 1, onset: 5, target: [DEMO_PLAN.
 
 export const useSim = create<SimState>((set, get) => ({
   plan: DEMO_PLAN,
+  ignition: saved.ignition ?? DEMO_PLAN.ignition[0] ?? 'S3',
   seed: saved.seed ?? 42,
   ticks: saved.ticks ?? 60,
   corruption: saved.corruption ?? DEFAULT_CORR,
@@ -53,8 +57,10 @@ export const useSim = create<SimState>((set, get) => ({
   playing: false,
   speed: 4,
   run: () => {
-    const { plan, seed, ticks, corruption } = get();
-    save({ seed, ticks, corruption });
+    const { plan: base, ignition, seed, ticks, corruption } = get();
+    save({ seed, ticks, corruption, ignition });
+    // The plan file says where the fire starts; the picker overrides it for demos.
+    const plan: StructurePlan = { ...base, ignition: [ignition] };
     try {
       const traces = runLoopMulti({ plan, seed, ticks, corruption, brains: { ours: createBrain, kalman: createKalmanBrain }, primary: 'ours' });
       const data = buildViewerData(plan, traces, { seed, corruption });
@@ -64,6 +70,7 @@ export const useSim = create<SimState>((set, get) => ({
     }
   },
   setSeed: (seed) => set({ seed }),
+  setIgnition: (ignition) => set({ ignition }),
   setTicks: (ticks) => set({ ticks }),
   setCorruption: (patch) => set({ corruption: { ...get().corruption, ...patch } }),
   setCursor: (i) => { const n = get().data?.ticks.length ?? 0; set({ cursor: Math.max(0, Math.min(n - 1, i)) }); },
