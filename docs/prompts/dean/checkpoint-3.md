@@ -87,6 +87,125 @@ DO NOT TOUCH: src/world, src/ui, src/brain, src/corruption.
 
 ---
 
+## Prompt 2b · A fair baseline: the source-estimating Kalman filter
+
+```
+You are working in the Firefly repo as Dean. Before anything else read CLAUDE.md, docs/00-README.md, docs/04-who-does-what.md, and src/shared/types.ts. Respect the directory ownership and lint boundaries in docs/04. Make reasonable assumptions instead of asking questions. Run `npm test && npm run lint && npm run typecheck` before you finish and do not report done unless all three are green. Commit in logical chunks with clear messages. Do not push. Finish by listing (1) what you built, (2) assumptions you made, (3) anything that did not work or that you skipped, (4) any contract change you need from Chase.
+
+CONTEXT: The Kalman baseline (src/brain/kalman.ts) estimates temperatures and calls a space
+"burning" when its estimate is above 200 C. That rule is wrong 65% of ticks on a CLEAN run
+(88% on vessel-3x8), because a burned-out space or a space heated by its neighbour is hot
+but not burning. So the false-certainty column has been measuring our chosen rule, not the
+filter. An innovation-gated variant already exists (createGatedKalmanBrain) and does not
+help. We will not write our own fire logic into the opponent. The standard, textbook
+answer is an AUGMENTED-STATE filter that estimates each space's heat SOURCE and calls a
+space burning when the estimated source is significantly positive. Read src/brain/physics.ts
+for the world's linear model: a burning space adds g_i * (FLAME_TEMP - x_i) per tick; a
+burned-out space adds nothing; a space heated by a neighbour adds nothing of its own.
+
+TASK: src/brain/kalman.ts, export createSourceKalmanBrain(config): Brain.
+  State: [x_1..x_n, q_1..q_n], x = temperature, q = heat added per tick by a source in
+  that space (C/tick). Process: x' = A0 x + ambientTerm + q  (A0 as in the existing
+  filter: I + L - COOL*I, NO generation term: the source is now estimated, not assumed);
+  q' = q (random walk) with process noise Q_q = 4 (C/tick)^2 per space, Q_x = 25 as now.
+  Measurement: H picks x only. Same R, same P0 for x; P0 for q = 100.
+  Burning rule (standard, no fuel guess): a space is burning iff q_hat_i / sqrt(P_qq,i) > 3
+  AND q_hat_i > 10 C/tick (a significant, non-trivial source). P(burning) is the posterior
+  P(q_i > 10) = Phi((q_hat_i - 10) / sqrt(P_qq,i)). Confidence as now, over the x block.
+  No gating in this variant (keep it a clean control); suspectSensors [].
+  Keep createKalmanBrain and createGatedKalmanBrain unchanged.
+
+WIRE IT IN: add 'kalman-source' to the brains in src/eval/evidence.ts, src/eval/sweep.ts
+(BRAINS, BASELINES so WHERE OURS LOSES compares against the best of all three baselines,
+BRAIN_ORDER for the table), src/eval/mismatch.ts, and the sweep test's expected counts.
+The split view store stays ours + naive kalman (src/ui/store.ts BRAIN_FACTORIES); do not
+add a fourth panel.
+
+TESTS (src/brain/kalman.test.ts, hand-built observations, physics-consistent streams
+built with forward() as the existing tests do):
+  - Clean burning stream on the test-3 plan: within 20 ticks the source filter names S1
+    burning and does NOT name S2 or S3 even once they pass 200 C (they have no source).
+  - A space that was burning and then goes out (build the stream with forward() and a
+    burning set that drops S1 at tick 20, so it cools while still hot): the source filter
+    drops it from burningSet within 10 ticks of the source stopping; the naive filter keeps it.
+  - A frozen sensor at the fire plateau: the source filter still believes the fire (same
+    weakness as naive; the point is it is fair on clean runs, not that it resists lies).
+  - P(burning) is in [0, 1] everywhere, > 0.99 for a strong source, < 0.01 for none.
+  - normalCdf is used, not a hard label.
+
+REPORT: run `npm run evidence` and paste the full table into your final message. The
+number that matters: the source filter's clean-run (mode none) false certainty. We expect
+it to fall from 65% to something small; whatever it is, report it. Then `npm run sweep --
+--quick --plans demo-6,vessel-3x8,tower-5x4` and paste WHERE OURS LOSES. If ours now loses
+a cell to the source filter, do not touch the estimator; report the cell. Add a decisions.md
+row: what the source filter is, why it is the fair baseline, and the clean-run number
+before and after.
+
+DO NOT TOUCH: src/brain/index.ts, consistency.ts, hypotheses.ts, physics.ts,
+src/corruption, src/world, src/ui.
+```
+
+---
+
+## Prompt 2c · Drone readings and the command hook, before the freeze
+
+```
+You are working in the Firefly repo as Dean. Before anything else read CLAUDE.md, docs/00-README.md, docs/04-who-does-what.md, and src/shared/types.ts. Respect the directory ownership and lint boundaries in docs/04. Make reasonable assumptions instead of asking questions. Run `npm test && npm run lint && npm run typecheck` before you finish and do not report done unless all three are green. Commit in logical chunks with clear messages. Do not push. Finish by listing (1) what you built, (2) assumptions you made, (3) anything that did not work or that you skipped, (4) any contract change you need from Chase.
+
+CONTEXT: Two things must be true of the estimator BEFORE it freezes, because after the
+freeze src/brain/index.ts, consistency.ts, hypotheses.ts and physics.ts cannot change.
+Read src/world/index.ts (do not import it) to see that every alive drone already emits a
+Reading with source 'drone', sensorId `${droneId}:temp`, droneId set, spaceId = where it
+is; the corruptor already drops readings from dead or comms-lost drones. The brain already
+consumes those readings like any other, BUT src/brain/consistency.ts keeps per-sensor
+history keyed by sensorId and assumes a sensor never moves: a drone that flies from a 20 C
+space into a 500 C space looks like an "impossible rise", and a drone parked at resupply
+looks "frozen". Also step() returns commands: [] inline; the CP4 allocator must plug in
+without editing index.ts after the freeze.
+
+TASK A (consistency, moving sensors): in src/brain/consistency.ts
+  - When a sensor's spaceId differs from its previous history entry, treat this tick as
+    the first observation from a NEW sensor for the rate-of-change rules: no impossible-rise
+    or impossible-drop check against its own previous reading (check against
+    prevEstimate[spaceId] instead, which already exists), and reset the frozen-streak.
+  - The frozen rule never fires for source 'drone' readings while the drone's spaceId has
+    changed within the last FROZEN_TICKS entries. A drone that has sat still for 6 ticks
+    while neighbours move IS subject to the frozen rule (a stuck drone lies like a stuck
+    sensor).
+  - Stale, cold-in-hot-neighbourhood and no-heat-path rules apply to drone readings
+    unchanged.
+  - Two trusted readings in one space (fixed + drone) already average in the estimate;
+    confirm and add a test.
+TASK B (command hook): create src/brain/commands.ts exporting
+  planCommands(input: { plan: StructurePlan; belief: Belief; kept: Set<SpaceId>[]; drones: Drone[]; prev: Command[] }): Command[]
+  returning [] today, with a doc comment saying this is the unfrozen hook the CP4
+  allocator fills in. In src/brain/index.ts replace the inline `commands: []` with a call
+  to planCommands(...) passing the kept hypothesis sets and last tick's commands (keep
+  prevCommands in the closure; reset clears it). That is the LAST edit to index.ts before
+  the freeze. Update docs/06-freeze-plan.md section 1 to say the hook exists, so the
+  allocator changes commands.ts and allocator.ts only, and docs/prompts/dean/checkpoint-4.md
+  prompt 1 so it no longer asks for an index.ts edit or a second hash.
+
+TESTS:
+  - src/brain/consistency.test.ts: a drone reading that jumps from S1 (20 C) to S3
+    (500 C, matching prevEstimate) is trusted, not "impossible"; the same jump on a FIXED
+    sensor id is still flagged. A drone sitting 8 ticks at one value while the median
+    neighbour moves 100 C is flagged frozen.
+  - src/brain/brain.test.ts: an ambiguity {S2}|{S4} with no fixed sensor in either is
+    resolved within 2 ticks once a drone reading arrives from S2 (hot) — the reading that
+    the CP4 scout will deliver. Build it by hand: readings from fixed sensors elsewhere plus
+    one 'drone' reading in S2.
+  - src/brain/commands.test.ts: planCommands returns [] and is what step() calls (spy or
+    behavioural: step() output commands equal planCommands output for the same inputs).
+  - `npm run evidence` numbers must be unchanged to two decimals (no drones move in the
+    evidence runs); paste the table.
+
+Add a decisions.md row for both tasks. DO NOT TOUCH: src/world, src/ui, src/corruption,
+src/brain/kalman.ts, src/brain/hypotheses.ts, src/brain/physics.ts.
+```
+
+---
+
 ## Prompt 3 · Freeze, and what surprised us
 
 ```

@@ -20,6 +20,11 @@ these effects; read src/world/drones.ts for the exact semantics but do not impor
 Read the Command type: { droneId, goTo, task }. Use task strings 'suppress', 'coat',
 'observe', 'close-door', 'refill', 'hold'.
 
+NOTE (added hour 18): if CP3 prompt 2c ran, src/brain/commands.ts already exists with a
+planCommands() hook that index.ts calls. In that case do NOT edit index.ts at all and do not
+record a second hash: fill in commands.ts to call allocate(), and ignore the paragraph below
+about the one-hunk index.ts change.
+
 TASK: src/brain/allocator.ts exporting
   allocate(plan, belief: Belief, hypotheses: Set<SpaceId>[], drones: Drone[], prevCommands: Command[]): Command[]
 and wire it into step() in src/brain/index.ts. That file is frozen for estimator logic,
