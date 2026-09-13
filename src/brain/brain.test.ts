@@ -1,10 +1,12 @@
 /**
- * v0.1 estimator honesty tests. Observations built by hand; the brain sees only
- * Observation.
+ * v1 estimator tests: hypothesis-set behavior end to end. Reading streams are generated
+ * by the brain's own physics (the guard pattern) so scenarios are self-consistent; the
+ * brain still sees only Observation objects.
  */
 import { describe, expect, it } from 'vitest';
 import { createBrain } from './index';
-import type { Observation, Reading, StructurePlan } from '../shared/types';
+import { forward } from './physics';
+import type { Observation, Reading, SpaceId, StructurePlan } from '../shared/types';
 
 const plan: StructurePlan = {
   name: 'test-3',
@@ -37,78 +39,64 @@ const reading = (sensorId: string, spaceId: string, temp: number, t: number): Re
 
 const obs = (t: number, readings: Reading[]): Observation => ({ t, readings, drones: [] });
 
-describe('createBrain v0.1', () => {
-  it('clean readings: full confidence, correct burning set, no suspects', () => {
+/** Physics-consistent temp stream: S1 ignites at 450 and burns. */
+const stream = (ticks: number): Record<SpaceId, number>[] => {
+  let temps: Record<SpaceId, number> = { S1: 450, S2: 20, S3: 20 };
+  const out: Record<SpaceId, number>[] = [];
+  for (let t = 0; t < ticks; t++) {
+    out.push(temps);
+    temps = forward(plan, temps, new Set(['S1']));
+  }
+  return out;
+};
+
+describe('createBrain v1', () => {
+  it('clean physics-consistent readings: correct burning set, no suspects, high confidence', () => {
     const brain = createBrain({ plan, seed: 42 });
-    let out = brain.step(obs(1, [reading('F1', 'S1', 450, 1), reading('F2', 'S2', 30, 1), reading('F3', 'S3', 20, 1)]));
-    out = brain.step(obs(2, [reading('F1', 'S1', 451, 2), reading('F2', 'S2', 31, 2), reading('F3', 'S3', 21, 2)]));
+    const temps = stream(8);
+    let out!: ReturnType<typeof brain.step>;
+    for (let t = 1; t <= 8; t++) {
+      const T = temps[t - 1]!;
+      out = brain.step(
+        obs(t, [reading('F1', 'S1', T['S1']!, t), reading('F2', 'S2', T['S2']!, t), reading('F3', 'S3', T['S3']!, t)]),
+      );
+    }
     expect(out.belief.burningSet).toEqual(['S1']);
     expect(out.belief.suspectSensors).toEqual([]);
-    expect(out.belief.confidence).toBe(1);
+    expect(out.belief.confidence).toBeGreaterThan(0.9);
   });
 
-  it('a stale reading (t lagging obs.t by >3) is suspect and excluded from the estimate', () => {
+  it('F1 freezes (stale t): suspect, and physics keeps the fire in the belief', () => {
     const brain = createBrain({ plan, seed: 42 });
-    // F1 froze at tick 2 (t stuck), the others stay live.
-    for (let t = 1; t <= 10; t++) {
-      brain.step(
-        obs(t, [
-          reading('F1', 'S1', 450, Math.min(t, 2)),
-          reading('F2', 'S2', 30 + t, t),
-          reading('F3', 'S3', 20 + t, t),
-        ]),
-      );
+    const temps = stream(12);
+    let out!: ReturnType<typeof brain.step>;
+    for (let t = 1; t <= 12; t++) {
+      const T = temps[t - 1]!;
+      const f1 = t <= 4 ? reading('F1', 'S1', T['S1']!, t) : reading('F1', 'S1', temps[3]!['S1']!, 4);
+      out = brain.step(obs(t, [f1, reading('F2', 'S2', T['S2']!, t), reading('F3', 'S3', T['S3']!, t)]));
     }
-    const out = brain.step(
-      obs(11, [reading('F1', 'S1', 450, 2), reading('F2', 'S2', 41, 11), reading('F3', 'S3', 31, 11)]),
-    );
     expect(out.belief.suspectSensors).toEqual(['F1']);
-    // Never full confidence while distrusting a sensor.
-    expect(out.belief.confidence).toBeLessThan(1);
-    expect(out.belief.confidence).toBeCloseTo(2 / 3, 5);
-    // S1 estimate comes from its trusted neighbor S2, not the frozen 450.
-    expect(out.belief.estimate['S1']).toBeCloseTo(41, 5);
-    expect(out.belief.burningSet).toEqual([]);
+    expect(out.belief.burningSet).toContain('S1'); // the sensor died; the fire did not
+    expect(out.belief.estimate['S1']!).toBeGreaterThan(300);
+    expect(out.belief.confidence).toBeLessThan(0.9); // one distrusted sensor costs certainty
   });
 
-  it('a current-looking sensor stuck for 8 ticks while a neighbor moves >20C is suspect', () => {
+  it('F1 blinded (impossible one-tick drop): suspect immediately, fire kept', () => {
     const brain = createBrain({ plan, seed: 42 });
-    // F2 pins at exactly 100 with a CURRENT t; its neighbor S1 climbs 15C/tick.
-    let out = brain.step(obs(1, [reading('F1', 'S1', 100, 1), reading('F2', 'S2', 100, 1), reading('F3', 'S3', 20, 1)]));
-    for (let t = 2; t <= 12; t++) {
-      out = brain.step(
-        obs(t, [reading('F1', 'S1', 100 + 15 * t, t), reading('F2', 'S2', 100, t), reading('F3', 'S3', 20, t)]),
-      );
+    const temps = stream(8);
+    let out!: ReturnType<typeof brain.step>;
+    for (let t = 1; t <= 8; t++) {
+      const T = temps[t - 1]!;
+      const f1 = t < 5 ? reading('F1', 'S1', T['S1']!, t) : reading('F1', 'S1', 22, t);
+      out = brain.step(obs(t, [f1, reading('F2', 'S2', T['S2']!, t), reading('F3', 'S3', T['S3']!, t)]));
+      if (t === 5) expect(out.belief.suspectSensors).toEqual(['F1']); // caught on the drop tick
     }
-    expect(out.belief.suspectSensors).toEqual(['F2']);
-    expect(out.belief.confidence).toBeLessThan(1);
-  });
-
-  it('an implausible one-tick drop (blinded sensor) is suspect from the drop onward', () => {
-    const brain = createBrain({ plan, seed: 42 });
-    // F1 reads a real 450C fire, then smoke blinds it: it reports ambient with a
-    // CURRENT timestamp and keeps jittering, so neither the stale nor the stuck rule
-    // ever fires. The 428C one-tick drop is the tell.
-    for (let t = 1; t <= 4; t++) {
-      brain.step(obs(t, [reading('F1', 'S1', 450, t), reading('F2', 'S2', 30, t), reading('F3', 'S3', 20, t)]));
-    }
-    let out = brain.step(obs(5, [reading('F1', 'S1', 22, 5), reading('F2', 'S2', 30, 5), reading('F3', 'S3', 20, 5)]));
     expect(out.belief.suspectSensors).toEqual(['F1']);
-    // Honest sensors jitter past the 0.1C change epsilon, as real (noisy) sensors do.
-    for (let t = 6; t <= 12; t++) {
-      out = brain.step(
-        obs(t, [
-          reading('F1', 'S1', 22 + (t % 2), t),
-          reading('F2', 'S2', 30 + 0.2 * (t % 2), t),
-          reading('F3', 'S3', 20 + 0.2 * (t % 2), t),
-        ]),
-      );
-    }
-    expect(out.belief.suspectSensors).toEqual(['F1']); // distrust persists
-    expect(out.belief.confidence).toBeLessThan(0.9); // never confidently wrong again
+    expect(out.belief.burningSet).toContain('S1');
+    expect(out.belief.confidence).toBeLessThan(0.9);
   });
 
-  it('a drone sensor flying from a hot space to a cool one is NOT implausible', () => {
+  it('a drone sensor flying from a hot space to a cool one is NOT suspect', () => {
     const brain = createBrain({ plan, seed: 42 });
     const droneReading = (spaceId: string, temp: number, t: number): Reading => ({
       sensorId: 'D1:temp',
@@ -118,37 +106,129 @@ describe('createBrain v0.1', () => {
       temp,
       t,
     });
-    // D1 hovers in burning S1, then relocates to cool S3: a 429C drop, but across spaces.
-    for (let t = 1; t <= 5; t++) {
-      brain.step(obs(t, [droneReading('S1', 450, t), reading('F2', 'S2', 30 + 0.2 * (t % 2), t)]));
+    const temps = stream(7);
+    for (let t = 1; t <= 6; t++) {
+      const T = temps[t - 1]!;
+      brain.step(obs(t, [droneReading('S1', T['S1']!, t), reading('F2', 'S2', T['S2']!, t)]));
     }
-    const out = brain.step(obs(6, [droneReading('S3', 21, 6), reading('F2', 'S2', 30, 6)]));
+    // D1 relocates two doors down: an enormous drop for the sensor, but a normal move.
+    const out = brain.step(obs(7, [droneReading('S3', temps[6]!['S3']!, 7), reading('F2', 'S2', temps[6]!['S2']!, 7)]));
     expect(out.belief.suspectSensors).toEqual([]);
   });
 
-  it('halves confidence when a believed-burning space has no trusted reading', () => {
+  it('total sensor blackout: minimal confidence, ambiguity reported, warmth not forgotten', () => {
     const brain = createBrain({ plan, seed: 42 });
-    // S2 has no sensor reading at all; its neighbors S1 and S3 read 450 -> S2 estimated
-    // burning purely by neighbor inference.
-    const out = brain.step(obs(1, [reading('F1', 'S1', 450, 1), reading('F3', 'S3', 450, 1)]));
-    expect(out.belief.burningSet).toContain('S2');
-    expect(out.belief.confidence).toBeCloseTo(0.5, 5); // 2/2 trusted, halved for the blind spot
+    const temps = stream(4);
+    for (let t = 1; t <= 4; t++) {
+      const T = temps[t - 1]!;
+      brain.step(
+        obs(t, [reading('F1', 'S1', T['S1']!, t), reading('F2', 'S2', T['S2']!, t), reading('F3', 'S3', T['S3']!, t)]),
+      );
+    }
+    const out = brain.step(obs(5, []));
+    // Three explanations survive a blackout on this plan; 1/3 is the honest number.
+    expect(out.belief.confidence).toBeLessThan(0.5);
+    // With zero data every hypothesis fits; the doubt must be visible somewhere.
+    const mentioned = new Set([...out.belief.burningSet, ...out.belief.ambiguous.flat()]);
+    expect(mentioned.has('S1')).toBe(true);
+    expect(out.belief.estimate['S1']!).toBeGreaterThan(250); // physics carries the warmth
   });
 
-  it('no readings at all: zero confidence, ambient estimates', () => {
-    const brain = createBrain({ plan, seed: 42 });
-    const out = brain.step(obs(1, []));
-    expect(out.belief.confidence).toBe(0);
-    expect(out.belief.estimate).toEqual({ S1: 20, S2: 20, S3: 20 });
-    expect(out.belief.burningSet).toEqual([]);
+  it('an unnamed fire (all readings below 200C but misfitting) cannot get confidence 1.00', () => {
+    // Butterfly: a sensed middle space between two unsensed wings; fire in a wing. The
+    // middle sensor climbs while every sub-200C reading keeps "no fire" the only obvious
+    // candidate — confidence must fall with the misfit, and the warm seed must
+    // eventually name a wing.
+    const butterfly: StructurePlan = {
+      name: 'butterfly',
+      ambient: 20,
+      spaces: [
+        { id: 'W1', level: 1 },
+        { id: 'M', level: 1 },
+        { id: 'W2', level: 1 },
+      ],
+      edges: [
+        { a: 'W1', b: 'M', kind: 'door', rate: 0.1 },
+        { a: 'M', b: 'W2', kind: 'door', rate: 0.1 },
+      ],
+      sensors: [{ id: 'FM', spaceId: 'M' }],
+      resupply: ['M'],
+      ignition: ['W1'],
+    };
+    const brain = createBrain({ plan: butterfly, seed: 42 });
+    let temps: Record<SpaceId, number> = { W1: 450, M: 20, W2: 20 };
+    // The whole run, not one tick: NO tick may pair a wrong burning set with conf >= 0.9.
+    let wingMentioned = false;
+    for (let t = 1; t <= 40; t++) {
+      const out = brain.step(obs(t, [reading('FM', 'M', temps['M']!, t)]));
+      const wrong = !out.belief.burningSet.includes('W1');
+      if (wrong) expect(out.belief.confidence).toBeLessThan(0.9);
+      const mentioned = new Set([...out.belief.burningSet, ...out.belief.ambiguous.flat()]);
+      if (mentioned.has('W1') || mentioned.has('W2')) wingMentioned = true;
+      temps = forward(butterfly, temps, new Set(['W1']));
+    }
+    expect(wingMentioned).toBe(true); // a wing is suspected at some point
   });
 
-  it('reset() clears sensor memory', () => {
+  it('slow-edge unsensed-space fire (rate 0.05): no wrong-set tick ever reaches conf 0.9', () => {
+    // The round-4 verifier repro: with slow edges the wrong "no fire" belief is STABLE,
+    // and a single well-fitting tick used to spike confidence to 1.00.
+    const slow: StructurePlan = {
+      name: 'butterfly-slow',
+      ambient: 20,
+      spaces: [
+        { id: 'W1', level: 1 },
+        { id: 'M', level: 1 },
+        { id: 'W2', level: 1 },
+      ],
+      edges: [
+        { a: 'W1', b: 'M', kind: 'bulkhead', rate: 0.05 },
+        { a: 'M', b: 'W2', kind: 'bulkhead', rate: 0.05 },
+      ],
+      sensors: [{ id: 'FM', spaceId: 'M' }],
+      resupply: ['M'],
+      ignition: ['W1'],
+    };
+    const brain = createBrain({ plan: slow, seed: 42 });
+    let temps: Record<SpaceId, number> = { W1: 450, M: 20, W2: 20 };
+    for (let t = 1; t <= 80; t++) {
+      const out = brain.step(obs(t, [reading('FM', 'M', temps['M']!, t)]));
+      if (!out.belief.burningSet.includes('W1')) {
+        expect(out.belief.confidence).toBeLessThan(0.9);
+      }
+      temps = forward(slow, temps, new Set(['W1']));
+    }
+  });
+
+  it('zero readings from the first tick: confidence stays at the floor forever', () => {
     const brain = createBrain({ plan, seed: 42 });
+    for (let t = 1; t <= 20; t++) {
+      const out = brain.step(obs(t, []));
+      expect(out.belief.confidence).toBeLessThanOrEqual(0.05);
+    }
+  });
+
+  it('a NaN reading is ignored rather than poisoning every hypothesis score', () => {
+    const brain = createBrain({ plan, seed: 42 });
+    const out = brain.step(
+      obs(1, [reading('F1', 'S1', NaN, 1), reading('F2', 'S2', 30, 1), reading('F3', 'S3', 20, 1)]),
+    );
+    expect(Number.isFinite(out.belief.confidence)).toBe(true);
+    for (const v of Object.values(out.belief.estimate)) expect(Number.isFinite(v)).toBe(true);
+  });
+
+  it('reset() clears history and estimates deterministically', () => {
+    const brain = createBrain({ plan, seed: 42 });
+    const temps = stream(6);
     const run = (): string => {
       const outs = [];
       for (let t = 1; t <= 6; t++) {
-        outs.push(brain.step(obs(t, [reading('F1', 'S1', 450, 1), reading('F2', 'S2', 30, t), reading('F3', 'S3', 20, t)])));
+        const T = temps[t - 1]!;
+        outs.push(
+          brain.step(
+            obs(t, [reading('F1', 'S1', T['S1']!, t), reading('F2', 'S2', T['S2']!, t), reading('F3', 'S3', T['S3']!, t)]),
+          ),
+        );
       }
       return JSON.stringify(outs);
     };

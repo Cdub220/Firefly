@@ -1,0 +1,51 @@
+/* Split view: truth | brains. Single deliberate dark theme; every color explicit. */
+.fx { --ground: #0e1116; --panel: #151a21; --panel-2: #1b212a; --line: #2a3240; --ink: #e6eaf0; --ink-2: #aab4c3; --muted: #6f7b8c;
+  --wrong: #ff5c5c; --uncertain: #f0b429; --ok: #5dd39e; --stale: #ff8a5c;
+  --sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; --mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  background: var(--ground); color: var(--ink); font-family: var(--sans); font-size: 14px; line-height: 1.45; min-height: 100vh; padding-block: 20px; padding-inline: 20px; }
+.fx * { box-sizing: border-box; }
+.fx header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 24px; margin-bottom: 10px; }
+.fx h1 { font-size: 18px; font-weight: 600; margin: 0; }
+.fx .cfg { font-family: var(--mono); font-size: 12px; color: var(--ink-2); }
+.fx .note { margin: 0 0 12px; max-width: 80ch; color: var(--muted); font-size: 12px; }
+.fx .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin-bottom: 12px; padding: 10px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+.fx .controls label { font-size: 11px; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em; display: inline-flex; align-items: center; gap: 6px; }
+.fx .controls input[type=range] { flex: 1 1 240px; min-width: 160px; accent-color: var(--uncertain); }
+.fx .controls input[type=number], .fx .controls select { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 4px 6px; font: 13px var(--mono); width: 6ch; }
+.fx .controls select { width: auto; font-family: var(--sans); }
+.fx .controls button { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 5px 12px; font: 500 13px var(--sans); cursor: pointer; }
+.fx .controls button.primary { background: var(--uncertain); color: #0e1116; border-color: var(--uncertain); font-weight: 600; }
+.fx .controls button:hover { border-color: var(--ink-2); }
+.fx .controls :focus-visible { outline: 2px solid var(--uncertain); outline-offset: 2px; }
+.fx .chips { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+.fx .chips button { padding: 2px 8px; font: 12px var(--mono); }
+.fx .chips button[aria-pressed=true] { background: var(--stale); color: #0e1116; border-color: var(--stale); }
+.fx .tick { font-family: var(--mono); font-size: 16px; font-weight: 600; min-width: 5ch; font-variant-numeric: tabular-nums; }
+.fx .panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px; }
+.fx .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px 12px 8px; min-width: 0; }
+.fx .panel h2 { margin: 0 0 2px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.fx .panel h2 .sub { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--muted); font-size: 12px; }
+.fx .conf { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px; color: var(--ink-2); margin: 6px 0 8px; font-variant-numeric: tabular-nums; }
+.fx .conf .bar { flex: 1; height: 6px; background: var(--panel-2); border-radius: 3px; overflow: hidden; }
+.fx .conf .bar i { display: block; height: 100%; background: var(--ink-2); }
+.fx .conf.hi .bar i { background: var(--wrong); }
+.fx .conf.lo .bar i { background: var(--uncertain); }
+.fx svg { width: 100%; height: auto; display: block; }
+.fx .id { font: 600 12px var(--sans); letter-spacing: 0.04em; }
+.fx .temp { font: 600 24px var(--mono); font-variant-numeric: tabular-nums; }
+.fx .tag { font: 700 10px var(--sans); letter-spacing: 0.08em; }
+.fx .chip { font: 10.5px var(--mono); }
+.fx .edge { stroke: var(--line); stroke-width: 2; }
+.fx .edge.bulkhead { stroke-dasharray: 3 4; }
+.fx .edge.passage, .fx .edge.shaft { stroke-width: 3; }
+.fx .edge-lbl { font: 9.5px var(--mono); fill: var(--ink-2); }
+.fx .verdict { margin-top: 8px; min-height: 2.6em; font-size: 12px; color: var(--ink-2); }
+.fx .verdict b { color: var(--ink); font-weight: 600; }
+.fx .strip { margin-top: 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px; }
+.fx .strip h3 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-2); font-weight: 600; }
+.fx .strip .rowlbl { font: 11px var(--sans); fill: var(--ink-2); }
+.fx .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 10px; font-size: 12px; color: var(--ink-2); }
+.fx .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; background: var(--sw); }
+.fx .legend .ok { --sw: var(--ok); } .fx .legend .unc { --sw: var(--uncertain); } .fx .legend .wr { --sw: var(--wrong); }
+.fx .err { margin: 0 0 12px; padding: 8px 12px; border: 1px solid var(--wrong); border-radius: 6px; color: var(--wrong); font-family: var(--mono); font-size: 12px; white-space: pre-wrap; }
+@media (prefers-reduced-motion: reduce) { .fx * { transition: none !important; } }

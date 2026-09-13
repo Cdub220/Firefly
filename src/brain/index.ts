@@ -5,138 +5,211 @@
  * corruption pattern. Enforced by lint: this directory cannot import src/world,
  * src/corruption, src/eval, src/ui or src/loop.
  *
- * v0.1 — minimal honesty, deliberately crude (the real estimator is checkpoint 2):
- *   - A sensor is SUSPECT when its reading is stale (t older than obs.t - 3), when its
- *     value has sat still for 8 ticks while a neighboring space's reading moved by more
- *     than 20C, or when it ever dropped more than 100C in a single tick (fires do not
- *     cool like that; smoke-blinded cameras read that way). Suspect sensors are excluded
- *     from the estimate.
- *   - A space with no trusted reading is estimated as the mean of trusted neighbor
- *     estimates (plan edges), falling back to ambient.
- *   - confidence = trusted readings / total readings, halved when any believed-burning
- *     space has no trusted reading. It must never report 1.0 while trusting a frozen
- *     sensor; that is the whole point.
+ * v1 — the real estimator:
+ *   1. checkConsistency judges every reading against heat physics and history, yielding
+ *      trusted readings and suspect sensors with reasons.
+ *   2. Hypothesis sets: enumerate candidate burning sets around the previous belief,
+ *      score each against the trusted readings (dropping the k largest residuals — up to
+ *      k sensors may still be lying undetected), and keep every hypothesis within
+ *      tolerance of the best.
+ *   3. burningSet = the intersection of kept hypotheses (certainly burning). Spaces in
+ *      some-but-not-all kept hypotheses are reported in `ambiguous`, grouped into
+ *      connected components. Confidence = 1 / kept, times the consistency penalty.
+ *      Two equally good explanations means confidence 0.5. That is what honest means.
  */
 import { makeRng, type Rng } from '../shared/rng';
 import { edgeMap } from '../shared/plan';
-import type { Belief, Brain, BrainConfig, Command, Observation, SensorId, SpaceId } from '../shared/types';
+import { candidates, hotSpaces, predict, score } from './hypotheses';
+import { checkConsistency, updateHistory, type SensorHistory } from './consistency';
+import type { Belief, Brain, BrainConfig, Command, Observation, SpaceId } from '../shared/types';
 
-const BURN_THRESHOLD_C = 200;
-const STALE_AGE_TICKS = 3; // reading older than obs.t - 3 => suspect
-const STUCK_TICKS = 8; // unchanged this long while a neighbor moves => suspect
-const CHANGE_EPS_C = 0.1; // a reading "changed" when it moved more than this
-const NEIGHBOR_MOVE_C = 20; // a neighbor "moved" when its space temp changed this much
-const MAX_CREDIBLE_DROP_C = 100; // a one-tick drop beyond this is physically implausible
-const HISTORY_TICKS = STUCK_TICKS + 2;
+// Default tolerance for undetected liars. NOT the prompt's 2: with one sensor per space
+// (every current plan), k=2 lets the "no fire" hypothesis silently discard both sensors
+// that contradict it — k must stay below the per-space sensor redundancy or the
+// estimator is formally blind to small fires. Plans with doubled-up sensors can raise it
+// via BrainConfig.k.
+const DEFAULT_K = 1;
+const SUSPECT_PENALTY = 0.8; // confidence multiplier per distrusted sensor
+const TOLERANCE_FLOOR_C = 8; // hypotheses within max(8, 15% of best) of the best survive
+const TOLERANCE_FRAC = 0.15;
+const MIN_CONFIDENCE = 0.05;
+// Confidence must also reflect FIT: 1/kept measures hypothesis-set collapse, and a pool
+// whose every member misfits the data (e.g. a fire in a space no candidate names) would
+// otherwise collapse to one bad hypothesis reported at confidence 1.00 — the exact false
+// certainty this project exists to kill. Residuals up to the allowance are free (noise +
+// model error); beyond it confidence decays as allowance/misfit.
+const FIT_ALLOWANCE_C = 6;
+const WARM_SEED_MARGIN_C = 30; // a reading this far above ambient seeds candidates too
+// Certainty must be EARNED BY STABILITY: a belief that changed recently, or a hypothesis
+// race that was contested recently, cannot claim near-certainty — otherwise a belief
+// flip-flopping between wrong answers reports confidence 1.00 on the ticks it happens to
+// collapse (probed: 8/40 such ticks on an unsensed-wing plan). Uncertainty does not
+// vanish in one tick.
+const STABLE_TICKS_FOR_CERTAINTY = 5;
+const VOLATILE_CONF_CAP = 0.7;
 
 export function createBrain(config: BrainConfig): Brain {
   let rng: Rng = makeRng(config.seed).fork('brain');
   void rng; // reserved for hedging / tie-breaks. TODO(Dean).
+  const k = config.k ?? DEFAULT_K;
   const spaceIds: SpaceId[] = config.plan.spaces.map((s) => s.id);
   const edges = edgeMap(config.plan);
   const neighborsOf = new Map<SpaceId, SpaceId[]>(
     spaceIds.map((id) => [id, (edges.get(id) ?? []).map((e) => e.b)]),
   );
 
-  // Per-sensor and per-space memory across ticks. reset() clears it.
-  let lastValue = new Map<SensorId, { temp: number; spaceId: SpaceId }>();
-  let lastChangeTick = new Map<SensorId, number>();
-  let spaceHistory = new Map<SpaceId, Array<{ t: number; temp: number }>>();
-  let implausible = new Set<SensorId>(); // once a sensor did the impossible, distrust it
+  const ROLLOUT = 3; // score hypotheses over this many ticks of history
 
-  const clear = (): void => {
-    lastValue = new Map();
-    lastChangeTick = new Map();
-    spaceHistory = new Map();
-    implausible = new Set();
+  let history: SensorHistory = new Map();
+  let prevEstimate: Record<SpaceId, number> = {};
+  let estHistory: Record<SpaceId, number>[] = []; // estimates of the last ROLLOUT ticks
+  let prevBurning = new Set<SpaceId>();
+  let stableTicks = 0; // consecutive ticks with an uncontested, unchanged burning set
+  let lastBurningKey = '';
+  const init = (): void => {
+    history = new Map();
+    prevEstimate = {};
+    for (const id of spaceIds) prevEstimate[id] = config.plan.ambient;
+    estHistory = [];
+    prevBurning = new Set();
+    stableTicks = 0;
+    lastBurningKey = '';
+  };
+  init();
+
+  /** Group ambiguous spaces into connected components over plan edges. */
+  const components = (ids: Set<SpaceId>): SpaceId[][] => {
+    const seen = new Set<SpaceId>();
+    const out: SpaceId[][] = [];
+    for (const id of ids) {
+      if (seen.has(id)) continue;
+      const group: SpaceId[] = [];
+      const queue = [id];
+      seen.add(id);
+      while (queue.length) {
+        const cur = queue.pop()!;
+        group.push(cur);
+        for (const n of neighborsOf.get(cur) ?? []) {
+          if (ids.has(n) && !seen.has(n)) {
+            seen.add(n);
+            queue.push(n);
+          }
+        }
+      }
+      out.push(group.sort());
+    }
+    return out.sort((a, b) => a[0]!.localeCompare(b[0]!));
   };
 
   return {
     step(obs: Observation): { belief: Belief; commands: Command[] } {
-      // Update per-sensor change tracking.
-      for (const r of obs.readings) {
-        const prev = lastValue.get(r.sensorId);
-        if (prev === undefined || Math.abs(r.temp - prev.temp) > CHANGE_EPS_C) {
-          lastChangeTick.set(r.sensorId, obs.t);
-        }
-        // A drone sensor that moved to another space may legitimately read far colder;
-        // the implausible-drop rule only applies to a sensor still in the same space.
-        if (prev !== undefined && prev.spaceId === r.spaceId && prev.temp - r.temp > MAX_CREDIBLE_DROP_C) {
-          implausible.add(r.sensorId);
-        }
-        lastValue.set(r.sensorId, { temp: r.temp, spaceId: r.spaceId });
-      }
-
-      // Per-space temp history (mean of this tick's readings per space), for the
-      // "neighbor moved while this sensor sat still" check.
-      const sums = new Map<SpaceId, { sum: number; n: number }>();
-      for (const r of obs.readings) {
-        const acc = sums.get(r.spaceId) ?? { sum: 0, n: 0 };
-        sums.set(r.spaceId, { sum: acc.sum + r.temp, n: acc.n + 1 });
-      }
-      const tempNow = new Map<SpaceId, number>([...sums].map(([id, a]) => [id, a.sum / a.n]));
-      for (const [spaceId, temp] of tempNow) {
-        const hist = spaceHistory.get(spaceId) ?? [];
-        hist.push({ t: obs.t, temp });
-        while (hist.length > 0 && hist[0]!.t < obs.t - HISTORY_TICKS) hist.shift();
-        spaceHistory.set(spaceId, hist);
-      }
-      const movedSince = (spaceId: SpaceId, sinceTick: number): boolean => {
-        const hist = spaceHistory.get(spaceId);
-        const now = tempNow.get(spaceId);
-        if (!hist || now === undefined) return false;
-        const then = hist.find((h) => h.t >= sinceTick);
-        return then !== undefined && Math.abs(now - then.temp) > NEIGHBOR_MOVE_C;
+      // A sensor emitting a non-finite temperature yields no usable reading at all;
+      // letting NaN in would poison every hypothesis score.
+      const sane: Observation = {
+        ...obs,
+        readings: obs.readings.filter((r) => Number.isFinite(r.temp)),
       };
+      updateHistory(history, sane);
+      const { trusted, suspect } = checkConsistency(config.plan, sane, prevEstimate, history);
 
-      // Trust judgment per reading.
-      const suspects = new Set<SensorId>();
-      for (const r of obs.readings) {
-        const stale = r.t < obs.t - STALE_AGE_TICKS;
-        const changed = lastChangeTick.get(r.sensorId) ?? obs.t;
-        const stuck =
-          obs.t - changed >= STUCK_TICKS &&
-          (neighborsOf.get(r.spaceId) ?? []).some((n) => movedSince(n, changed));
-        if (stale || stuck || implausible.has(r.sensorId)) suspects.add(r.sensorId);
+      // Seed candidates from hot READINGS and hot ESTIMATES: a fire whose sensors died
+      // must stay in the pool — the estimate remembers it even when no reading does.
+      // Also seed from the warmest merely-warm reading: an unsensed space's fire shows
+      // up first as unexplained warmth next door, below any burning threshold.
+      const warmest = trusted.reduce(
+        (a, r) => (r.temp > (a?.temp ?? config.plan.ambient + WARM_SEED_MARGIN_C) ? r : a),
+        undefined as { temp: number; spaceId: SpaceId } | undefined,
+      );
+      const hotSeeds = [
+        ...new Set([
+          ...hotSpaces(trusted),
+          ...spaceIds.filter((id) => prevEstimate[id]! > 200),
+          ...(warmest ? [warmest.spaceId] : []),
+        ]),
+      ];
+      // Score each candidate by rolling physics from the estimate of ROLLOUT ticks ago
+      // to the present and comparing against the current readings. Ties resolve toward
+      // the hypothesis that needs no liars (full), then the smaller claim.
+      const from = estHistory[0] ?? prevEstimate;
+      const steps = Math.max(1, estHistory.length);
+      const sets = candidates(config.plan, prevBurning, hotSeeds);
+      const scored = sets
+        .map((set) => ({ set, ...score(config.plan, set, trusted, from, k, steps) }))
+        .sort((a, b) => a.s - b.s || a.full - b.full || a.set.size - b.set.size);
+      const best = scored[0]!;
+      const tolerance = Math.max(TOLERANCE_FLOOR_C, TOLERANCE_FRAC * best.s);
+      const kept = scored.filter((x) => x.s <= best.s + tolerance);
+
+      // Certainly burning: what every surviving explanation agrees on. If they agree on
+      // nothing (disjoint explanations, or "no fire" among the survivors), report the
+      // BEST explanation rather than the empty set: naming no fire while one burns is
+      // the one unacceptable failure mode, and the alternatives stay visible in
+      // `ambiguous` with confidence lowered accordingly.
+      let burning = kept
+        .map((x) => x.set)
+        .reduce((acc, s) => new Set([...acc].filter((id) => s.has(id))));
+      if (burning.size === 0) burning = best.set;
+
+      const union = new Set<SpaceId>(kept.flatMap((x) => [...x.set]));
+      const contested = new Set<SpaceId>([...union].filter((id) => !burning.has(id)));
+      const ambiguous = kept.length > 1 ? components(contested) : [];
+
+      // Stability accounting: an uncontested race with an unchanged, WELL-FITTING answer
+      // earns a stable tick; a contested race, a changed answer, or a misfit resets the
+      // counter. Fit must be part of stability: a wrong-but-stable belief whose misfit
+      // dips under the allowance for a single tick would otherwise spike to 1.00
+      // (verified on slow-edge plans with an unsensed burning space).
+      const burningKey = [...burning].sort().join(',');
+      if (kept.length === 1 && burningKey === lastBurningKey && best.s <= FIT_ALLOWANCE_C) {
+        stableTicks += 1;
+      } else {
+        stableTicks = 0;
       }
-      const trusted = obs.readings.filter((r) => !suspects.has(r.sensorId));
+      lastBurningKey = burningKey;
 
-      // Estimate: trusted readings first, then trusted-neighbor mean, then ambient.
-      const direct = new Map<SpaceId, number>();
+      const fit = best.s <= FIT_ALLOWANCE_C ? 1 : FIT_ALLOWANCE_C / best.s;
+      const raw = (1 / kept.length) * Math.pow(SUSPECT_PENALTY, suspect.length) * fit;
+      const capped =
+        stableTicks < STABLE_TICKS_FOR_CERTAINTY ? Math.min(raw, VOLATILE_CONF_CAP) : raw;
+      // No evidence means no confidence, however comfortable the sole hypothesis is.
+      const confidence =
+        trusted.length === 0
+          ? MIN_CONFIDENCE
+          : Math.min(1, Math.max(MIN_CONFIDENCE, capped));
+
+      // Estimate: trusted readings where present; the best hypothesis's physics
+      // elsewhere (one step from last tick's estimate — the current-tick prediction).
+      const predicted = predict(config.plan, best.set, prevEstimate, 1);
+      const direct = new Map<SpaceId, { sum: number; n: number }>();
       for (const r of trusted) {
-        const xs = trusted.filter((x) => x.spaceId === r.spaceId).map((x) => x.temp);
-        direct.set(r.spaceId, xs.reduce((a, b) => a + b, 0) / xs.length);
+        const acc = direct.get(r.spaceId) ?? { sum: 0, n: 0 };
+        direct.set(r.spaceId, { sum: acc.sum + r.temp, n: acc.n + 1 });
       }
       const estimate: Record<SpaceId, number> = {};
       for (const id of spaceIds) {
         const d = direct.get(id);
-        if (d !== undefined) {
-          estimate[id] = d;
-          continue;
-        }
-        const near = (neighborsOf.get(id) ?? [])
-          .map((n) => direct.get(n))
-          .filter((v): v is number => v !== undefined);
-        estimate[id] = near.length ? near.reduce((a, b) => a + b, 0) / near.length : config.plan.ambient;
+        estimate[id] = d ? d.sum / d.n : predicted[id]!;
       }
 
-      const burningSet = spaceIds.filter((id) => (estimate[id] ?? 0) > BURN_THRESHOLD_C);
-      const blindSpot = burningSet.some((id) => !direct.has(id));
-      const confidence =
-        (obs.readings.length ? trusted.length / obs.readings.length : 0) * (blindSpot ? 0.5 : 1);
+      // Grow next tick's candidates from the best explanation, not the (possibly
+      // empty-intersection) reported set: the candidate generator needs a fire to grow.
+      prevEstimate = estimate;
+      estHistory.push(estimate);
+      while (estHistory.length > ROLLOUT) estHistory.shift();
+      prevBurning = new Set(best.set);
 
       const belief: Belief = {
         estimate,
-        burningSet,
-        ambiguous: [],
-        suspectSensors: [...suspects].sort(),
+        burningSet: [...burning].sort(),
+        ambiguous,
+        suspectSensors: suspect.map((s) => s.sensorId).sort(),
         confidence,
       };
       return { belief, commands: [] };
     },
     reset(): void {
       rng = makeRng(config.seed).fork('brain');
-      clear();
+      init();
     },
   };
 }

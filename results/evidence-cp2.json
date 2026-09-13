@@ -1,0 +1,61 @@
+{
+  "plan": "demo-6",
+  "ticks": 60,
+  "onset": 5,
+  "k": 1,
+  "target": [
+    "S3",
+    "S2"
+  ],
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "rows": [
+    {
+      "mode": "freeze",
+      "brain": "ours",
+      "falseCertainty": 0,
+      "ambiguityCoverage": 0.9142857142857143,
+      "meanAbsErr": 3.556129953326053
+    },
+    {
+      "mode": "freeze",
+      "brain": "kalman",
+      "falseCertainty": 0.65,
+      "ambiguityCoverage": 1,
+      "meanAbsErr": 41.97721995197852
+    },
+    {
+      "mode": "blind",
+      "brain": "ours",
+      "falseCertainty": 0,
+      "ambiguityCoverage": 0.9142857142857143,
+      "meanAbsErr": 3.7033262652945864
+    },
+    {
+      "mode": "blind",
+      "brain": "kalman",
+      "falseCertainty": 0.7214285714285713,
+      "ambiguityCoverage": 0.3321428571428572,
+      "meanAbsErr": 114.69251333521977
+    },
+    {
+      "mode": "flashover",
+      "brain": "ours",
+      "falseCertainty": 0,
+      "ambiguityCoverage": 0.9142857142857143,
+      "meanAbsErr": 7.980727718014411
+    },
+    {
+      "mode": "flashover",
+      "brain": "kalman",
+      "falseCertainty": 0.6392857142857143,
+      "ambiguityCoverage": 1,
+      "meanAbsErr": 41.91971196823791
+    }
+  ]
+}

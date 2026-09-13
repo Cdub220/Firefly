@@ -116,7 +116,7 @@ describe('blind', () => {
 
 describe('saturate', () => {
   it('a reading of 800 becomes exactly saturateAt; 100 is untouched', () => {
-    const c = createCorruptor({ seed: 42, mode: 'saturate' });
+    const c = createCorruptor({ seed: 42, mode: 'saturate', onset: 1 });
     const input = obs(1, [reading('F1', 'S1', 800, 1), reading('F2', 'S2', 100, 1)]);
     const out = c.apply(input);
     expect(out.readings[0]!.temp).toBe(DEFAULT_CORRUPTION.saturateAt);
@@ -126,7 +126,7 @@ describe('saturate', () => {
 
 describe('target', () => {
   it('saturate respects target: same temp pins in S1 but not in S2', () => {
-    const c = createCorruptor({ seed: 1, mode: 'saturate', target: ['S1'] });
+    const c = createCorruptor({ seed: 1, mode: 'saturate', target: ['S1'], onset: 1 });
     const input = obs(1, [reading('F1', 'S1', 800, 1), reading('F2', 'S2', 800, 1)]);
     const out = c.apply(input);
     expect(out.readings[0]!.temp).toBe(DEFAULT_CORRUPTION.saturateAt);
@@ -156,7 +156,7 @@ describe('target', () => {
 
 describe('flashover', () => {
   it('a space at 600 loses all readings permanently and its drone reports dead', () => {
-    const c = createCorruptor({ seed: 42, mode: 'flashover' });
+    const c = createCorruptor({ seed: 42, mode: 'flashover', onset: 1 });
     const hot = obs(
       1,
       [reading('F3', 'S3', 600, 1), reading('D1:temp', 'S3', 590, 1, 'D1'), reading('F1', 'S1', 30, 1)],
@@ -173,6 +173,19 @@ describe('flashover', () => {
     const later = c.apply(cooled);
     expect(later.readings.filter((r) => r.spaceId === 'S3')).toHaveLength(0);
     expect(later.drones.find((d) => d.id === 'D1')).toMatchObject({ alive: false, linked: false });
+  });
+});
+
+describe('onset gating', () => {
+  it('flashover and saturate do nothing before onset — the eval window means what it says', () => {
+    const c = createCorruptor({ seed: 42, mode: 'flashover', onset: 5 });
+    const hot = (t: number): Observation => obs(t, [reading('F1', 'S1', 600, t)]);
+    expect(c.apply(hot(4)).readings).toHaveLength(1); // before onset: untouched
+    expect(c.apply(hot(5)).readings).toHaveLength(0); // at onset: the space flashes
+
+    const s = createCorruptor({ seed: 42, mode: 'saturate', onset: 5 });
+    expect(s.apply(hot(4)).readings[0]!.temp).toBe(600);
+    expect(s.apply(hot(5)).readings[0]!.temp).toBe(DEFAULT_CORRUPTION.saturateAt);
   });
 });
 

@@ -13,7 +13,8 @@
     "evidence": "tsx src/eval/evidence.ts",
     "test": "vitest run",
     "lint": "eslint src",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "viewer": "tsx src/eval/export-viewer.ts"
   },
   "dependencies": {
     "@react-three/fiber": "^9.1.2",
