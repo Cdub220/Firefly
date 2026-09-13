@@ -1,0 +1,414 @@
+{
+  "name": "tower-5x4",
+  "ambient": 22,
+  "spaces": [
+    {
+      "id": "L1-A1",
+      "level": 1
+    },
+    {
+      "id": "L1-A2",
+      "level": 1,
+      "occupants": 2
+    },
+    {
+      "id": "L1-B1",
+      "level": 1
+    },
+    {
+      "id": "L1-B2",
+      "level": 1,
+      "occupants": 3
+    },
+    {
+      "id": "L2-A1",
+      "level": 2
+    },
+    {
+      "id": "L2-A2",
+      "level": 2,
+      "occupants": 4
+    },
+    {
+      "id": "L2-B1",
+      "level": 2,
+      "occupants": 2
+    },
+    {
+      "id": "L2-B2",
+      "level": 2,
+      "occupants": 5
+    },
+    {
+      "id": "L3-A1",
+      "level": 3
+    },
+    {
+      "id": "L3-A2",
+      "level": 3,
+      "occupants": 3
+    },
+    {
+      "id": "L3-B1",
+      "level": 3,
+      "occupants": 4
+    },
+    {
+      "id": "L3-B2",
+      "level": 3,
+      "occupants": 4
+    },
+    {
+      "id": "L4-A1",
+      "level": 4
+    },
+    {
+      "id": "L4-A2",
+      "level": 4,
+      "occupants": 5
+    },
+    {
+      "id": "L4-B1",
+      "level": 4,
+      "occupants": 3
+    },
+    {
+      "id": "L4-B2",
+      "level": 4,
+      "occupants": 6
+    },
+    {
+      "id": "L5-A1",
+      "level": 5
+    },
+    {
+      "id": "L5-A2",
+      "level": 5,
+      "occupants": 2
+    },
+    {
+      "id": "L5-B1",
+      "level": 5,
+      "occupants": 4
+    },
+    {
+      "id": "L5-B2",
+      "level": 5,
+      "occupants": 3
+    }
+  ],
+  "edges": [
+    {
+      "a": "L1-A1",
+      "b": "L1-A2",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L1-A1",
+      "b": "L1-B1",
+      "kind": "passage",
+      "rate": 0.15
+    },
+    {
+      "a": "L1-A1",
+      "b": "L2-A1",
+      "kind": "floor",
+      "rate": 0.04
+    },
+    {
+      "a": "L1-A2",
+      "b": "L1-B2",
+      "kind": "passage",
+      "rate": 0.15
+    },
+    {
+      "a": "L1-A2",
+      "b": "L2-A2",
+      "kind": "floor",
+      "rate": 0.04
+    },
+    {
+      "a": "L1-B1",
+      "b": "L1-B2",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L1-B1",
+      "b": "L2-B1",
+      "kind": "floor",
+      "rate": 0.04
+    },
+    {
+      "a": "L1-B2",
+      "b": "L2-B2",
+      "kind": "floor",
+      "rate": 0.04
+    },
+    {
+      "a": "L2-A1",
+      "b": "L2-A2",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L2-A1",
+      "b": "L2-B1",
+      "kind": "passage",
+      "rate": 0.15
+    },
+    {
+      "a": "L2-A1",
+      "b": "L3-A1",
+      "kind": "floor",
+      "rate": 0.04
+    },
+    {
+      "a": "L2-A2",
+      "b": "L2-B2",
+      "kind": "passage",
+      "rate": 0.15
+    },
+    {
+      "a": "L2-A2",
+      "b": "L3-A2",
+      "kind": "floor",
+      "rate": 0.04
+    },
+    {
+      "a": "L2-B1",
+      "b": "L2-B2",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L2-B1",
+      "b": "L3-B1",
+      "kind": "floor",
+      "rate": 0.04
+    },
+    {
+      "a": "L2-B2",
+      "b": "L3-B2",
+      "kind": "floor",
+      "rate": 0.04
+    },
+    {
+      "a": "L3-A1",
+      "b": "L3-A2",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L3-A1",
+      "b": "L3-B1",
+      "kind": "passage",
+      "rate": 0.15
+    },
+    {
+      "a": "L3-A1",
+      "b": "L4-A1",
+      "kind": "floor",
+      "rate": 0.04
+    },
+    {
+      "a": "L3-A2",
+      "b": "L3-B2",
+      "kind": "passage",
+      "rate": 0.15
+    },
+    {
+      "a": "L3-A2",
+      "b": "L4-A2",
+      "kind": "floor",
+      "rate": 0.04
+    },
+    {
+      "a": "L3-B1",
+      "b": "L3-B2",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L3-B1",
+      "b": "L4-B1",
+      "kind": "floor",
+      "rate": 0.04
+    },
+    {
+      "a": "L3-B2",
+      "b": "L4-B2",
+      "kind": "floor",
+      "rate": 0.04
+    },
+    {
+      "a": "L4-A1",
+      "b": "L4-A2",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L4-A1",
+      "b": "L4-B1",
+      "kind": "passage",
+      "rate": 0.15
+    },
+    {
+      "a": "L4-A1",
+      "b": "L5-A1",
+      "kind": "floor",
+      "rate": 0.04
+    },
+    {
+      "a": "L4-A2",
+      "b": "L4-B2",
+      "kind": "passage",
+      "rate": 0.15
+    },
+    {
+      "a": "L4-A2",
+      "b": "L5-A2",
+      "kind": "floor",
+      "rate": 0.04
+    },
+    {
+      "a": "L4-B1",
+      "b": "L4-B2",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L4-B1",
+      "b": "L5-B1",
+      "kind": "floor",
+      "rate": 0.04
+    },
+    {
+      "a": "L4-B2",
+      "b": "L5-B2",
+      "kind": "floor",
+      "rate": 0.04
+    },
+    {
+      "a": "L5-A1",
+      "b": "L5-A2",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L5-A1",
+      "b": "L5-B1",
+      "kind": "passage",
+      "rate": 0.15
+    },
+    {
+      "a": "L5-A2",
+      "b": "L5-B2",
+      "kind": "passage",
+      "rate": 0.15
+    },
+    {
+      "a": "L5-B1",
+      "b": "L5-B2",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L1-A1",
+      "b": "L2-A1",
+      "kind": "shaft",
+      "rate": 0.35
+    },
+    {
+      "a": "L2-A1",
+      "b": "L3-A1",
+      "kind": "shaft",
+      "rate": 0.35
+    },
+    {
+      "a": "L3-A1",
+      "b": "L4-A1",
+      "kind": "shaft",
+      "rate": 0.35
+    },
+    {
+      "a": "L4-A1",
+      "b": "L5-A1",
+      "kind": "shaft",
+      "rate": 0.35
+    }
+  ],
+  "sensors": [
+    {
+      "id": "F-L1-A1",
+      "spaceId": "L1-A1"
+    },
+    {
+      "id": "F-L1-A2",
+      "spaceId": "L1-A2"
+    },
+    {
+      "id": "F-L1-B1",
+      "spaceId": "L1-B1"
+    },
+    {
+      "id": "F-L1-B2",
+      "spaceId": "L1-B2"
+    },
+    {
+      "id": "F-L2-A1",
+      "spaceId": "L2-A1"
+    },
+    {
+      "id": "F-L2-A2",
+      "spaceId": "L2-A2"
+    },
+    {
+      "id": "F-L2-B1",
+      "spaceId": "L2-B1"
+    },
+    {
+      "id": "F-L2-B2",
+      "spaceId": "L2-B2"
+    },
+    {
+      "id": "F-L3-A1",
+      "spaceId": "L3-A1"
+    },
+    {
+      "id": "F-L3-A2",
+      "spaceId": "L3-A2"
+    },
+    {
+      "id": "F-L3-B1",
+      "spaceId": "L3-B1"
+    },
+    {
+      "id": "F-L3-B2",
+      "spaceId": "L3-B2"
+    },
+    {
+      "id": "F-L5-A1",
+      "spaceId": "L5-A1"
+    },
+    {
+      "id": "F-L5-A2",
+      "spaceId": "L5-A2"
+    },
+    {
+      "id": "F-L5-B1",
+      "spaceId": "L5-B1"
+    },
+    {
+      "id": "F-L5-B2",
+      "spaceId": "L5-B2"
+    }
+  ],
+  "resupply": [
+    "L1-A1"
+  ],
+  "ignition": [
+    "L2-B2"
+  ]
+}
