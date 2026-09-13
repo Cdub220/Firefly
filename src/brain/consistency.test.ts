@@ -67,7 +67,9 @@ describe('checkConsistency', () => {
     const plan = line(2);
     const history: SensorHistory = new Map();
     // Previous belief: everything ambient. F1 suddenly claims 800C. maxRise from 20 is
-    // gen 0.25*(900-20) = 220 plus nothing hotter nearby; 780 >> 220 + 6.
+    // gen 0.25*(900-20) = 220 plus nothing hotter nearby; 780 >> 220 + 6. (Both sensors
+    // reported last tick: this is a stationary sensor's jump, not a first observation.)
+    updateHistory(history, obs(4, [reading('F1', 'S1', 20, 4), reading('F2', 'S2', 20, 4)]));
     const o = obs(5, [reading('F1', 'S1', 800, 5), reading('F2', 'S2', 21, 5)]);
     updateHistory(history, o);
     const { suspect } = checkConsistency(plan, o, ambientEstimate(plan), history);
@@ -78,6 +80,7 @@ describe('checkConsistency', () => {
     const plan = line(2);
     const history: SensorHistory = new Map();
     const prev = { ...ambientEstimate(plan), S1: 450 };
+    updateHistory(history, obs(5, [reading('F1', 'S1', 450, 5), reading('F2', 'S2', 25, 5)]));
     const o = obs(6, [reading('F1', 'S1', 21, 6), reading('F2', 'S2', 25, 6)]);
     updateHistory(history, o);
     const { suspect } = checkConsistency(plan, o, prev, history);
@@ -120,6 +123,7 @@ describe('checkConsistency', () => {
   it('a lone 450C reading from nowhere at t=20 is dropped (rise rule catches it first)', () => {
     const plan = line(5);
     const history: SensorHistory = new Map();
+    updateHistory(history, obs(19, [reading('F1', 'S1', 21, 19), reading('F4', 'S4', 20, 19), reading('F5', 'S5', 20, 19)]));
     const o = obs(20, [
       reading('F1', 'S1', 21, 20),
       reading('F4', 'S4', 20, 20),
@@ -158,5 +162,155 @@ describe('checkConsistency', () => {
       prev = { ...temps };
       temps = forward(plan, temps, new Set(['S1']));
     }
+  });
+
+  describe('moving sensors (drone-borne readings)', () => {
+    const drone = (spaceId: string, temp: number, t: number): Reading => ({
+      sensorId: 'D1:temp',
+      source: 'drone',
+      droneId: 'D1',
+      spaceId,
+      temp,
+      t,
+    });
+
+    it('a drone reading that jumps from S1 (20 C) to S3 (500 C, matching prevEstimate) is trusted; the same jump on a FIXED sensor id is flagged', () => {
+      const plan = line(3);
+      // Six ticks parked in S1 at ambient, then a flight into S3 which the brain already
+      // believes is at 500 (F3 has been reading it). For the drone that is a move; for a
+      // fixed sensor it is a 480 C rise in one tick and physics says no.
+      const run = (mk: (spaceId: string, temp: number, t: number) => Reading): ReturnType<typeof checkConsistency> => {
+        const history: SensorHistory = new Map();
+        const prev = { ...ambientEstimate(plan), S2: 300, S3: 500 };
+        let out: ReturnType<typeof checkConsistency> | undefined;
+        for (let t = 1; t <= 7; t++) {
+          const o = obs(t, [
+            mk(t < 7 ? 'S1' : 'S3', t < 7 ? 20 : 500, t),
+            reading('F2', 'S2', 300, t),
+            reading('F3', 'S3', 500, t),
+          ]);
+          updateHistory(history, o);
+          out = checkConsistency(plan, o, prev, history);
+        }
+        return out!;
+      };
+      const d = run(drone);
+      expect(d.suspect).toEqual([]);
+      expect(d.trusted.map((r) => r.sensorId)).toContain('D1:temp');
+      const f = run((spaceId, temp, t) => reading('F1', spaceId, temp, t));
+      expect(f.suspect).toEqual([{ sensorId: 'F1', reason: 'impossible-rise' }]);
+    });
+
+    it('a drone sitting 8 ticks at one value while the median neighbour moves 100 C is flagged frozen; one that just landed is not', () => {
+      const plan = line(3);
+      const history: SensorHistory = new Map();
+      let prev = ambientEstimate(plan);
+      let caughtAt: number | null = null;
+      // D1 flies S1 -> S2 at tick 3, then sits in S2 reading exactly 100.0 while S1 and S3 climb.
+      for (let t = 1; t <= 11 && caughtAt === null; t++) {
+        const o = obs(t, [
+          reading('F1', 'S1', 60 + 12 * t, t),
+          drone(t < 3 ? 'S1' : 'S2', t < 3 ? 60 + 12 * t : 100, t),
+          reading('F3', 'S3', 50 + 12 * t, t),
+        ]);
+        updateHistory(history, o);
+        const { trusted, suspect } = checkConsistency(plan, o, prev, history);
+        if (suspect.some((s) => s.sensorId === 'D1:temp' && s.reason === 'frozen')) caughtAt = t;
+        else expect(suspect.filter((s) => s.sensorId === 'D1:temp')).toEqual([]);
+        prev = { ...ambientEstimate(plan), ...Object.fromEntries(trusted.map((r) => [r.spaceId, r.temp])) };
+      }
+      // Six flat ticks are needed AFTER the move (ticks 3..8): caught at tick 8 exactly, the
+      // same six-tick streak a fixed sensor needs.
+      expect(caughtAt).toBe(8);
+    });
+
+    it('a drone that keeps moving is never frozen even when its reading repeats, and its flight is not counted as its old space moving', () => {
+      const plan = line(3);
+      const history: SensorHistory = new Map();
+      const prev = { ...ambientEstimate(plan), S1: 100, S2: 100, S3: 100 };
+      for (let t = 1; t <= 10; t++) {
+        // Bounces S1 <-> S2 every tick reading a flat 100 while F3 climbs.
+        const o = obs(t, [drone(t % 2 ? 'S1' : 'S2', 100, t), reading('F3', 'S3', 100 + 20 * t, t)]);
+        updateHistory(history, o);
+        const { suspect } = checkConsistency(plan, o, prev, history);
+        expect(suspect.filter((s) => s.reason === 'frozen')).toEqual([]);
+      }
+    });
+
+    it('stale, cold-in-hot-neighbourhood and no-heat-path apply to drone readings unchanged', () => {
+      const plan = line(3);
+      // stale
+      let history: SensorHistory = new Map();
+      let o = obs(10, [drone('S1', 30, 7), reading('F2', 'S2', 30, 10)]);
+      updateHistory(history, o);
+      expect(checkConsistency(plan, o, ambientEstimate(plan), history).suspect).toEqual([{ sensorId: 'D1:temp', reason: 'stale' }]);
+      // cold in a hot neighbourhood: 20 C reading in S2 between two 400 C rooms through open doors
+      history = new Map();
+      const prev = { ...ambientEstimate(plan), S1: 400, S2: 300, S3: 400 };
+      o = obs(10, [reading('F1', 'S1', 400, 10), drone('S2', 20, 10), reading('F3', 'S3', 400, 10)]);
+      updateHistory(history, o);
+      const cold = checkConsistency(plan, o, prev, history);
+      expect(cold.suspect.map((s) => s.reason)).toContain('cold-in-hot-neighborhood');
+      expect(cold.suspect.map((s) => s.sensorId)).toEqual(['D1:temp']);
+      // no heat path: a drone reporting 300 C in S1 while everything within two edges is cold
+      history = new Map();
+      const far = line(4);
+      o = obs(10, [drone('S1', 300, 10), reading('F2', 'S2', 20, 10), reading('F3', 'S3', 20, 10), reading('F4', 'S4', 20, 10)]);
+      updateHistory(history, o);
+      const path = checkConsistency(far, o, ambientEstimate(far), history);
+      expect(path.suspect).toEqual([{ sensorId: 'D1:temp', reason: 'no-heat-path' }]);
+    });
+
+    it('a fixed and a drone reading in the same space both stay trusted when they agree', () => {
+      const plan = line(3);
+      const history: SensorHistory = new Map();
+      const prev = { ...ambientEstimate(plan), S1: 300, S2: 150, S3: 40 };
+      const o = obs(10, [reading('F1', 'S1', 301, 10), drone('S1', 299, 10), reading('F2', 'S2', 150, 10), reading('F3', 'S3', 40, 10)]);
+      updateHistory(history, o);
+      const { trusted, suspect } = checkConsistency(plan, o, prev, history);
+      expect(suspect).toEqual([]);
+      expect(trusted.filter((r) => r.spaceId === 'S1').map((r) => r.sensorId).sort()).toEqual(['D1:temp', 'F1']);
+    });
+
+    it('first observation of a space: a reading from a space nobody observed last tick is not judged against the guessed estimate', () => {
+      const plan = line(3);
+      // F3 has been the only sensor; S1 is unsensed and the brain guessed it at 60 C. A scout
+      // arrives in S1 and reads 500 C: the guess was wrong, the reading is what settles it.
+      const history: SensorHistory = new Map();
+      const prev = { ...ambientEstimate(plan), S1: 60, S2: 200, S3: 300 };
+      for (let t = 5; t <= 8; t++) {
+        const o = obs(t, t < 8 ? [reading('F3', 'S3', 300, t), reading('F2', 'S2', 200, t)] : [drone('S1', 500, t), reading('F3', 'S3', 300, t), reading('F2', 'S2', 200, t)]);
+        updateHistory(history, o);
+        const { suspect } = checkConsistency(plan, o, prev, history);
+        expect(suspect).toEqual([]);
+      }
+      // A stationary sensor that misses one tick and returns lying is NOT a first observation:
+      // the exemption is keyed on the sensor, so a gap-then-lie is still an impossible rise.
+      const history3: SensorHistory = new Map();
+      for (let t = 5; t <= 8; t++) {
+        const o = obs(t, t === 7 ? [reading('F3', 'S3', 300, t), reading('F2', 'S2', 200, t)] : [reading('F1', 'S1', t < 8 ? 60 : 500, t), reading('F3', 'S3', 300, t), reading('F2', 'S2', 200, t)]);
+        updateHistory(history3, o);
+        const { suspect } = checkConsistency(plan, o, prev, history3);
+        if (t === 8) expect(suspect).toEqual([{ sensorId: 'F1', reason: 'impossible-rise' }]);
+        else expect(suspect).toEqual([]);
+      }
+      // A FIXED sensor that has never reported before is not a first observation either: it
+      // is part of the structure, so a late first reading is held to physics from the estimate.
+      const history4: SensorHistory = new Map();
+      for (let t = 5; t <= 8; t++) {
+        const o = obs(t, t < 8 ? [reading('F3', 'S3', 300, t), reading('F2', 'S2', 200, t)] : [reading('F1', 'S1', 500, t), reading('F3', 'S3', 300, t), reading('F2', 'S2', 200, t)]);
+        updateHistory(history4, o);
+        const { suspect } = checkConsistency(plan, o, prev, history4);
+        if (t === 8) expect(suspect).toEqual([{ sensorId: 'F1', reason: 'impossible-rise' }]);
+      }
+      // Whereas a sensor that WAS observed there last tick is held to physics from that estimate.
+      const history2: SensorHistory = new Map();
+      for (let t = 5; t <= 8; t++) {
+        const o = obs(t, [drone('S1', t < 8 ? 60 : 500, t), reading('F3', 'S3', 300, t), reading('F2', 'S2', 200, t)]);
+        updateHistory(history2, o);
+        const { suspect } = checkConsistency(plan, o, prev, history2);
+        if (t === 8) expect(suspect).toEqual([{ sensorId: 'D1:temp', reason: 'impossible-rise' }]);
+      }
+    });
   });
 });

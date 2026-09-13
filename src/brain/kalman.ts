@@ -32,6 +32,7 @@
 import type { Belief, Brain, BrainConfig, Command, Observation, SensorId, SpaceId } from '../shared/types';
 import { add, identity, inverse, matmul, matvec, sub, transpose, zeros, type Mat } from './mat';
 import { COOL, FLAME_TEMP, FUEL_HAZARD_MULT, GEN_RATE } from './physics';
+import { planCommands } from './commands';
 
 export const BURN_THRESHOLD_C = 200; // x_i above this => believed burning
 const SIGMA_MEAS_C = 2; // sensor noise the filter assumes
@@ -170,3 +171,142 @@ export function createKalmanBrain(config: BrainConfig, opts: KalmanOptions = {})
 
 /** The practitioner's baseline: the same filter with innovation gating. */
 export const createGatedKalmanBrain = (config: BrainConfig): Brain => createKalmanBrain(config, { gate: true });
+
+// ---------------------------------------------------------------------------------------
+// The fair baseline: an augmented-state filter that ESTIMATES each space's heat source.
+//
+// The naive and gated filters call a space burning when its temperature estimate is above
+// 200 C. That rule is wrong on 65% of ticks of a CLEAN run (88% on the 3x8 plan), because
+// a burned-out space or a space heated by its neighbour is hot without burning. That was
+// measuring our chosen label rule, not the filter. The textbook answer, and the one a
+// practitioner would deploy, is to put the unknown heat source in the state:
+//
+//   x' = A0 x + ambientTerm + q        (A0 = I + L - COOL*I, NO generation term)
+//   q' = q                             (random walk, process noise Q_Q per space)
+//
+// and call a space burning when its estimated source q_i is significantly positive:
+// q_i / sqrt(P_qq,i) > 3 and q_i > 10 C/tick. P(burning) = Phi((q_i - 10) / sd_i), the
+// filter's own posterior that a non-trivial source is present. No fuel guess, no
+// hand-written fire logic, no gating (a clean control). It separates hot from burning the
+// way a linear filter can; what it still cannot do is doubt a reading.
+// ---------------------------------------------------------------------------------------
+export const SOURCE_MIN_C_PER_TICK = 10; // a source below this is not a fire
+export const SOURCE_SIGMAS = 3; // q must be this many posterior sigmas above zero
+const Q_SOURCE = 4; // random-walk process noise on q, (C/tick)^2 per space per tick
+const P0_SOURCE = 100; // initial variance on q
+
+export function createSourceKalmanBrain(config: BrainConfig): Brain {
+  const spaceIds: SpaceId[] = config.plan.spaces.map((s) => s.id);
+  const n = spaceIds.length;
+  const N = 2 * n; // state = [x_1..x_n, q_1..q_n]
+  const idx = new Map<SpaceId, number>(spaceIds.map((id, i) => [id, i]));
+
+  // F = [[A0, I], [0, I]]: temperatures flow along edges and leak to ambient, plus the
+  // per-space source; the source itself is a random walk.
+  const F: Mat = identity(N);
+  for (let i = 0; i < n; i++) {
+    F[i]![i] = 1 - COOL;
+    F[i]![n + i] = 1;
+  }
+  for (const e of config.plan.edges) {
+    const i = idx.get(e.a);
+    const j = idx.get(e.b);
+    if (i === undefined || j === undefined) continue;
+    F[i]![i]! -= e.rate;
+    F[i]![j]! += e.rate;
+    F[j]![j]! -= e.rate;
+    F[j]![i]! += e.rate;
+  }
+  const Ft = transpose(F);
+  const Q: Mat = identity(N).map((row, i) => row.map((v) => v * (i < n ? Q_PROCESS : Q_SOURCE)));
+  const ambientTerm = COOL * config.plan.ambient;
+
+  let z: number[] = [];
+  let P: Mat = [];
+  const init = (): void => {
+    z = Array.from({ length: N }, (_, i) => (i < n ? config.plan.ambient : 0));
+    P = identity(N).map((row, i) => row.map((v) => v * (i < n ? P0 : P0_SOURCE)));
+  };
+  init();
+
+  return {
+    step(obs: Observation): { belief: Belief; commands: Command[] } {
+      // Predict.
+      z = matvec(F, z).map((v, i) => (i < n ? v + ambientTerm : v));
+      P = add(matmul(matmul(F, P), Ft), Q);
+
+      // Update: H picks temperatures only; every reading is used, none doubted.
+      const rows = obs.readings.filter((r) => idx.has(r.spaceId));
+      const m = rows.length;
+      if (m > 0) {
+        const H: Mat = zeros(m, N);
+        rows.forEach((r, k) => {
+          H[k]![idx.get(r.spaceId)!] = 1;
+        });
+        const Ht = transpose(H);
+        const R = identity(m).map((row) => row.map((v) => v * SIGMA_MEAS_C * SIGMA_MEAS_C));
+        const S = add(matmul(matmul(H, P), Ht), R);
+        const K = matmul(matmul(P, Ht), inverse(S));
+        const hz = matvec(H, z);
+        const innov = rows.map((r, k) => r.temp - hz[k]!);
+        const gain = matvec(K, innov);
+        z = z.map((v, i) => v + gain[i]!);
+        P = matmul(sub(identity(N), matmul(K, H)), P);
+      }
+
+      const estimate: Record<SpaceId, number> = {};
+      const probability: Record<SpaceId, number> = {};
+      const burningSet: SpaceId[] = [];
+      let confSum = 0;
+      spaceIds.forEach((id, i) => {
+        estimate[id] = z[i]!;
+        const q = z[n + i]!;
+        const sd = Math.sqrt(Math.max(1e-9, P[n + i]![n + i]!));
+        probability[id] = normalCdf((q - SOURCE_MIN_C_PER_TICK) / sd);
+        if (q / sd > SOURCE_SIGMAS && q > SOURCE_MIN_C_PER_TICK) burningSet.push(id);
+        confSum += 1 - Math.min(1, Math.sqrt(Math.max(0, P[i]![i]!)) / CONF_STDDEV_SCALE_C);
+      });
+      const belief: Belief = {
+        estimate,
+        burningSet,
+        ambiguous: [],
+        suspectSensors: [],
+        confidence: confSum / n,
+        probability,
+      };
+      return { belief, commands: [] };
+    },
+    reset(): void {
+      init();
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------------------
+// Closed-loop baselines (CP4 prompt 3, task A). A filter has exactly one hypothesis, so
+// handing its burning set to the same allocator our brain uses gives a baseline that
+// dispatches and never hedges. What differs between the runs is the belief, nothing else.
+// ---------------------------------------------------------------------------------------
+export type BrainFactory = (cfg: BrainConfig) => Brain;
+
+/** Wrap any brain so its commands come from the shared allocator hook, with kept = [burningSet]. */
+export function withAllocator(factory: BrainFactory): BrainFactory {
+  return (cfg) => {
+    const inner = factory(cfg);
+    let prev: Command[] = [];
+    return {
+      step(obs) {
+        const { belief } = inner.step(obs);
+        prev = planCommands({ plan: cfg.plan, belief, kept: [new Set(belief.burningSet)], drones: obs.drones, prev });
+        return { belief, commands: prev };
+      },
+      reset() {
+        inner.reset();
+        prev = [];
+      },
+    };
+  };
+}
+
+export const createKalmanDispatching: BrainFactory = withAllocator(createKalmanBrain);
+export const createSourceKalmanDispatching: BrainFactory = withAllocator(createSourceKalmanBrain);

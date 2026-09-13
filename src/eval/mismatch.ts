@@ -12,7 +12,7 @@
  */
 import { runLoopMulti } from '../loop';
 import { createBrain } from '../brain';
-import { createGatedKalmanBrain, createKalmanBrain } from '../brain/kalman';
+import { createGatedKalmanBrain, createKalmanBrain, createSourceKalmanBrain } from '../brain/kalman';
 import { computeMetrics } from './metrics';
 import { makeRng } from '../shared/rng';
 import { loadPlan } from '../shared/structures';
@@ -54,6 +54,7 @@ for (const planName of plans) {
         'ours-mismatch': withPlan(createBrain, wrong),
         'kalman-mismatch': withPlan(createKalmanBrain, wrong),
         'gated-mismatch': withPlan(createGatedKalmanBrain, wrong),
+        'source-mismatch': withPlan(createSourceKalmanBrain, wrong),
       },
     });
     for (const [name, trace] of Object.entries(traces)) {

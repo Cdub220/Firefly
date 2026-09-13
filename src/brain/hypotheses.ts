@@ -94,9 +94,11 @@ export function predict(
   hypothesis: Set<SpaceId>,
   fromEstimate: Record<SpaceId, number>,
   steps = ROLLOUT_TICKS,
+  /** Tethers working each space, held constant over the rollout (they move slowly). */
+  suppression?: ReadonlyMap<SpaceId, number>,
 ): Record<SpaceId, number> {
   let temps = fromEstimate;
-  for (let i = 0; i < Math.max(1, steps); i++) temps = forward(plan, temps, hypothesis);
+  for (let i = 0; i < Math.max(1, steps); i++) temps = forward(plan, temps, hypothesis, suppression);
   return temps;
 }
 
@@ -125,8 +127,9 @@ export function score(
   fromEstimate: Record<SpaceId, number>,
   k: number,
   steps = ROLLOUT_TICKS,
+  suppression?: ReadonlyMap<SpaceId, number>,
 ): Score {
-  const predicted = predict(plan, hypothesis, fromEstimate, steps);
+  const predicted = predict(plan, hypothesis, fromEstimate, steps, suppression);
   const residuals = trusted
     .map((r) => {
       const p = predicted[r.spaceId] ?? plan.ambient;

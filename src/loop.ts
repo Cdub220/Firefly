@@ -16,7 +16,7 @@ import demoPlan from '../data/structures/demo-6.json';
 import { loadPlan, PLAN_NAMES } from './shared/structures';
 import type {
   Belief, Brain, BrainConfig, Command, CorruptionConfig, CorruptionMode, Observation,
-  SpaceId, StructurePlan, WorldState,
+  SpaceId, StructurePlan, WorldConfig, WorldState,
 } from './shared/types';
 
 export type TickRecord = {
@@ -54,13 +54,23 @@ export type LoopConfig = {
   /** Which brain to run. Default createBrain (ours). */
   brain?: BrainFactory;
   onTick?: (rec: TickRecord) => void;
+  /**
+   * Apply the brain's commands to the world (closed loop). Default false: the world runs
+   * open-loop with idle drones, the family the frozen estimator's numbers are reported on
+   * (docs/06-freeze-plan.md section 1). A trace records only the commands the world
+   * applied, so an open-loop trace carries none. (Additive, Dean, CP4 prompt 1.)
+   */
+  dispatch?: boolean;
+  /** Drone roster for the world (WorldConfig.drones). Default: the world's DEFAULT_DRONES. (Additive, Dean, CP4.) */
+  drones?: WorldConfig['drones'];
 };
 
 export function runLoop(cfg: LoopConfig): TickRecord[] {
-  const world = createWorld({ plan: cfg.plan, seed: cfg.seed });
+  const world = createWorld({ plan: cfg.plan, seed: cfg.seed, ...(cfg.drones ? { drones: cfg.drones } : {}) });
   const corruptor = createCorruptor({ seed: cfg.seed, mode: 'none', ...cfg.corruption });
   const makeBrain = cfg.brain ?? createBrain;
-  const brain = makeBrain({ plan: cfg.plan, seed: cfg.seed });
+  const dispatch = cfg.dispatch === true;
+  const brain = makeBrain({ plan: cfg.plan, seed: cfg.seed, dispatch });
 
   const onset = onsetOf(cfg.corruption);
   const trace: TickRecord[] = [];
@@ -71,7 +81,7 @@ export function runLoop(cfg: LoopConfig): TickRecord[] {
     const t0 = now();
     const out = brain.step(seen);
     const stepMs = now() - t0;
-    commands = out.commands;
+    commands = dispatch ? out.commands : [];
     const rec: TickRecord = { t: truth.t, truth, obs: seen, belief: out.belief, commands, stepMs, onset };
     trace.push(rec);
     cfg.onTick?.(rec);
@@ -88,7 +98,7 @@ export type MultiLoopConfig = Omit<LoopConfig, 'brain'> & {
 /**
  * One world, one corruptor, every brain fed the same corrupted observation each tick.
  * Each brain's trace records its own belief and commands; only the primary brain's
- * commands are applied to the world.
+ * commands are applied to the world, and only when `dispatch` is true.
  */
 export function runLoopMulti(cfg: MultiLoopConfig): Record<string, TickRecord[]> {
   const names = Object.keys(cfg.brains);
@@ -96,11 +106,13 @@ export function runLoopMulti(cfg: MultiLoopConfig): Record<string, TickRecord[]>
   const primary = cfg.primary ?? names[0]!;
   if (!(primary in cfg.brains)) throw new Error(`runLoopMulti: unknown primary "${primary}"`);
 
-  const world = createWorld({ plan: cfg.plan, seed: cfg.seed });
+  const world = createWorld({ plan: cfg.plan, seed: cfg.seed, ...(cfg.drones ? { drones: cfg.drones } : {}) });
   const corruptor = createCorruptor({ seed: cfg.seed, mode: 'none', ...cfg.corruption });
+  const dispatch = cfg.dispatch === true;
   const brains = names.map((name) => ({
     name,
-    brain: cfg.brains[name]!({ plan: cfg.plan, seed: cfg.seed }),
+    // Only the primary's commands drive the world; the others are told they are open-loop.
+    brain: cfg.brains[name]!({ plan: cfg.plan, seed: cfg.seed, dispatch: dispatch && name === primary }),
   }));
 
   const onset = onsetOf(cfg.corruption);
@@ -116,10 +128,11 @@ export function runLoopMulti(cfg: MultiLoopConfig): Record<string, TickRecord[]>
       const t0 = now();
       const out = brain.step(own);
       const stepMs = now() - t0;
-      const rec: TickRecord = { t: truth.t, truth, obs: own, belief: out.belief, commands: out.commands, stepMs, onset };
+      // Only commands the world will apply are recorded: an open-loop trace says what happened.
+      const rec: TickRecord = { t: truth.t, truth, obs: own, belief: out.belief, commands: dispatch ? out.commands : [], stepMs, onset };
       traces[name]!.push(rec);
       if (name === primary) {
-        commands = out.commands;
+        commands = dispatch ? out.commands : [];
         cfg.onTick?.(rec);
       }
     }

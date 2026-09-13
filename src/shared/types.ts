@@ -181,4 +181,11 @@ export type BrainConfig = {
    * space, k=2 would let "no fire" discard both witnesses of a small fire).
    */
   k?: number;
+  /**
+   * Whether this brain's commands are applied to the world (closed loop). The loop sets
+   * it from LoopConfig.dispatch. When false, the brain must not assume its own commands
+   * had any effect (a tether it told to suppress is not suppressing). Default true.
+   * (Additive, Dean, CP3 prompt 2d.)
+   */
+  dispatch?: boolean;
 };

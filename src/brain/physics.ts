@@ -29,16 +29,29 @@ export function fuelTicks(plan: StructurePlan, spaceId: SpaceId): number {
 export const ORDNANCE_COOKOFF_HEAT = 150; // one-off jump a neighbor of 'ordnance' can see
 export const TETHER_COOL = 0.1; // extra cooling per tether working a space
 export const MAX_TETHERS = 2; // most units that plausibly work one space at once
+/**
+ * A tether on 'suppress' multiplies a burning space's heat generation by this, per tether
+ * (two stack to 0.09). Mirror of the world's TETHER_SUPPRESSION (src/world/constants.ts),
+ * copied, not imported, like the constants above: the brain models what water does.
+ */
+export const TETHER_SUPPRESSION = 0.3;
 export const SIGMA_C = 2; // sensor noise the brain assumes (conservative)
 
 const STEADY_EPS_C = 0.5;
 const MAX_OUTGOING_RATE = 0.9; // stability clamp on a space's summed edge rates (as the world)
 
-/** One tick of the linear heat model: transfer along edges, generation, ambient loss. */
+/**
+ * One tick of the linear heat model: transfer along edges, generation, ambient loss, and
+ * suppression. `suppression` maps a space to the number of tethers working it (capped at
+ * MAX_TETHERS): a burning space generates TETHER_SUPPRESSION ** n of its heat and every
+ * space with tethers loses n * TETHER_COOL * (T - ambient) more per tick, exactly the
+ * world's effect of a tether on 'suppress'. No map = no suppression = the old behaviour.
+ */
 export function forward(
   plan: StructurePlan,
   temps: Record<SpaceId, number>,
   burning: Set<SpaceId>,
+  suppression?: ReadonlyMap<SpaceId, number>,
 ): Record<SpaceId, number> {
   const edges = edgeMap(plan);
   const hazard = new Map(plan.spaces.map((s) => [s.id, s.hazard ?? 'none']));
@@ -52,9 +65,12 @@ export function forward(
     for (const e of myEdges) {
       dT += scale * e.rate * ((temps[e.b] ?? plan.ambient) - t);
     }
+    const raw = suppression?.get(s.id) ?? 0;
+    const tethers = Number.isFinite(raw) ? Math.min(MAX_TETHERS, Math.max(0, Math.floor(raw))) : 0;
+    if (tethers > 0) dT += tethers * TETHER_COOL * (plan.ambient - t);
     if (burning.has(s.id)) {
       const gen = hazard.get(s.id) === 'fuel' ? GEN_RATE * FUEL_HAZARD_MULT : GEN_RATE;
-      dT += gen * (FLAME_TEMP - t);
+      dT += gen * Math.pow(TETHER_SUPPRESSION, tethers) * (FLAME_TEMP - t);
     }
     out[s.id] = t + dT;
   }

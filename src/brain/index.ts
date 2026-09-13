@@ -20,8 +20,9 @@
 import { makeRng, type Rng } from '../shared/rng';
 import { edgeMap } from '../shared/plan';
 import { candidates, hotSpaces, predict, score } from './hypotheses';
-import { fuelTicks, IGNITE } from './physics';
+import { fuelTicks, IGNITE, MAX_TETHERS } from './physics';
 import { checkConsistency, updateHistory, type SensorHistory } from './consistency';
+import { planCommands } from './commands';
 import type { Belief, Brain, BrainConfig, Command, Observation, SpaceId } from '../shared/types';
 
 // Default tolerance for undetected liars. NOT the prompt's 2: with one sensor per space
@@ -88,6 +89,7 @@ export function createBrain(config: BrainConfig): Brain {
   let burnTicks = new Map<SpaceId, number>(); // ticks a space has been in the best hypothesis (fuel does not regenerate)
   let agreedStreak = new Map<SpaceId, number>(); // consecutive ticks a space was in every kept hypothesis
   let lastBelief: Belief | null = null; // carried forward under total blackout: last known fire, unconfirmed
+  let prevCommands: Command[] = []; // last tick's commands, handed back to the command hook
   const init = (): void => {
     history = new Map();
     prevEstimate = {};
@@ -100,6 +102,7 @@ export function createBrain(config: BrainConfig): Brain {
     burnTicks = new Map();
     agreedStreak = new Map();
     lastBelief = null;
+    prevCommands = [];
   };
   init();
 
@@ -137,13 +140,32 @@ export function createBrain(config: BrainConfig): Brain {
       };
       updateHistory(history, sane);
       const { trusted, suspect } = checkConsistency(config.plan, sane, prevEstimate, history);
+      // Water exists: a tether we told to suppress a space, and which reports standing in
+      // that space, is working it (the world applies suppression exactly then), so the
+      // rollout must expect that space to cool rather than climb toward flame temperature,
+      // or a suppressed fire looks like no fire at all. Both halves are needed: the observed
+      // self-report says where the tether is (never assume a command was obeyed), and our
+      // own last command says whether its hose is on. An observed tether alone is not
+      // enough: the world's default roster parks idle tethers at the resupply space on
+      // every open-loop run, and counting those changed the open-loop evidence table. And
+      // when this brain's commands are not applied at all (BrainConfig.dispatch false: the
+      // open-loop family the freeze record is measured on), no tether is ever working.
+      const suppressing = new Set(
+        config.dispatch === false ? [] : prevCommands.filter((c) => c.task === 'suppress').map((c) => `${c.droneId}@${c.goTo}`),
+      );
+      const tethersAt = new Map<SpaceId, number>();
+      for (const d of sane.drones) {
+        if (d.class === 'tether' && d.alive && suppressing.has(`${d.id}@${d.at}`)) {
+          tethersAt.set(d.at, Math.min(MAX_TETHERS, (tethersAt.get(d.at) ?? 0) + 1));
+        }
+      }
 
       // Total blackout: no reading can be trusted. Every hypothesis fits zero data equally,
       // so scoring would fall to the tie-break and report "no fire". A commander with no
       // data wants the last known fire, marked unconfirmed, not a clean sheet: carry the
       // previous belief forward at floor confidence and let physics move the estimate.
       if (trusted.length === 0 && lastBelief !== null) {
-        const estimate = predict(config.plan, prevBurning, prevEstimate, 1);
+        const estimate = predict(config.plan, prevBurning, prevEstimate, 1, tethersAt);
         prevEstimate = estimate;
         estHistory.push(estimate);
         while (estHistory.length > ROLLOUT) estHistory.shift();
@@ -157,7 +179,8 @@ export function createBrain(config: BrainConfig): Brain {
           confidence: MIN_CONFIDENCE,
         };
         lastBelief = belief;
-        return { belief, commands: [] };
+        prevCommands = planCommands({ plan: config.plan, belief, kept: [new Set(belief.burningSet)], drones: sane.drones, prev: prevCommands });
+        return { belief, commands: prevCommands };
       }
 
       // Seed candidates from hot READINGS and hot ESTIMATES: a fire whose sensors died
@@ -194,7 +217,7 @@ export function createBrain(config: BrainConfig): Brain {
       );
       const sets = candidates(config.plan, prevBurning, hotSeeds, forced);
       const scored = sets
-        .map((set) => ({ set, ...score(config.plan, set, trusted, from, k, steps) }))
+        .map((set) => ({ set, ...score(config.plan, set, trusted, from, k, steps, tethersAt) }))
         .sort((a, b) => a.s - b.s || a.full - b.full || a.set.size - b.set.size);
       const best = scored[0]!;
       const tolerance = Math.max(TOLERANCE_FLOOR_C, TOLERANCE_FRAC * best.s);
@@ -241,7 +264,7 @@ export function createBrain(config: BrainConfig): Brain {
 
       // Estimate: trusted readings where present; the best hypothesis's physics
       // elsewhere (one step from last tick's estimate — the current-tick prediction).
-      const predicted = predict(config.plan, best.set, prevEstimate, 1);
+      const predicted = predict(config.plan, best.set, prevEstimate, 1, tethersAt);
       const direct = new Map<SpaceId, { sum: number; n: number }>();
       for (const r of trusted) {
         const acc = direct.get(r.spaceId) ?? { sum: 0, n: 0 };
@@ -294,7 +317,8 @@ export function createBrain(config: BrainConfig): Brain {
         probability,
       };
       lastBelief = belief;
-      return { belief, commands: [] };
+      prevCommands = planCommands({ plan: config.plan, belief, kept: kept.map((x) => x.set), drones: sane.drones, prev: prevCommands });
+      return { belief, commands: prevCommands };
     },
     reset(): void {
       rng = makeRng(config.seed).fork('brain');

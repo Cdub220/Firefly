@@ -15,7 +15,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createBrain } from '../brain';
-import { createGatedKalmanBrain, createKalmanBrain } from '../brain/kalman';
+import { createGatedKalmanBrain, createKalmanBrain, createSourceKalmanBrain } from '../brain/kalman';
 import { runLoop, runLoopMulti } from '../loop';
 import { edgeMap } from '../shared/plan';
 import { loadPlan, PLAN_NAMES } from '../shared/structures';
@@ -25,9 +25,10 @@ import { computeMetrics, type Metrics } from './metrics';
 export type TargetKind = 'ignition' | 'neighbor' | 'far' | 'random';
 export const TARGET_KINDS: readonly TargetKind[] = ['ignition', 'neighbor', 'far', 'random'];
 export const SWEEP_MODES: readonly CorruptionMode[] = ['freeze', 'blind', 'saturate', 'flashover', 'mixed'];
-const BRAINS = { ours: createBrain, kalman: createKalmanBrain, 'kalman-gated': createGatedKalmanBrain } as const;
-const BRAIN_ORDER: readonly string[] = ['ours', 'kalman', 'kalman-gated'];
-const BASELINES: readonly BrainName[] = ['kalman', 'kalman-gated'];
+const BRAINS = { ours: createBrain, kalman: createKalmanBrain, 'kalman-gated': createGatedKalmanBrain, 'kalman-source': createSourceKalmanBrain } as const;
+const BRAIN_ORDER: readonly string[] = ['ours', 'kalman', 'kalman-gated', 'kalman-source'];
+/** WHERE OURS LOSES compares against the best of every baseline: naive, gated, and source-estimating. */
+const BASELINES: readonly BrainName[] = ['kalman', 'kalman-gated', 'kalman-source'];
 export type BrainName = keyof typeof BRAINS;
 
 export type SweepOptions = {
@@ -184,7 +185,7 @@ export function aggregate(rows: SweepRow[]): Aggregate[] {
   });
 }
 
-/** Cells where ours has higher false certainty or wrong dispatch than the BEST Kalman baseline (naive or gated). */
+/** Cells where ours has higher false certainty or wrong dispatch than the BEST Kalman baseline (naive, gated or source). */
 export function whereOursLoses(aggs: Aggregate[]): Array<{ ours: Aggregate; kalman: Aggregate; on: string[] }> {
   const out: Array<{ ours: Aggregate; kalman: Aggregate; on: string[] }> = [];
   const byCell = new Map<string, Partial<Record<BrainName, Aggregate>>>();
@@ -241,7 +242,7 @@ export const K_NOTE = 'note: k (freeze/blind budget) only changes the freeze, bl
 export function formatLosses(losses: ReturnType<typeof whereOursLoses>): string {
   const out = ['WHERE OURS LOSES'];
   if (losses.length === 0) {
-    out.push('  (no aggregated cell where ours has higher false certainty or wrong dispatch than the best Kalman baseline, naive or gated)');
+    out.push('  (no aggregated cell where ours has higher false certainty or wrong dispatch than the best Kalman baseline: naive, gated or source)');
     return out.join('\n');
   }
   for (const l of losses) {
@@ -328,7 +329,7 @@ const isMain =
 if (isMain) {
   const opts = parseSweepArgs(process.argv.slice(2));
   const cells = opts.plans.length * opts.modes.length * opts.ks.length * opts.targets.length * opts.seeds.length;
-  console.log(`sweep  plans=${opts.plans.join(',')}  modes=${opts.modes.join(',')}  k=${opts.ks.join(',')}  targets=${opts.targets.join(',')}  onset=${opts.onset}  seeds=${opts.seeds.join(',')}  ticks=${opts.ticks}  cells=${cells} x 2 brains`);
+  console.log(`sweep  plans=${opts.plans.join(',')}  modes=${opts.modes.join(',')}  k=${opts.ks.join(',')}  targets=${opts.targets.join(',')}  onset=${opts.onset}  seeds=${opts.seeds.join(',')}  ticks=${opts.ticks}  cells=${cells} x ${BRAIN_ORDER.length} brains`);
   let lastPrinted = 0;
   const result = runSweep({
     ...opts,

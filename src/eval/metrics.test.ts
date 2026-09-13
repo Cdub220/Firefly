@@ -2,7 +2,7 @@
  * computeMetrics on synthetic traces where the answers are known by hand.
  */
 import { describe, expect, it } from 'vitest';
-import { computeMetrics } from './metrics';
+import { computeMetrics, isHedge } from './metrics';
 import type { TickRecord } from '../loop';
 import type { Belief, SpaceId } from '../shared/types';
 
@@ -14,6 +14,7 @@ type Tick = {
   temps?: Record<SpaceId, number>;
   belief: Partial<Belief> & { burningSet: SpaceId[]; confidence: number };
   stepMs?: number;
+  commands?: TickRecord['commands'];
 };
 
 /** Build a TickRecord with only the fields the metrics read; everything else is filler. */
@@ -35,7 +36,7 @@ function rec(x: Tick): TickRecord {
     confidence: x.belief.confidence,
     probability: x.belief.probability ?? Object.fromEntries(IDS.map((id) => [id, x.belief.burningSet.includes(id) ? 1 : 0])),
   };
-  return { t: x.t, truth, obs: { t: x.t, readings: [], drones: [] }, belief, commands: [], stepMs: x.stepMs ?? 0, onset: null };
+  return { t: x.t, truth, obs: { t: x.t, readings: [], drones: [] }, belief, commands: x.commands ?? [], stepMs: x.stepMs ?? 0, onset: null };
 }
 
 describe('computeMetrics', () => {
@@ -176,5 +177,27 @@ describe('computeMetrics', () => {
     expect(onsetOf(undefined)).toBeNull();
     const m = computeMetrics(multi['ours']!, { onset: 5 });
     expect(m.computeMsPerTick).toBeGreaterThan(0);
+  });
+
+  it('hedgeRate: ticks >= onset with a non-empty ambiguous set AND commands to two different spaces inside one group', () => {
+    const cmd = (droneId: string, goTo: string): TickRecord['commands'][number] => ({ droneId, goTo, task: 'observe' });
+    const trace = [
+      // before onset: a hedge that must not count
+      rec({ t: 1, burning: ['A'], belief: { burningSet: [], ambiguous: [['B', 'C']], confidence: 0.5 }, commands: [cmd('D1', 'B'), cmd('D2', 'C')] }),
+      // hedge: two drones, two spaces, one group
+      rec({ t: 2, burning: ['A'], belief: { burningSet: [], ambiguous: [['B', 'C']], confidence: 0.5 }, commands: [cmd('D1', 'B'), cmd('D2', 'C')] }),
+      // not a hedge: both drones to the same space
+      rec({ t: 3, burning: ['A'], belief: { burningSet: [], ambiguous: [['B', 'C']], confidence: 0.5 }, commands: [cmd('D1', 'B'), cmd('D2', 'B')] }),
+      // not a hedge: two spaces but in different groups
+      rec({ t: 4, burning: ['A'], belief: { burningSet: [], ambiguous: [['B'], ['C']], confidence: 0.5 }, commands: [cmd('D1', 'B'), cmd('D2', 'C')] }),
+      // not a hedge: no ambiguity
+      rec({ t: 5, burning: ['A'], belief: { burningSet: ['A'], ambiguous: [], confidence: 0.9 }, commands: [cmd('D1', 'B'), cmd('D2', 'C')] }),
+    ];
+    const m = computeMetrics(trace, { onset: 2 });
+    expect(m.hedgeRate).toBeCloseTo(1 / 4, 10);
+    expect(m.containmentDelta).toBeUndefined();
+    expect(isHedge([['B', 'C']], [cmd('D1', 'B'), cmd('D1', 'C')])).toBe(true); // two targets, even from one drone's two commands
+    expect(isHedge([['B', 'C']], [])).toBe(false);
+    expect(computeMetrics([], { onset: 0 }).hedgeRate).toBe(0);
   });
 });

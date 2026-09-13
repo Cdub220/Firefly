@@ -2,9 +2,10 @@
  * Kalman baseline tests. Observations are built by hand: the brain sees only Observation.
  */
 import { describe, expect, it } from 'vitest';
-import { createGatedKalmanBrain, createKalmanBrain, GATE_REACCEPT, normalCdf } from './kalman';
+import { createGatedKalmanBrain, createKalmanBrain, createKalmanDispatching, createSourceKalmanBrain, GATE_REACCEPT, normalCdf, SOURCE_MIN_C_PER_TICK, withAllocator } from './kalman';
+import { allocate } from './allocator';
 import { forward } from './physics';
-import type { Observation, Reading, StructurePlan } from '../shared/types';
+import type { Command, Observation, Reading, StructurePlan } from '../shared/types';
 
 const plan: StructurePlan = {
   name: 'test-3',
@@ -179,5 +180,193 @@ describe('createKalmanBrain', () => {
     const out = brain.step({ t: 6, readings: [], drones: [] });
     expect(Number.isFinite(out.belief.confidence)).toBe(true);
     expect(Object.keys(out.belief.estimate)).toHaveLength(3);
+  });
+});
+
+/** A physics-consistent stream: temps advanced by forward() with the given burning set per tick. */
+const streamObs = (temps: Record<string, number>, t: number): Observation => ({
+  t,
+  readings: [reading('F1', 'S1', temps['S1']!, t), reading('F2', 'S2', temps['S2']!, t), reading('F3', 'S3', temps['S3']!, t)],
+  drones: [],
+});
+
+describe('createSourceKalmanBrain (augmented-state source filter, the fair baseline)', () => {
+  it('clean burning stream: within 20 ticks names S1 burning and never names S2 or S3, even once they pass 200 C', () => {
+    const brain = createSourceKalmanBrain({ plan, seed: 42 });
+    const naive = createKalmanBrain({ plan, seed: 42 });
+    let temps: Record<string, number> = { S1: 450, S2: 20, S3: 20 };
+    let namedS1 = -1;
+    let naiveNamedNeighbour = false;
+    let neighbourPassed200 = false;
+    for (let t = 1; t <= 20; t++) {
+      const out = brain.step(streamObs(temps, t));
+      const nv = naive.step(streamObs(temps, t));
+      if (namedS1 < 0 && out.belief.burningSet.includes('S1')) namedS1 = t;
+      expect(out.belief.burningSet).not.toContain('S2');
+      expect(out.belief.burningSet).not.toContain('S3');
+      if (temps['S2']! > 200 || temps['S3']! > 200) neighbourPassed200 = true;
+      if (nv.belief.burningSet.includes('S2') || nv.belief.burningSet.includes('S3')) naiveNamedNeighbour = true;
+      temps = forward(plan, temps, new Set(['S1']));
+    }
+    expect(namedS1).toBeGreaterThan(0);
+    expect(namedS1).toBeLessThanOrEqual(20);
+    // The stream did exercise the case: a neighbour crossed 200 C with no source of its own,
+    // and the temperature-threshold filter called it burning. Hot is not burning.
+    expect(neighbourPassed200).toBe(true);
+    expect(naiveNamedNeighbour).toBe(true);
+  });
+
+  it('a space that goes out while still hot is dropped within 10 ticks of the source stopping; the naive filter keeps it', () => {
+    const brain = createSourceKalmanBrain({ plan, seed: 42 });
+    const naive = createKalmanBrain({ plan, seed: 42 });
+    let temps: Record<string, number> = { S1: 450, S2: 20, S3: 20 };
+    const OUT_AT = 20;
+    let dropped = -1;
+    let naiveKept = 0;
+    for (let t = 1; t <= OUT_AT + 10; t++) {
+      const out = brain.step(streamObs(temps, t));
+      const nv = naive.step(streamObs(temps, t));
+      if (t <= OUT_AT) expect(out.belief.burningSet).toContain('S1');
+      if (t > OUT_AT && dropped < 0 && !out.belief.burningSet.includes('S1')) dropped = t;
+      if (t > OUT_AT && nv.belief.burningSet.includes('S1')) naiveKept += 1;
+      // S1 burns through tick OUT_AT, then its source stops; it cools but stays hot for a long time.
+      temps = forward(plan, temps, new Set(t < OUT_AT ? ['S1'] : []));
+    }
+    expect(dropped).toBeGreaterThan(OUT_AT);
+    expect(dropped).toBeLessThanOrEqual(OUT_AT + 10);
+    expect(temps['S1']!).toBeGreaterThan(200); // still hot when dropped: the point of the test
+    expect(naiveKept).toBe(10);
+  });
+
+  it('a sensor frozen at the fire plateau: the source filter still believes the fire (fair on clean runs, not lie-resistant)', () => {
+    const brain = createSourceKalmanBrain({ plan, seed: 42 });
+    let temps: Record<string, number> = { S1: 450, S2: 20, S3: 20 };
+    for (let t = 1; t <= 40; t++) {
+      brain.step(streamObs(temps, t));
+      temps = forward(plan, temps, new Set(['S1']));
+    }
+    const plateau = temps['S1']!;
+    let stillBurning = 0;
+    for (let t = 41; t <= 60; t++) {
+      const out = brain.step({ t, readings: [reading('F1', 'S1', plateau, 40), reading('F2', 'S2', temps['S2']!, t), reading('F3', 'S3', temps['S3']!, t)], drones: [] });
+      if (out.belief.burningSet.includes('S1')) stillBurning += 1;
+      expect(out.belief.suspectSensors).toEqual([]); // no gating in this variant
+      expect(out.belief.ambiguous).toEqual([]);
+      temps = forward(plan, temps, new Set(['S1']));
+    }
+    expect(stillBurning).toBe(20);
+  });
+
+  it('P(burning) is the posterior Phi((q - 10) / sd): in [0, 1] everywhere, > 0.99 for a strong source, < 0.01 for none', () => {
+    const brain = createSourceKalmanBrain({ plan, seed: 42 });
+    let temps: Record<string, number> = { S1: 450, S2: 20, S3: 20 };
+    let last = brain.step(streamObs(temps, 1));
+    for (let t = 1; t <= 20; t++) {
+      last = brain.step(streamObs(temps, t));
+      for (const id of ['S1', 'S2', 'S3']) {
+        expect(last.belief.probability[id]!).toBeGreaterThanOrEqual(0);
+        expect(last.belief.probability[id]!).toBeLessThanOrEqual(1);
+      }
+      temps = forward(plan, temps, new Set(['S1']));
+    }
+    expect(last.belief.probability['S1']!).toBeGreaterThan(0.99);
+    expect(last.belief.probability['S2']!).toBeLessThan(0.01);
+    expect(last.belief.probability['S3']!).toBeLessThan(0.01);
+    expect(SOURCE_MIN_C_PER_TICK).toBe(10);
+  });
+
+  it('P(burning) is graded through normalCdf, not a hard label: a source held near the 10 C/tick line is neither 0 nor 1', () => {
+    // Isolated spaces, so a space's only heat input is its own source. Hold S2 on the exact
+    // trajectory of a constant source q = 10 + 1.5 C/tick against ambient cooling; the
+    // posterior on q sits a fraction of a sigma above the line, so P must be in between.
+    const iso = { ...plan, edges: [] };
+    const brain = createSourceKalmanBrain({ plan: iso, seed: 42 });
+    const q = SOURCE_MIN_C_PER_TICK + 1.5;
+    let s2 = 20;
+    let last = brain.step({ t: 1, readings: [reading('F1', 'S1', 20, 1), reading('F2', 'S2', s2, 1), reading('F3', 'S3', 20, 1)], drones: [] });
+    for (let t = 2; t <= 40; t++) {
+      s2 = s2 + 0.02 * (20 - s2) + q;
+      last = brain.step({ t, readings: [reading('F1', 'S1', 20, t), reading('F2', 'S2', s2, t), reading('F3', 'S3', 20, t)], drones: [] });
+    }
+    const p = last.belief.probability['S2']!;
+    expect(p).toBeGreaterThan(0.05);
+    expect(p).toBeLessThan(0.95);
+    expect(last.belief.probability['S1']!).toBeLessThan(0.01);
+  });
+
+  it('the 3-sigma half of the rule: a source estimate that stays above 10 C/tick but whose uncertainty grows past q/3 leaves burningSet while P(burning) stays high', () => {
+    // 40 ticks of a clean fire fix q_S1 near 47 C/tick; then a 100-tick blackout. The random
+    // walk keeps q where it was but its variance grows 4 per tick, so sd passes q/3 and the
+    // significance test fails while the magnitude test still passes: not confidently burning.
+    const brain = createSourceKalmanBrain({ plan, seed: 42 });
+    let temps: Record<string, number> = { S1: 450, S2: 20, S3: 20 };
+    for (let t = 1; t <= 40; t++) {
+      brain.step(streamObs(temps, t));
+      temps = forward(plan, temps, new Set(['S1']));
+    }
+    let out = brain.step({ t: 41, readings: [], drones: [] });
+    expect(out.belief.burningSet).toContain('S1');
+    for (let t = 42; t <= 140; t++) out = brain.step({ t, readings: [], drones: [] });
+    expect(out.belief.burningSet).not.toContain('S1');
+    expect(out.belief.probability['S1']!).toBeGreaterThan(0.5); // magnitude still says fire; significance does not
+    expect(out.belief.confidence).toBeLessThan(0.1); // and it says so
+  });
+
+  it('the process model keeps ambient: with no readings at all the estimate stays at plan.ambient, not decaying toward zero', () => {
+    const brain = createSourceKalmanBrain({ plan, seed: 42 });
+    let out = brain.step({ t: 1, readings: [], drones: [] });
+    for (let t = 2; t <= 30; t++) out = brain.step({ t, readings: [], drones: [] });
+    for (const id of ['S1', 'S2', 'S3']) expect(out.belief.estimate[id]!).toBeCloseTo(plan.ambient, 6);
+  });
+
+  it('reset() restores the initial state deterministically and a tick with no readings does not break confidence', () => {
+    const brain = createSourceKalmanBrain({ plan, seed: 42 });
+    const a = JSON.stringify([1, 2, 3].map((t) => brain.step(tick(t))));
+    brain.reset();
+    const b = JSON.stringify([1, 2, 3].map((t) => brain.step(tick(t))));
+    expect(b).toBe(a);
+    const out = brain.step({ t: 4, readings: [], drones: [] });
+    expect(Number.isFinite(out.belief.confidence)).toBe(true);
+    expect(Object.keys(out.belief.estimate)).toHaveLength(3);
+    expect(out.commands).toEqual([]);
+  });
+});
+
+describe('withAllocator (dispatching baselines)', () => {
+  const drones = [{ id: 'D3', class: 'tether' as const, at: 'S3', resource: 1, alive: true, linked: true }, { id: 'D1', class: 'scout' as const, at: 'S3', resource: 1, alive: true, linked: true }];
+  const withDrones = (t: number): Observation => ({ ...tick(t), drones });
+
+  it('commands are allocate() on [burningSet] as the single hypothesis; the belief is the inner brain\'s, untouched', () => {
+    const inner = createKalmanBrain({ plan, seed: 42 });
+    const brain = createKalmanDispatching({ plan, seed: 42 });
+    let prev: Command[] = [];
+    for (let t = 1; t <= 6; t++) {
+      const a = inner.step(withDrones(t));
+      const b = brain.step(withDrones(t));
+      expect(b.belief).toEqual(a.belief);
+      expect(b.commands).toEqual(allocate(plan, a.belief, [new Set(a.belief.burningSet)], drones, prev));
+      prev = b.commands;
+    }
+    expect(prev.some((c) => c.task === 'suppress')).toBe(true); // a tether was actually sent
+  });
+
+  it('carries last tick\'s commands as prev (hysteresis) and reset() clears them and the inner filter', () => {
+    const calls: Command[][] = [];
+    const spyFactory = withAllocator((cfg) => {
+      const inner = createKalmanBrain(cfg);
+      return { step: (o) => inner.step(o), reset: () => inner.reset() };
+    });
+    const brain = spyFactory({ plan, seed: 42 });
+    const first = brain.step(withDrones(1)).commands;
+    const second = brain.step(withDrones(2)).commands;
+    calls.push(first, second);
+    // With prev = first the second call is the hysteresis-aware result; recompute both ways.
+    const inner = createKalmanBrain({ plan, seed: 42 });
+    inner.step(withDrones(1));
+    const b2 = inner.step(withDrones(2)).belief;
+    expect(second).toEqual(allocate(plan, b2, [new Set(b2.burningSet)], drones, first));
+    brain.reset();
+    const again = brain.step(withDrones(1)).commands;
+    expect(again).toEqual(first); // same state as the very first call: prev cleared, filter reset
   });
 });

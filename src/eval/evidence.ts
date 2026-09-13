@@ -9,7 +9,7 @@
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { createBrain } from '../brain';
-import { createGatedKalmanBrain, createKalmanBrain } from '../brain/kalman';
+import { createGatedKalmanBrain, createKalmanBrain, createSourceKalmanBrain } from '../brain/kalman';
 import { DEMO_PLAN, runLoopMulti, type TickRecord } from '../loop';
 import { computeMetrics, P_THRESHOLDS } from './metrics';
 import type { CorruptionConfig, CorruptionMode, SpaceId } from '../shared/types';
@@ -57,7 +57,7 @@ function runMode(mode: CorruptionMode): Row[] {
       seed,
       ticks: TICKS,
       corruption,
-      brains: { ours: createBrain, kalman: createKalmanBrain, 'kalman-gated': createGatedKalmanBrain },
+      brains: { ours: createBrain, kalman: createKalmanBrain, 'kalman-gated': createGatedKalmanBrain, 'kalman-source': createSourceKalmanBrain },
       primary: 'ours',
     });
     for (const [name, trace] of Object.entries(traces)) {
@@ -74,7 +74,7 @@ function runMode(mode: CorruptionMode): Row[] {
     }
     if (VERBOSE && seed === SEEDS[0]) printVerbose(mode, traces);
   }
-  return [...perBrain.entries()].map(([brain, a]) => ({
+  return [...perBrain.entries()].sort((a, b) => BRAIN_ORDER.indexOf(a[0]) - BRAIN_ORDER.indexOf(b[0])).map(([brain, a]) => ({
     mode,
     brain,
     falseCertainty: mean(a.fc),
@@ -105,6 +105,7 @@ function printVerbose(mode: CorruptionMode, traces: Record<string, TickRecord[]>
 }
 
 const pct = (x: number): string => `${(100 * x).toFixed(0)}%`;
+const BRAIN_ORDER = ['ours', 'kalman', 'kalman-gated', 'kalman-source'];
 
 console.log(
   `evidence-cp2  plan=${DEMO_PLAN.name}  ticks=${TICKS}  onset=${ONSET}  k=1  target=${TARGET.join(',')}  seeds=${SEEDS.join(',')}`,
@@ -138,8 +139,9 @@ for (const mode of MODES) {
   const ours = rows.find((r) => r.mode === mode && r.brain === 'ours')!;
   const kal = rows.find((r) => r.mode === mode && r.brain === 'kalman')!;
   const gated = rows.find((r) => r.mode === mode && r.brain === 'kalman-gated')!;
+  const source = rows.find((r) => r.mode === mode && r.brain === 'kalman-source')!;
   console.log(
-    `${mode}: false-certain kalman ${pct(kal.falseCertainty)}, gated ${pct(gated.falseCertainty)}, ours ${pct(ours.falseCertainty)} of ticks; coverage ours ${pct(ours.ambiguityCoverage)}; ` +
-      `Brier ours ${ours.brierScore.toFixed(2)} vs kalman ${kal.brierScore.toFixed(2)} vs gated ${gated.brierScore.toFixed(2)}.`,
+    `${mode}: false-certain kalman ${pct(kal.falseCertainty)}, gated ${pct(gated.falseCertainty)}, source ${pct(source.falseCertainty)}, ours ${pct(ours.falseCertainty)} of ticks; coverage ours ${pct(ours.ambiguityCoverage)}; ` +
+      `Brier ours ${ours.brierScore.toFixed(2)} vs kalman ${kal.brierScore.toFixed(2)} vs gated ${gated.brierScore.toFixed(2)} vs source ${source.brierScore.toFixed(2)}.`,
   );
 }
