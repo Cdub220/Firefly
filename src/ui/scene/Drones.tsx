@@ -65,11 +65,11 @@ function DroneMesh({ d, pos, from, progress, hoseTo }: { d: Drone; pos: Pos; fro
   );
 }
 
-function DeadMark({ pos }: { pos: Pos }) {
+function DeadMark({ pos, dx, dz }: { pos: Pos; dx: number; dz: number }) {
   return (
-    <group position={[pos.x, pos.y + BOX.h / 2 + 0.06, pos.z]}>
-      <mesh rotation={[0, Math.PI / 4, 0]}><boxGeometry args={[1.1, 0.04, 0.08]} /><meshBasicMaterial color="#6f7b8c" /></mesh>
-      <mesh rotation={[0, -Math.PI / 4, 0]}><boxGeometry args={[1.1, 0.04, 0.08]} /><meshBasicMaterial color="#6f7b8c" /></mesh>
+    <group position={[pos.x + dx, pos.y + BOX.h / 2 + 0.06, pos.z + dz]}>
+      <mesh rotation={[0, Math.PI / 4, 0]}><boxGeometry args={[0.5, 0.04, 0.07]} /><meshBasicMaterial color="#6f7b8c" /></mesh>
+      <mesh rotation={[0, -Math.PI / 4, 0]}><boxGeometry args={[0.5, 0.04, 0.07]} /><meshBasicMaterial color="#6f7b8c" /></mesh>
     </group>
   );
 }
@@ -111,6 +111,8 @@ export function Drones({ plan, layout, rec, prev, playing, speed, shown }: Props
   });
 
   const slots = useMemo(() => slotsBySpace(rec.truth.drones.filter((d) => d.alive)), [rec]);
+  // Dead marks get their own ring on the box top so several deaths in one space stay countable.
+  const deadSlots = useMemo(() => slotsBySpace(rec.truth.drones.filter((d) => !d.alive)), [rec]);
   const prevSlots = useMemo(() => (prev ? slotsBySpace(prev.truth.drones.filter((d) => d.alive)) : slots), [prev, slots]);
   const prevAt = useMemo(() => new Map((prev ?? rec).truth.drones.map((d) => [d.id, d.at])), [prev, rec]);
   const cmdFor = useMemo(() => new Map(rec.commands.map((c) => [c.droneId, c])), [rec]);
@@ -122,7 +124,11 @@ export function Drones({ plan, layout, rec, prev, playing, speed, shown }: Props
         if (!shown(d.at)) return null;
         const p = layout[d.at];
         if (!p) return null;
-        if (!d.alive) return <DeadMark key={d.id} pos={p} />;
+        if (!d.alive) {
+          const ds = deadSlots.get(d.id) ?? { index: 0, count: 1 };
+          const o = ringOffsets(ds.count, 0.55)[ds.index] ?? { dx: 0, dz: 0 };
+          return <DeadMark key={d.id} pos={p} dx={o.dx} dz={o.dz} />;
+        }
         const slot = slots.get(d.id) ?? { index: 0, count: 1 };
         const pos = slotPos(layout, d.at, slot.index, slot.count)!;
         const pa = prevAt.get(d.id) ?? d.at;

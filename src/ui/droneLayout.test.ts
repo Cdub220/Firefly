@@ -42,7 +42,9 @@ describe('nearestResupply', () => {
     expect(nearestResupply(vessel, 'L3-B4')).toBe('L1-A1');
     expect(nearestResupply({ ...DEMO_PLAN, resupply: [] }, 'S3')).toBeUndefined();
     const two = { ...DEMO_PLAN, resupply: ['S1', 'S5'] };
-    expect(nearestResupply(two, 'S6')).toBe('S5'); // S6-S5 is one hop, S6-S1 is one hop too: BFS order picks S5? no: both 1 hop; first found wins
+    expect(nearestResupply(two, 'S5')).toBe('S5'); // standing on a resupply that is not resupply[0]
+    expect(nearestResupply(two, 'S4')).toBe('S5'); // S4-S5 is one hop; S1 is three
+    expect(['S1', 'S5']).toContain(nearestResupply(two, 'S6')); // both one hop: either is fine
   });
 });
 
@@ -55,6 +57,8 @@ describe('droneRows', () => {
     for (const r of rows) {
       expect(r.stale).toBe(false); // clean run: self-reports match truth
       expect(r.seenAt).toBe(r.at);
+      expect(r.arrived).toBe(false); // no command, so nothing to arrive at
+      expect(r.goTo).toBeUndefined();
     }
     // Stale: the brain saw D1 somewhere else.
     const staleRec = { ...rec, obs: { ...rec.obs, drones: rec.obs.drones.map((d) => (d.id === 'D1' ? { ...d, at: 'S6' } : d)) } };
