@@ -206,6 +206,27 @@ describe('store', () => {
     expect(useSim.getState().trace).toHaveLength(20);
   });
 
+  it('runCompare runs the same scenario with each brain driving and fills compare', () => {
+    useSim.getState().setBrains('ours');
+    useSim.getState().runCompare();
+    const s = useSim.getState();
+    expect(s.brains).toBe('both');
+    expect(Object.keys(s.traces).sort()).toEqual(['kalman', 'ours']);
+    expect(Object.keys(s.compare!).sort()).toEqual(['kalman', 'ours']);
+    expect(s.compare!['ours']).toHaveLength(30);
+    expect(s.compare!['kalman']).toHaveLength(30);
+    // Ours-driven world is the same run as the main traces (same seed, same primary).
+    expect(JSON.stringify(s.compare!['ours']!.map((r) => r.truth))).toBe(JSON.stringify(s.traces['ours']!.map((r) => r.truth)));
+    // Kalman-driven run has kalman's own belief on every record.
+    expect(s.compare!['kalman']![5]!.belief.confidence).toBeGreaterThan(0.9);
+    // A plain run clears it; a plan change clears it.
+    useSim.getState().run();
+    expect(useSim.getState().compare).toBeNull();
+    useSim.getState().runCompare();
+    useSim.getState().setPlan('vessel-3x8');
+    expect(useSim.getState().compare).toBeNull();
+  });
+
   it('ticks below 1 is an error string, not an empty trace', () => {
     useSim.setState({ ticks: 0 });
     useSim.getState().run();

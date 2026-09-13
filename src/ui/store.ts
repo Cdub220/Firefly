@@ -69,6 +69,12 @@ export type SimState = {
   data: ViewerData | null;
   /** traces[primary], kept as a field for the 3D scene: trace[cursor].truth and .obs are exact. */
   trace: TickRecord[] | null;
+  /**
+   * Head-to-head: the same scenario run twice, once with each brain driving the world,
+   * keyed by the driving brain. Only that brain's commands reach the world, so the two
+   * truth curves can differ. null until runCompare().
+   */
+  compare: Record<string, TickRecord[]> | null;
   error: string | null;
   cursor: number;
   playing: boolean;
@@ -80,6 +86,8 @@ export type SimState = {
   beat: Beat | null;
   run: () => void;
   runBeat: (beat: Beat) => void;
+  /** run(), then the same scenario again with kalman driving; fills `compare`. */
+  runCompare: () => void;
   setPlan: (name: string) => void;
   /** Alias of setPlan. */
   setPlanName: (name: string) => void;
@@ -290,9 +298,25 @@ export const useSim = create<SimState>((set, get) => {
       // Open two ticks before the failure begins (data.startAt) so the demo starts where it
       // matters, but never past the end of a short run.
       const cursor = Math.max(0, Math.min(data.startAt, (trace?.length ?? 1) - 1));
-      set({ traces, data, trace, error: null, cursor, playing: false });
+      set({ traces, data, trace, error: null, cursor, playing: false, compare: null });
     } catch (e) {
-      set({ error: e instanceof Error ? `${e.message}\n${e.stack ?? ''}` : String(e), data: null, trace: null, playing: false });
+      set({ error: e instanceof Error ? `${e.message}\n${e.stack ?? ''}` : String(e), data: null, trace: null, playing: false, compare: null });
+    }
+  };
+  /** Same scenario, each brain driving its own world. Identical seed and config; only `primary` differs. */
+  const executeCompare = (): void => {
+    const { plan: base, seed, ticks, ignition, corruption, error } = get();
+    if (error) return;
+    const plan: StructurePlan = { ...base, ignition: [ignition] };
+    try {
+      const compare: Record<string, TickRecord[]> = {};
+      for (const primary of Object.keys(BRAIN_FACTORIES.both)) {
+        const traces = runLoopMulti({ plan, seed, ticks, corruption, brains: BRAIN_FACTORIES.both, primary });
+        compare[primary] = traces[primary]!;
+      }
+      set({ compare });
+    } catch (e) {
+      set({ error: e instanceof Error ? `${e.message}\n${e.stack ?? ''}` : String(e), compare: null });
     }
   };
   /** Any manual change means the last beat's caption no longer describes what is shown. */
@@ -310,6 +334,7 @@ export const useSim = create<SimState>((set, get) => {
     primary: PRIMARY,
     data: null,
     trace: null,
+    compare: null,
     error: null,
     cursor: 0,
     playing: false,
@@ -329,6 +354,11 @@ export const useSim = create<SimState>((set, get) => {
       set({ planName: cfg.planName, plan: loadPlan(cfg.planName), ignition: cfg.ignition, corruption: cfg.corruption, caption: cfg.caption, beat });
       execute();
     },
+    runCompare: () => {
+      if (get().brains !== 'both') set({ brains: 'both' });
+      get().run();
+      executeCompare();
+    },
 
     setPlan: (name) => {
       if (name === get().planName) return;
@@ -336,7 +366,7 @@ export const useSim = create<SimState>((set, get) => {
       // A corruption target from the old plan is meaningless here; aim at the new ignition space.
       const corruption = sanitizeCorruption({ ...get().corruption, target: [...plan.ignition] }, plan);
       const ignition = sanitizeIgnition(undefined, plan);
-      set({ plan, planName: name, ignition, corruption, traces: {}, data: null, trace: null, cursor: 0, playing: false, error: null, ...clearBeat() });
+      set({ plan, planName: name, ignition, corruption, traces: {}, data: null, trace: null, compare: null, cursor: 0, playing: false, error: null, ...clearBeat() });
     },
     setPlanName: (name) => get().setPlan(name),
     setSeed: (seed) => { if (Number.isFinite(seed)) set({ seed: Math.round(seed), ...clearBeat() }); },
