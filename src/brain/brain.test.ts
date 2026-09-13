@@ -363,6 +363,26 @@ describe('createBrain v1', () => {
       expect(trace[39]!.belief.suspectSensors).toEqual([]); // the cooling is physically allowed, nobody is called a liar
     });
 
+    it('a brain told its commands are not applied (dispatch false) counts no tether, even with them visible: same belief as the control', () => {
+      const brain = createBrain({ plan: crowded, seed: 42, dispatch: false });
+      let temps: Record<SpaceId, number> = { S1: 450, S2: 20, S3: 20 };
+      const burning = new Set<SpaceId>(['S1']);
+      const confs: number[] = [];
+      for (let t = 1; t <= 40; t++) {
+        const o: Observation = { ...obs(t, [reading('F1', 'S1', temps['S1']!, t), reading('F2', 'S2', temps['S2']!, t), reading('F3', 'S3', temps['S3']!, t)]), drones: t >= ARRIVE ? tethers : [] };
+        const out = brain.step(o);
+        if (t >= 25) confs.push(out.belief.confidence);
+        for (const e of plan.edges) {
+          if (burning.has(e.a) && !burning.has(e.b) && temps[e.b]! >= IGNITE) burning.add(e.b);
+          else if (burning.has(e.b) && !burning.has(e.a) && temps[e.a]! >= IGNITE) burning.add(e.a);
+        }
+        temps = forward(plan, temps, burning, t >= ARRIVE ? new Map([['S1', 2]]) : undefined);
+      }
+      const control = run(false).filter((r) => r.t >= 25).map((r) => r.belief.confidence);
+      expect(confs).toEqual(control);
+      expect(confs.every((c) => c < 0.5)).toBe(true);
+    });
+
     it('control, observed behaviour: with NO drones visible the same stream keeps S1 only through the forced rule (its reading stays above ignition) and confidence stays below 0.5 because the rollout misfits', () => {
       const trace = run(false);
       // Not required to keep S1; it does here because S1 never cools below IGNITE (its

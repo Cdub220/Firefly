@@ -65,7 +65,8 @@ export function forward(
     for (const e of myEdges) {
       dT += scale * e.rate * ((temps[e.b] ?? plan.ambient) - t);
     }
-    const tethers = Math.min(MAX_TETHERS, Math.max(0, suppression?.get(s.id) ?? 0));
+    const raw = suppression?.get(s.id) ?? 0;
+    const tethers = Number.isFinite(raw) ? Math.min(MAX_TETHERS, Math.max(0, Math.floor(raw))) : 0;
     if (tethers > 0) dT += tethers * TETHER_COOL * (plan.ambient - t);
     if (burning.has(s.id)) {
       const gen = hazard.get(s.id) === 'fuel' ? GEN_RATE * FUEL_HAZARD_MULT : GEN_RATE;

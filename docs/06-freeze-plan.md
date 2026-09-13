@@ -4,7 +4,7 @@ Written Sun Sept 13, hour 17, on `dean-branch`, before `docs/06-freeze.md` exist
 
 ## 1. What the freeze covers, exactly
 
-**The frozen object is the map Observation → Belief.** Concretely: `src/brain/index.ts`, `src/brain/consistency.ts`, `src/brain/hypotheses.ts`, `src/brain/physics.ts`, and everything in `src/corruption/`. After the freeze commit these files do not change; `src/eval/freeze.test.ts` diffs them against the recorded hash and fails the suite if they do.
+**The frozen object is the map Observation → Belief** (more precisely, since CP3 prompt 2d: the map from the observation history and the brain's own applied-command history to Belief; on the open-loop family no command is applied, so there it is Observation → Belief exactly). Concretely: `src/brain/index.ts`, `src/brain/consistency.ts`, `src/brain/hypotheses.ts`, `src/brain/physics.ts`, and everything in `src/corruption/`. After the freeze commit these files do not change; `src/eval/freeze.test.ts` diffs them against the recorded hash and fails the suite if they do.
 
 **What is deliberately not frozen, and why that is not a loophole:**
 

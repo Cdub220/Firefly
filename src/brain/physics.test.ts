@@ -82,6 +82,9 @@ describe('physics', () => {
     // No map, an empty map and a zero count are all the old behaviour.
     expect(forward(plan, temps, new Set(['A']), new Map())['A']).toBeCloseTo(plain['A']!, 9);
     expect(forward(plan, temps, new Set(['A']), new Map([['A', 0]]))['A']).toBeCloseTo(plain['A']!, 9);
+    // A count that is not a whole number of tethers is floored; a non-finite one counts as none.
+    expect(forward(plan, temps, new Set(['A']), new Map([['A', 1.5]]))['A']).toBeCloseTo(forward(plan, temps, new Set(['A']), new Map([['A', 1]]))['A']!, 9);
+    expect(forward(plan, temps, new Set(['A']), new Map([['A', Number.NaN]]))['A']).toBeCloseTo(plain['A']!, 9);
     void FLAME_TEMP; void GEN_RATE;
   });
 });
