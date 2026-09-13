@@ -299,7 +299,7 @@ export const useSim = create<SimState>((set, get) => {
    * `factories` and `dispatch` given, those override the store's brains and loop mode
    * (the head-to-head). Returns the traces, or null on a validation or runtime error.
    */
-  const execute = (opts?: { factories: Record<string, BrainFactory>; dispatch: boolean }): Record<string, TickRecord[]> | null => {
+  const execute = (opts?: { factories?: Record<string, BrainFactory>; dispatch: boolean }): Record<string, TickRecord[]> | null => {
     const { plan: base, planName, seed, ticks, brains } = get();
     const corruption = sanitizeCorruption(get().corruption, base);
     const ignition = sanitizeIgnition(get().ignition, base);
@@ -384,7 +384,9 @@ export const useSim = create<SimState>((set, get) => {
       const { planName, plan, ignition, corruption, seed } = get();
       const cfg = beatConfig(beat, { planName, plan, ignition, corruption, seed });
       set({ planName: cfg.planName, plan: loadPlan(cfg.planName), ignition: cfg.ignition, corruption: cfg.corruption, caption: cfg.caption, beat });
-      execute();
+      // A beat is always open loop: its caption describes the fire spreading while the
+      // brains watch, and a persisted dispatch toggle must not quietly change that.
+      execute({ dispatch: false });
     },
     runCompare: () => {
       if (get().brains !== 'both') set({ brains: 'both' });

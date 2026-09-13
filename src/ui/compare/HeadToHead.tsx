@@ -93,10 +93,10 @@ export function HeadToHead() {
             <div className="h2h-bottom">
               <section className="h2h-chart">
                 <header><h2>Containment</h2><span className="sub">spaces burning in truth over time; each curve is the world with that brain in command{s.compare ? '' : ' · press Run head to head for the Kalman curve'}</span></header>
-                <ContainmentChart runs={runs} cursor={s.cursor} onset={onset} spaces={s.plan.spaces.length} />
+                <ContainmentChart runs={runs} cursor={s.cursor} onset={onset} spaces={s.plan.spaces.length} labels={s.compare ? undefined : { [RIGHT]: s.dispatch ? 'ours driving' : 'open loop · nobody driving' }} />
               </section>
               <section className="h2h-score">
-                <header><h2>Scorecard</h2><span className="sub">this run, from corruption onset; better in bold</span></header>
+                <header><h2>Scorecard</h2><span className="sub">both beliefs scored on the ours-driven world, from corruption onset; better in bold</span></header>
                 <Scorecard traces={s.traces} left={LEFT} right={RIGHT} />
               </section>
             </div>

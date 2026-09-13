@@ -252,6 +252,15 @@ describe('store', () => {
     expect(peak(s.trace)).toBe(1);
   });
 
+  it('a beat is open loop even when the dispatch toggle is on: its caption describes a spreading fire', () => {
+    useSim.getState().setDispatch(true);
+    useSim.getState().runBeat('freeze');
+    const s = useSim.getState();
+    expect(s.dispatch).toBe(true); // the toggle itself is left alone
+    expect(s.trace!.every((r) => r.commands.length === 0)).toBe(true);
+    expect(Math.max(...s.trace!.map((r) => r.truth.spaces.filter((x) => x.burning).length))).toBeGreaterThan(1);
+  });
+
   it('dispatch is off by default (open loop, no commands recorded) and on when asked', () => {
     useSim.setState({ dispatch: false });
     useSim.getState().run();

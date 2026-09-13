@@ -16,9 +16,11 @@ type Props = {
   spaces: number;
   width?: number;
   height?: number;
+  /** Legend text per run, when the default "<brain> driving" would be wrong (an open-loop trace). */
+  labels?: Record<string, string> | undefined;
 };
 
-export function ContainmentChart({ runs, cursor, onset, spaces, width = 640, height = 150 }: Props) {
+export function ContainmentChart({ runs, cursor, onset, spaces, width = 640, height = 150, labels }: Props) {
   // Kalman first so the ours curve is drawn on top when the two coincide.
   const names = Object.keys(runs).sort((a, b) => (a === 'kalman' ? -1 : b === 'kalman' ? 1 : 0));
   const series = names.map((n) => ({ name: n, y: containmentSeries(runs[n]!) }));
@@ -54,7 +56,7 @@ export function ContainmentChart({ runs, cursor, onset, spaces, width = 640, hei
       {series.map((s, i) => (
         <g key={`legend:${s.name}`} transform={`translate(${pad.l + 8 + i * 150}, ${pad.t + 12})`}>
           <line x1={0} x2={18} y1={0} y2={0} stroke={CURVE_COLORS[s.name] ?? '#a78bfa'} strokeWidth={3} />
-          <text x={24} y={4} fontSize={11} fill="#e6eaf0">{LABEL[s.name] ?? s.name} · now {s.y[Math.min(cursor, s.y.length - 1)] ?? 0}</text>
+          <text x={24} y={4} fontSize={11} fill="#e6eaf0">{labels?.[s.name] ?? LABEL[s.name] ?? s.name} · now {s.y[Math.min(cursor, s.y.length - 1)] ?? 0}</text>
         </g>
       ))}
     </svg>
