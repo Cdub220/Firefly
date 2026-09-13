@@ -20,4 +20,6 @@
 .scene-view .note { margin: 0; max-width: none; }
 .scene-id { font: 600 11px var(--mono); color: #e6eaf0; background: rgba(14, 17, 22, 0.75); padding: 1px 5px; border-radius: 3px; white-space: nowrap; display: inline-flex; gap: 6px; align-items: center; }
 .scene-occ { background: #f0b429; color: #0e1116; border-radius: 8px; padding: 0 5px; font-size: 10px; }
+.scene-wrong-floor { font: 700 11px var(--mono, monospace); letter-spacing: 0.08em; color: #0e1116; background: #ff5c5c; padding: 2px 7px; border-radius: 3px; white-space: nowrap; animation: scene-wrong 0.6s ease-in-out infinite alternate; }
+@keyframes scene-wrong { from { opacity: 1; } to { opacity: 0.55; } }
 @media (max-width: 1100px) { .scene-view .scene-grid { grid-template-columns: 1fr; } .scene-view .scene-left, .scene-view .scene-side { max-height: none; } .scene-view .scene-canvas { height: 60vh; } }

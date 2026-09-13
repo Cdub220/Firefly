@@ -9,18 +9,19 @@ import { PLAN_NAMES, isPlanName } from '../shared/structures';
 import { SplitView } from './split/SplitView';
 import { SceneView } from './scene/SceneView';
 import { CompareView } from './scene/CompareView';
+import { HeadToHead } from './compare/HeadToHead';
 import { useSim } from './store';
 import { usePlayback } from './usePlayback';
 import './split/split.css';
 import './app.css';
 
-type View = 'split' | 'scene' | 'compare';
+type View = 'split' | 'scene' | 'compare' | 'h2h';
 
 function fromUrl(): { view: View; plan: string | null; t: number | null } {
   try {
     const q = new URLSearchParams(window.location.search);
     const v = q.get('view');
-    const view: View = v === 'scene' ? 'scene' : v === 'compare' ? 'compare' : 'split';
+    const view: View = v === 'scene' ? 'scene' : v === 'compare' ? 'compare' : v === 'h2h' ? 'h2h' : 'split';
     const plan = q.get('plan');
     const t = q.get('t');
     return { view, plan, t: t !== null && Number.isFinite(Number(t)) ? Number(t) : null };
@@ -63,13 +64,14 @@ export function App() {
         <button type="button" role="tab" aria-selected={view === 'split'} className={view === 'split' ? 'on' : ''} onClick={() => setView('split')}>Split view</button>
         <button type="button" role="tab" aria-selected={view === 'scene'} className={view === 'scene' ? 'on' : ''} onClick={() => setView('scene')}>3D scene</button>
         <button type="button" role="tab" aria-selected={view === 'compare'} className={view === 'compare' ? 'on' : ''} onClick={() => setView('compare')}>3D compare</button>
+        <button type="button" role="tab" aria-selected={view === 'h2h'} className={view === 'h2h' ? 'on' : ''} onClick={() => setView('h2h')}>Head to head</button>
         <label htmlFor="plan">structure
           <select id="plan" value={planName} onChange={(e) => setPlanName(e.target.value)}>
             {PLAN_NAMES.map((n) => <option key={n} value={n}>{n}</option>)}
           </select>
         </label>
       </div>
-      {view === 'split' ? <SplitView /> : view === 'scene' ? <SceneView /> : <CompareView />}
+      {view === 'split' ? <SplitView /> : view === 'scene' ? <SceneView /> : view === 'compare' ? <CompareView /> : <HeadToHead />}
     </>
   );
 }
