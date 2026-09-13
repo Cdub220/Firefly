@@ -206,6 +206,83 @@ src/brain/kalman.ts, src/brain/hypotheses.ts, src/brain/physics.ts.
 
 ---
 
+## Prompt 2d · The estimator learns that water exists (suppression-aware rollout), last change before the freeze
+
+```
+You are working in the Firefly repo as Dean. Before anything else read CLAUDE.md, docs/00-README.md, docs/04-who-does-what.md, and src/shared/types.ts. Respect the directory ownership and lint boundaries in docs/04. Make reasonable assumptions instead of asking questions. Run `npm test && npm run lint && npm run typecheck` before you finish and do not report done unless all three are green. Commit in logical chunks with clear messages. Do not push. Finish by listing (1) what you built, (2) assumptions you made, (3) anything that did not work or that you skipped, (4) any contract change you need from Chase.
+
+CONTEXT: The closed-loop brief (CP4 prompt 3, `npm run brief`) exposed a real estimator
+defect: the brain has no model of suppression. When two tethers cool a burning space, the
+space stops generating heat, the rollout for "this space is burning" predicts it should be
+climbing toward 900 C, the reading says it is falling toward 300 C, so the hypothesis
+"not burning" fits better, burningSet drops the space, the allocator retargets the
+tethers, the space reignites, and the tethers come back: 24 A-B-A retargets per tether in
+60 ticks on vessel-3x8 seed 1, and most of ours' wrong-floor commands and drone deaths.
+The world's effect of a tether with task 'suppress' in a space (read src/world/drones.ts
+and src/world/physics.ts, do not import them): generation multiplied by
+TETHER_SUPPRESSION = 0.3 per tether (two stack to 0.09) and an extra cooling term of
+TETHER_COOL = 0.1 × (ambient − T) per tether; the space stays burning in truth until its
+fuel is gone. src/brain/physics.ts already declares TETHER_COOL and MAX_TETHERS and uses
+them for the impossible-drop bound, so the consistency rules already tolerate suppressed
+cooling; only the hypothesis rollout and the estimate are blind to it. This is the LAST
+estimator change before the freeze; keep it minimal and mechanical.
+
+TASK A (physics): in src/brain/physics.ts add `export const TETHER_SUPPRESSION = 0.3`
+(mirror of the world's constant, with a comment saying so) and give forward() an optional
+fourth argument `suppression?: ReadonlyMap<SpaceId, number>` (tethers working each space,
+capped at MAX_TETHERS). For a burning space with n tethers: generation is multiplied by
+TETHER_SUPPRESSION ** n and dT gains n × TETHER_COOL × (ambient − T). For a non-burning
+space with tethers, only the cooling term applies. No argument = no suppression = today's
+behaviour, so every existing call and test is unchanged.
+
+TASK B (rollout): src/brain/hypotheses.ts predict() and score() take the same optional
+suppression map and pass it to every forward() step of the rollout. Assume the tether
+placement is constant over the ROLLOUT window (three ticks); that is the simplest thing
+that is right, and tethers move slowly.
+
+TASK C (the brain): in src/brain/index.ts, each tick build
+  tethersAt: Map<SpaceId, number> = count of drones in sane.drones with class 'tether' and
+  alive === true, per space, capped at MAX_TETHERS.
+Use OBSERVED drones, not prevCommands: a tether standing in a space is working it (the
+allocator only ever sends tethers to suppress), and this keeps the estimator's input to
+the Observation alone, which is what the freeze scope says. Pass tethersAt into every
+score() call, into the one-step predict() that fills the estimate for unsensed spaces,
+and into the blackout carry-forward predict(). Do not change the forced-space rule, the
+fuel budget, the tolerance, the confidence formula, or the probability cap. The
+observation-only diet is preserved: nothing new is imported.
+
+TESTS:
+  - src/brain/physics.test.ts: forward() with two tethers on a burning space at 800 C
+    produces a lower next temperature than without, by the world's formula (compute the
+    expected value by hand in the test); a space with tethers but not burning only cools;
+    three tethers count as MAX_TETHERS.
+  - src/brain/brain.test.ts, the regression: a physics-consistent stream on the test-3 plan
+    where S1 burns for 15 ticks, then two alive tether drones appear at S1 in obs.drones and
+    the stream from tick 16 is generated with forward(..., suppression={S1: 2}) so S1 falls
+    from ~800 toward ~300 while still burning. Assert S1 stays in burningSet on every tick
+    16–40 with the drones present. Control: the same temperature stream with NO drones in
+    obs.drones must NOT be required to keep S1 (document the observed behaviour in the test
+    name; it may drop S1, which is the defect this prompt fixes when tethers are visible).
+  - src/brain/brain.test.ts, closed loop: runLoop on demo-6, seed 1, 60 ticks, dispatch
+    true, two tethers in the drone roster, mode none. Count burningSet flips (a space that
+    leaves burningSet and re-enters it later). Assert flips <= 3 for the whole run. Before
+    this prompt the same run flips many times; print the before/after count in your report.
+  - `npm run evidence` must be byte-identical to results/evidence-cp2.json (open-loop runs
+    have no drones, so nothing may change). Assert that in your report, not in a test.
+
+REPORT: rerun `npm run brief -- --plan vessel-3x8 --mode flashover --seed 7 --ticks 120`
+and the task-D brief sweep from CP4 prompt 3, and update the CP4-prompt-3 decisions row
+with the new means (extinguishedAt, tetherTicks, retardantSpent, droneDeaths, wrongFloor)
+for ours / kalman / kalman-source, before and after this change. If wrongFloor or drone
+deaths do not improve, say so and stop; do not tune anything else. Add a decisions.md row
+for this prompt: the defect, the fix, and the flip counts before and after.
+
+DO NOT TOUCH: src/brain/allocator.ts, src/brain/commands.ts, src/brain/kalman.ts,
+src/corruption, src/world, src/ui, src/eval.
+```
+
+---
+
 ## Prompt 3 · Freeze, and what surprised us
 
 ```
