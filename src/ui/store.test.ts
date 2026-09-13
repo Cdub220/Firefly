@@ -273,6 +273,15 @@ describe('store', () => {
     useSim.getState().setDispatch(false);
     useSim.getState().runCompare();
     expect(useSim.getState().closedLoop).toBe(true); // head to head is always closed loop
+    // No run on screen, no label: a failed run and a plan change both clear it.
+    useSim.setState({ ticks: 0 });
+    useSim.getState().run();
+    expect(useSim.getState().closedLoop).toBe(false);
+    useSim.setState({ ticks: 30 });
+    useSim.getState().runCompare();
+    useSim.getState().setPlan('vessel-3x8');
+    expect(useSim.getState().closedLoop).toBe(false);
+    useSim.getState().setPlan('demo-6');
     useSim.getState().setDispatch(true);
     useSim.getState().run();
     const closed = useSim.getState().trace!;

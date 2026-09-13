@@ -310,7 +310,7 @@ export const useSim = create<SimState>((set, get) => {
     save({ planName, seed, ticks, corruption, ignition, brains, dispatch: get().dispatch });
     const why = validateRun(base, ignition, ticks);
     if (why) {
-      set({ error: `Cannot run: ${why}`, data: null, trace: null, playing: false, compare: null });
+      set({ error: `Cannot run: ${why}`, data: null, trace: null, playing: false, compare: null, closedLoop: false });
       return null;
     }
     // The plan file says where the fire starts; the picker overrides it for demos.
@@ -326,7 +326,7 @@ export const useSim = create<SimState>((set, get) => {
       set({ traces, data, trace, error: null, cursor, playing: false, compare: null, closedLoop: dispatch });
       return traces;
     } catch (e) {
-      set({ error: e instanceof Error ? `${e.message}\n${e.stack ?? ''}` : String(e), data: null, trace: null, playing: false, compare: null });
+      set({ error: e instanceof Error ? `${e.message}\n${e.stack ?? ''}` : String(e), data: null, trace: null, playing: false, compare: null, closedLoop: false });
       return null;
     }
   };
@@ -407,7 +407,7 @@ export const useSim = create<SimState>((set, get) => {
       // A corruption target from the old plan is meaningless here; aim at the new ignition space.
       const corruption = sanitizeCorruption({ ...get().corruption, target: [...plan.ignition] }, plan);
       const ignition = sanitizeIgnition(undefined, plan);
-      set({ plan, planName: name, ignition, corruption, traces: {}, data: null, trace: null, compare: null, cursor: 0, playing: false, error: null, ...clearBeat() });
+      set({ plan, planName: name, ignition, corruption, traces: {}, data: null, trace: null, compare: null, closedLoop: false, cursor: 0, playing: false, error: null, ...clearBeat() });
     },
     setPlanName: (name) => get().setPlan(name),
     setSeed: (seed) => { if (Number.isFinite(seed)) set({ seed: Math.round(seed), ...clearBeat() }); },
