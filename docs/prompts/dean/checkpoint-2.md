@@ -161,3 +161,71 @@ Diagnosis is the deliverable; tuning is a human call because the freeze is at ho
 
 DO NOT TOUCH: src/world, src/ui.
 ```
+
+---
+
+## Prompt 4 · Graded belief (pre-freeze, added Sat night)
+
+Why this exists: in the split view, late in the freeze run every space reads over 800° from a fresh honest sensor, yet the brain reports only one or two as certain and the rest as one flat MAYBE. A commander would rather see "these three at 95%, that one at 50%." This adds a per-space probability so ambiguity is graded, and tightens the rule that fresh, physically consistent, above-ignition readings count as burning. It must land before the hour-36 freeze.
+
+```
+You are working in the Firefly repo as Dean. Before anything else read CLAUDE.md, docs/00-README.md, docs/04-who-does-what.md, docs/decisions.md, and src/shared/types.ts. Respect the directory ownership and lint boundaries in docs/04. Make reasonable assumptions instead of asking questions. Run `npm test && npm run lint && npm run typecheck` before you finish and do not report done unless all three are green. Commit in logical chunks with clear messages. Do not push. Finish by listing (1) what you built, (2) assumptions you made, (3) anything that did not work or that you skipped, (4) any contract change you need from Chase.
+
+CONTEXT: src/brain/index.ts is the v1 estimator: consistency check -> candidate burning
+sets -> score with k-residual dropping -> keep every hypothesis within tolerance of the
+best -> burningSet = intersection, ambiguous = contested spaces, confidence = 1/kept x
+penalties, capped until stable. Run `npm run viewer` and open results/viewer-freeze.html,
+scrub to tick 50: truth has five spaces burning and S3 burned out; ours reports S1,S2
+certain and S3..S6 as one MAYBE group at confidence 0.16, even though F4,F5,F6 are fresh,
+honest, and reading over 800°. That is the defect. Kalman calls all six burning at 0.97,
+including S3 whose only sensor froze at tick 5.
+
+TASK, three parts. The estimator is NOT frozen yet; this is the last change to it.
+
+PART A — per-space probability (additive contract change; tell Chase; the split view in
+src/ui/split already renders it when present).
+  - Add `probability: Record<SpaceId, number>` to Belief in src/shared/types.ts.
+  - In src/brain/index.ts, compute it from the kept hypotheses: weight each kept
+    hypothesis by exp(-(score - best) / T) with T = the tolerance, so a hypothesis at the
+    edge of tolerance weighs ~e^-1 of the best. probability[s] = weighted fraction of kept
+    hypotheses containing s. Every space gets a value, including 0 for spaces in no
+    hypothesis.
+  - Multiply probability[s] by the consistency penalty ONLY for spaces whose own sensor is
+    suspect (a distrusted sensor lowers certainty about its own space, not about every
+    space).
+  - Kalman brain: probability[s] = 1 if estimate > 200 else 0, times its scalar confidence.
+    It has no notion of per-space doubt; that is the point.
+  - Keep burningSet and ambiguous exactly as they are so nothing downstream breaks.
+
+PART B — fresh honest hot readings count. Add to the hypothesis scoring a rule, implemented
+as a candidate-generation change not a threshold override: any space with a TRUSTED reading
+above the ignition temperature (copy the constant from src/world/constants.ts with a comment
+that it is an assumed property of the structure) for 3 consecutive ticks is included in
+every candidate. Rationale: physics says a space that stays above ignition with fuel is
+burning; the hypothesis set should not be allowed to omit it. A space whose sensor is
+suspect gets no such rule. Test that on the freeze run at tick 50, S4,S5,S6 are in
+burningSet and S3 is ambiguous with probability between 0.3 and 0.7.
+
+PART C — surface it.
+  - src/eval/metrics.ts: add `brierScore` (mean over spaces and ticks >= onset of
+    (probability - truthBurning)^2) and per-space `falsePositiveRate` / `falseNegativeRate`
+    at probability >= 0.5, for both brains. Brier is the calibration number: a brain that
+    says 0.5 when it is right half the time scores better than one that says 0.97 and is
+    wrong. Add these to the evidence table and to results/evidence-cp2.json.
+  - `npm run viewer` regenerates results/viewer-freeze.html; confirm the cells show
+    "P(burning) NN%".
+  - docs/decisions.md: one row for this change with the before/after numbers.
+
+TESTS: src/brain/probability.test.ts. Hand-built observations. (1) Two equally good
+hypotheses {A} and {B}: probability[A] and probability[B] both ~0.5. (2) One hypothesis:
+its spaces ~1.0 (before the stability cap), others 0. (3) A space with a suspect sensor
+gets a lower probability than the same space with a trusted sensor, same readings. (4) A
+space reading 700° from a trusted sensor for 3 ticks is in burningSet. (5) Every
+probability in [0,1]; sum of probabilities is not constrained.
+
+DO NOT TOUCH: src/world, src/ui (except nothing — the split view already handles it),
+src/corruption, src/brain/kalman.ts beyond the probability field.
+
+Report the new evidence table. If falseCertainty for ours rises above 0 or Kalman's Brier
+beats ours on any mode, stop and say so rather than tuning; a human decides.
+```
