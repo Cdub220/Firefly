@@ -51,6 +51,8 @@
 @media (prefers-reduced-motion: reduce) { .fx * { transition: none !important; } }
 
 /* Split view v2: plan bands, vertical edges, demo beats, caption, recording mode. */
+/* Safety net for any plan shape the layout did not anticipate: a panel never exceeds one screen. */
+.fx .panel svg { max-height: 80vh; }
 .fx .band { font: 700 11px var(--sans); fill: var(--ink-2); letter-spacing: 0.1em; }
 .fx .band-line { stroke: var(--line); stroke-width: 1; }
 .fx .edge.floor { stroke-width: 2; }

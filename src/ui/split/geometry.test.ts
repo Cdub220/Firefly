@@ -117,3 +117,49 @@ describe('six-space ring', () => {
     expect(brainSvg(data, g, rec, 'kalman')).toMatchSnapshot();
   });
 });
+
+describe('awkward plan shapes', () => {
+  it('a tall tower (5 levels of 2x2) is flattened to one row per level so the panel is not several screens tall', () => {
+    const tower = makeGridFixture({ levels: 5, rows: 2, cols: 2 });
+    const g = layoutPlan(tower);
+    expect(g.H / g.W).toBeLessThanOrEqual(1.6);
+    expect(g.bands.length).toBe(5);
+    expect(overlaps(g)).toBe(0);
+    for (const e of tower.edges) {
+      if (e.kind === 'floor' || e.kind === 'shaft') expect(g.pos[e.a]!.x).toBe(g.pos[e.b]!.x);
+    }
+    for (const v of g.vertical) expect(v.x1).toBe(v.x2);
+    // A wide plan is not flattened: three levels of 2x4 keep their two rows.
+    const wide = layoutPlan(makeGridFixture({ levels: 3, rows: 2, cols: 4 }));
+    expect(wide.bands[0]!.h).toBeGreaterThan(wide.CH);
+  });
+
+  it('several upper spaces sharing one partner below: connectors run to the partner, none dangle', () => {
+    const plan = {
+      spaces: [{ id: 'hold', level: 1 }, { id: 'r1', level: 2 }, { id: 'r2', level: 2 }, { id: 'r5', level: 2 }],
+      edges: [
+        { a: 'hold', b: 'r1', kind: 'floor' as const, rate: 0.08 },
+        { a: 'hold', b: 'r2', kind: 'floor' as const, rate: 0.08 },
+        { a: 'hold', b: 'r5', kind: 'shaft' as const, rate: 0.3 },
+        { a: 'r1', b: 'r2', kind: 'door' as const, rate: 0.15 },
+      ],
+    };
+    const g = layoutPlan(plan);
+    expect(overlaps(g)).toBe(0);
+    const holdX = g.pos['hold']!.x + g.CW / 2;
+    expect(g.vertical.length).toBe(3);
+    for (const v of g.vertical) expect(v.x2).toBe(holdX); // every connector ends on the partner
+    expect(g.vertical.some((v) => v.x1 === holdX)).toBe(true); // one inherited the column
+    expect(g.vertical.filter((v) => v.kind === 'shaft').length).toBe(1);
+  });
+
+  it('a zero-space plan and Object.prototype ids do not throw', () => {
+    const empty = layoutPlan({ spaces: [], edges: [] });
+    expect(empty.W).toBeGreaterThan(0);
+    expect(empty.H).toBeGreaterThan(0);
+    expect(empty.pos).toEqual({});
+    const odd = layoutPlan({ spaces: ['constructor', 'toString', 'S1', 'S2', 'S3', 'S4'].map((id) => ({ id, level: 1 })), edges: [] });
+    expect(Object.keys(odd.pos).sort()).toEqual(['S1', 'S2', 'S3', 'S4', 'constructor', 'toString']);
+    expect(overlaps(odd)).toBe(0);
+  });
+});

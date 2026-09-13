@@ -51,7 +51,7 @@ export function edgeLines(data: ViewerData, g: Geometry): string {
     const a = g.pos[e.a], b = g.pos[e.b]; if (!a || !b) return '';
     return `<line class="edge ${e.kind}" x1="${a.x + g.CW / 2}" y1="${a.y + g.CH / 2}" x2="${b.x + g.CW / 2}" y2="${b.y + g.CH / 2}"/>`;
   }).join('');
-  const vertical = g.vertical.map((v) => `<line class="edge ${v.kind}" x1="${v.x}" y1="${v.y1}" x2="${v.x}" y2="${v.y2}"/>`).join('');
+  const vertical = g.vertical.map((v) => `<line class="edge ${v.kind}" x1="${v.x1}" y1="${v.y1}" x2="${v.x2}" y2="${v.y2}"/>`).join('');
   return same + vertical;
 }
 export function edgeLabels(data: ViewerData, g: Geometry): string {
@@ -71,7 +71,7 @@ export function bandLabels(g: Geometry): string {
 /** One line under the panel when edge labels are not drawn. */
 export function legendText(data: ViewerData): string {
   const parts: string[] = [];
-  if (isCompact(data.layout)) parts.push('solid red border: burning', 'dashed amber: maybe', 'bright red: wrong');
+  if (isCompact(data.layout)) parts.push('solid red border: burning', 'dashed amber: maybe', 'bright red: wrong', 'P: P(burning)');
   if (data.layout.labelEdges) return parts.join(' · ');
   const kinds = new Set(data.plan.edges.map((e) => e.kind));
   if (kinds.has('door')) parts.push('door: thin line');
@@ -94,8 +94,12 @@ export function cell(id: string, T: number, ambient: number, g: Geometry, o: Cel
   if (o.state === 'burning' || o.state === 'believed') { stroke = '#e4572e'; sw = 3; }
   if (o.state === 'ambiguous') { stroke = C.uncertain; sw = 2.5; dash = 'stroke-dasharray="6 4"'; }
   if (o.verdict === 'wrong') { stroke = C.wrong; sw = 3.5; dash = ''; }
+  // Compact cells cannot fit id + tag on one line: WRONG / MISS become a badge on the
+  // temperature bar at the top right, and other tags are carried by the border alone.
   const tagText = o.tag ? (isCompact(g) ? compactTag(o.tag) : o.tag) : '';
-  const tag = tagText ? `<text class="tag" x="${p.x + CW - 7}" y="${p.y + 22 * g.scale}" text-anchor="end" fill="${o.tagColor ?? stroke}"${fs(g, f.tag)}>${esc(tagText)}</text>` : '';
+  const tag = !tagText ? '' : isCompact(g)
+    ? `<rect x="${p.x + CW - 36}" y="${p.y + 1}" width="35" height="9" rx="2" fill="${o.tagColor ?? stroke}"/><text class="tag" x="${p.x + CW - 18.5}" y="${p.y + 8}" text-anchor="middle" fill="${C.ground}" font-size="7px">${esc(tagText)}</text>`
+    : `<text class="tag" x="${p.x + CW - 7}" y="${p.y + 22 * g.scale}" text-anchor="end" fill="${o.tagColor ?? stroke}"${fs(g, f.tag)}>${esc(tagText)}</text>`;
   let chip = '';
   if (o.reading) {
     const r = o.reading;
@@ -110,7 +114,7 @@ export function cell(id: string, T: number, ambient: number, g: Geometry, o: Cel
   const sub = o.fuel != null
     ? `<text class="chip" x="${p.x + CW / 2}" y="${subY}" text-anchor="middle" fill="${o.fuel <= 0 ? C.stale : C.ink2}"${fs(g, f.chip)}>fuel ${Math.round(o.fuel * 100)}%</text>`
     : o.prob != null
-      ? `<text class="chip" x="${p.x + CW / 2}" y="${subY}" text-anchor="middle" fill="${C.ink2}"${fs(g, f.chip)}>P(burning) ${Math.round(o.prob * 100)}%</text>`
+      ? `<text class="chip" x="${p.x + CW / 2}" y="${subY}" text-anchor="middle" fill="${C.ink2}"${fs(g, f.chip)}>${isCompact(g) ? 'P' : 'P(burning)'} ${Math.round(o.prob * 100)}%</text>`
       : '';
   return `<g><rect x="${p.x}" y="${p.y}" width="${CW}" height="${CH}" rx="5" fill="${C.panel2}" stroke="${stroke}" stroke-width="${sw}" ${dash}/>` +
     `<rect x="${p.x + 1}" y="${p.y + 1}" width="${CW - 2}" height="7" rx="3" fill="${barCol}"/>` +

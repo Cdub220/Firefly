@@ -5,7 +5,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DEMO_PLAN } from '../loop';
 import { loadPlan, PLAN_NAMES } from '../shared/structures';
-import { BEATS, beatConfig, fromUrl, hottestNeighbor, nextPlanName, sanitizeCorruption, useSim, validateRun } from './store';
+import { BEATS, beatConfig, fromUrl, hottestNeighbor, nextIn, nextPlanName, sanitizeCorruption, useSim, validateRun } from './store';
 
 const demo = loadPlan('demo-6');
 const fresh = () => {
@@ -153,5 +153,42 @@ describe('demo beats', () => {
     expect(useSim.getState().demo).toBe(false);
     useSim.getState().setDemo(true);
     expect(useSim.getState().demo).toBe(true);
+  });
+});
+
+describe('round-2 regressions', () => {
+  beforeEach(fresh);
+
+  it('a run shorter than the onset lead-in still shows a tick (cursor clamped), so a beat on ticks=3 is not a blank page', () => {
+    useSim.setState({ ticks: 3 });
+    useSim.getState().runBeat('flashover');
+    const s = useSim.getState();
+    expect(s.error).toBeNull();
+    expect(s.data?.ticks.length).toBe(3);
+    expect(s.cursor).toBeLessThan(3);
+    expect(s.data?.ticks[s.cursor]).toBeDefined();
+  });
+
+  it('a manual Run or a control change clears the previous beat and its caption', () => {
+    useSim.getState().runBeat('freeze');
+    expect(useSim.getState().caption).not.toBe('');
+    useSim.getState().run();
+    expect(useSim.getState().beat).toBeNull();
+    expect(useSim.getState().caption).toBe('');
+    useSim.getState().runBeat('blind');
+    useSim.getState().setCorruption({ k: 2 });
+    expect(useSim.getState().beat).toBeNull();
+    expect(useSim.getState().caption).toBe('');
+    useSim.getState().runBeat('clean');
+    useSim.setState({ planName: '__other__' });
+    useSim.getState().setPlanName('demo-6');
+    expect(useSim.getState().caption).toBe('');
+  });
+
+  it('nextIn cycles a list and tolerates unlisted names and empty lists', () => {
+    expect(nextIn(['a', 'b', 'c'], 'a')).toBe('b');
+    expect(nextIn(['a', 'b', 'c'], 'c')).toBe('a');
+    expect(nextIn(['a', 'b', 'c'], 'zzz')).toBe('a');
+    expect(nextIn([], 'a')).toBe('a');
   });
 });

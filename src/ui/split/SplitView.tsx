@@ -55,6 +55,7 @@ export function SplitView() {
       if (e.key === ' ') { e.preventDefault(); s.toggle(); }
       if (e.key === 'ArrowRight') s.stepBy(1);
       if (e.key === 'ArrowLeft') s.stepBy(-1);
+      if (e.metaKey || e.ctrlKey || e.altKey) return; // Cmd/Ctrl+1..5 belong to the browser
       const beat = BEATS.find((b) => b.hotkey === e.key);
       if (beat) s.runBeat(beat.key);
     };

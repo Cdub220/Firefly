@@ -132,9 +132,14 @@ export function hottestNeighbor(plan: StructurePlan, ignition: string, seed = 42
   return [...neighbors].sort((a, b) => (temp.get(b) ?? -Infinity) - (temp.get(a) ?? -Infinity) || a.localeCompare(b))[0] ?? null;
 }
 
+/** The name after `current` in `names`, wrapping; `current` itself if unlisted or the list is empty. */
+export function nextIn(names: readonly string[], current: string): string {
+  if (names.length === 0) return current;
+  const i = names.indexOf(current);
+  return names[(i + 1) % names.length] ?? current;
+}
 export function nextPlanName(current: string): string {
-  const i = PLAN_NAMES.indexOf(current as (typeof PLAN_NAMES)[number]);
-  return PLAN_NAMES[(i + 1) % PLAN_NAMES.length] ?? current;
+  return nextIn(PLAN_NAMES, current);
 }
 
 /** Everything a beat sets, as data. Pure; exported for tests. */
@@ -190,23 +195,9 @@ const initialPlanName = urlPlan ?? (PLAN_NAMES.includes(saved.planName as (typeo
 const initialPlan = loadPlan(initialPlanName);
 const DEFAULT_CORR: Corr = { mode: 'freeze', k: 1, onset: BEAT_ONSET, target: [initialPlan.ignition[0] ?? ''] };
 
-export const useSim = create<SimState>((set, get) => ({
-  planName: initialPlanName,
-  plan: initialPlan,
-  ignition: sanitizeIgnition(saved.ignition, initialPlan),
-  seed: saved.seed ?? 42,
-  ticks: saved.ticks ?? 60,
-  corruption: sanitizeCorruption(saved.corruption ?? DEFAULT_CORR, initialPlan),
-  data: null,
-  trace: null,
-  error: null,
-  cursor: 0,
-  playing: false,
-  speed: 4,
-  demo: fromUrl().demo,
-  caption: '',
-  beat: null,
-  run: () => {
+export const useSim = create<SimState>((set, get) => {
+  /** Run the current scenario. Shared by run() and runBeat(). */
+  const execute = (): void => {
     const { plan: base, planName, seed, ticks } = get();
     const corruption = sanitizeCorruption(get().corruption, base);
     if (corruption !== get().corruption) set({ corruption });
@@ -223,16 +214,38 @@ export const useSim = create<SimState>((set, get) => ({
       const traces = runLoopMulti({ plan, seed, ticks, corruption, brains: { ours: createBrain, kalman: createKalmanBrain }, primary: 'ours' });
       const data = buildViewerData(plan, traces, { seed, corruption });
       if (data.ticks.length === 0) throw new Error('the run produced no ticks');
-      set({ data, trace: traces['ours'] ?? null, error: null, cursor: data.startAt, playing: false });
+      // startAt is two ticks before onset; a very short run may not reach it.
+      set({ data, trace: traces['ours'] ?? null, error: null, cursor: Math.max(0, Math.min(data.startAt, data.ticks.length - 1)), playing: false });
     } catch (e) {
       set({ error: e instanceof Error ? `${e.message}\n${e.stack ?? ''}` : String(e), data: null, trace: null, playing: false });
     }
+  };
+  return {
+  planName: initialPlanName,
+  plan: initialPlan,
+  ignition: sanitizeIgnition(saved.ignition, initialPlan),
+  seed: saved.seed ?? 42,
+  ticks: saved.ticks ?? 60,
+  corruption: sanitizeCorruption(saved.corruption ?? DEFAULT_CORR, initialPlan),
+  data: null,
+  trace: null,
+  error: null,
+  cursor: 0,
+  playing: false,
+  speed: 4,
+  demo: fromUrl().demo,
+  caption: '',
+  beat: null,
+  run: () => {
+    // A manual run is not a beat: the caption would describe a scenario no longer shown.
+    if (get().beat !== null || get().caption !== '') set({ beat: null, caption: '' });
+    execute();
   },
   runBeat: (beat) => {
     const { planName, plan, ignition, corruption, seed } = get();
     const cfg = beatConfig(beat, { planName, plan, ignition, corruption, seed });
     set({ planName: cfg.planName, plan: loadPlan(cfg.planName), ignition: cfg.ignition, corruption: cfg.corruption, caption: cfg.caption, beat });
-    get().run();
+    execute();
   },
   setPlanName: (name) => {
     if (name === get().planName) return;
@@ -240,12 +253,12 @@ export const useSim = create<SimState>((set, get) => ({
     // A corruption target from the old plan is meaningless here; aim at the new ignition space.
     const corruption = sanitizeCorruption({ ...get().corruption, target: [...plan.ignition] }, plan);
     const ignition = sanitizeIgnition(undefined, plan);
-    set({ plan, planName: name, ignition, corruption, data: null, trace: null, cursor: 0, playing: false, error: null, beat: null });
+    set({ plan, planName: name, ignition, corruption, data: null, trace: null, cursor: 0, playing: false, error: null, beat: null, caption: '' });
   },
   setSeed: (seed) => set({ seed }),
   setIgnition: (ignition) => set({ ignition }),
   setTicks: (ticks) => set({ ticks }),
-  setCorruption: (patch) => set({ corruption: { ...get().corruption, ...patch } }),
+  setCorruption: (patch) => set({ corruption: { ...get().corruption, ...patch }, beat: null, caption: '' }),
   setDemo: (on) => set({ demo: on }),
   setCursor: (i) => {
     if (!Number.isFinite(i)) return;
@@ -265,4 +278,5 @@ export const useSim = create<SimState>((set, get) => ({
     set({ playing: true, cursor: cursor >= n - 1 ? 0 : cursor });
   },
   setSpeed: (speed) => set({ speed }),
-}));
+  };
+});

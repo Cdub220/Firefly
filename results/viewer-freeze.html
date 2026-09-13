@@ -32,6 +32,7 @@
   .conf.hi .bar i { background: var(--wrong); }
   .conf.lo .bar i { background: var(--uncertain); }
   svg { width: 100%; height: auto; display: block; }
+  .panel .svgwrap svg { max-height: 80vh; }
   .id { font: 600 12px var(--sans); fill: var(--ink-2); letter-spacing: 0.04em; }
   .temp { font: 600 24px var(--mono); fill: var(--ink); font-variant-numeric: tabular-nums; }
   .tag { font: 700 10px var(--sans); letter-spacing: 0.08em; }
@@ -121,7 +122,7 @@ const DATA = {"plan":{"name":"demo-6","spaces":[{"id":"S1","level":1},{"id":"S2"
       const a = pos[e.a], b = pos[e.b]; if (!a || !b) return '';
       return `<line class="edge ${e.kind}" x1="${a.x + CW / 2}" y1="${a.y + CH / 2}" x2="${b.x + CW / 2}" y2="${b.y + CH / 2}"/>`;
     }).join('');
-    const vertical = L.vertical.map(v => `<line class="edge ${v.kind}" x1="${v.x}" y1="${v.y1}" x2="${v.x}" y2="${v.y2}"/>`).join('');
+    const vertical = L.vertical.map(v => `<line class="edge ${v.kind}" x1="${v.x1}" y1="${v.y1}" x2="${v.x2}" y2="${v.y2}"/>`).join('');
     return same + vertical;
   }
   function edgeLabels() {
@@ -139,7 +140,7 @@ const DATA = {"plan":{"name":"demo-6","spaces":[{"id":"S1","level":1},{"id":"S2"
   }
   function legendText() {
     const parts = [];
-    if (compact) parts.push('solid red border: burning', 'dashed amber: maybe', 'bright red: wrong');
+    if (compact) parts.push('solid red border: burning', 'dashed amber: maybe', 'bright red: wrong', 'P: P(burning)');
     if (L.labelEdges) return parts.join(' · ');
     const kinds = new Set(plan.edges.map(e => e.kind));
     if (kinds.has('door')) parts.push('door: thin line');
@@ -158,7 +159,9 @@ const DATA = {"plan":{"name":"demo-6","spaces":[{"id":"S1","level":1},{"id":"S2"
     if (opts.state === 'ambiguous') { stroke = '#f0b429'; sw = 2.5; dash = 'stroke-dasharray="6 4"'; }
     if (opts.verdict === 'wrong') { stroke = '#ff5c5c'; sw = 3.5; dash = ''; }
     const tagText = opts.tag ? (compact ? compactTag(opts.tag) : opts.tag) : '';
-    const tag = tagText ? `<text class="tag" x="${p.x + CW - 7}" y="${p.y + 22 * SC}" text-anchor="end" fill="${opts.tagColor || stroke}"${fs(F.tag)}>${esc(tagText)}</text>` : '';
+    const tag = !tagText ? '' : compact
+      ? `<rect x="${p.x + CW - 36}" y="${p.y + 1}" width="35" height="9" rx="2" fill="${opts.tagColor || stroke}"/><text class="tag" x="${p.x + CW - 18.5}" y="${p.y + 8}" text-anchor="middle" fill="#0e1116" font-size="7px">${esc(tagText)}</text>`
+      : `<text class="tag" x="${p.x + CW - 7}" y="${p.y + 22 * SC}" text-anchor="end" fill="${opts.tagColor || stroke}"${fs(F.tag)}>${esc(tagText)}</text>`;
     let chip = '';
     if (opts.reading) {
       const r = opts.reading;
@@ -171,7 +174,7 @@ const DATA = {"plan":{"name":"demo-6","spaces":[{"id":"S1","level":1},{"id":"S2"
     const fuel = opts.fuel != null
       ? `<text class="chip" x="${p.x + CW / 2}" y="${subY}" text-anchor="middle" fill="${opts.fuel <= 0 ? '#ff8a5c' : '#aab4c3'}"${fs(F.chip)}>fuel ${Math.round(opts.fuel * 100)}%</text>`
       : opts.prob != null
-        ? `<text class="chip" x="${p.x + CW / 2}" y="${subY}" text-anchor="middle" fill="#aab4c3"${fs(F.chip)}>P(burning) ${Math.round(opts.prob * 100)}%</text>`
+        ? `<text class="chip" x="${p.x + CW / 2}" y="${subY}" text-anchor="middle" fill="#aab4c3"${fs(F.chip)}>${compact ? 'P' : 'P(burning)'} ${Math.round(opts.prob * 100)}%</text>`
         : '';
     return `<g><rect x="${p.x}" y="${p.y}" width="${CW}" height="${CH}" rx="5" fill="#1b212a" stroke="${stroke}" stroke-width="${sw}" ${dash}/>` +
       `<rect x="${p.x + 1}" y="${p.y + 1}" width="${CW - 2}" height="7" rx="3" fill="${barCol}"/>` +

@@ -19,8 +19,12 @@ export type LayoutPlan = { spaces: Array<{ id: SpaceId; level: number }>; edges:
 
 export type Band = { level: number; label: string; y: number; h: number };
 
-/** A floor / shaft connector drawn in the gap between two bands. */
-export type Vertical = { x: number; y1: number; y2: number; kind: 'floor' | 'shaft' };
+/**
+ * A floor / shaft connector drawn in the gap between two bands, from the upper space's
+ * column to the lower partner's column (the same x on grid plans; slanted only when
+ * several upper spaces share one partner below and could not all inherit its column).
+ */
+export type Vertical = { x1: number; y1: number; x2: number; y2: number; kind: 'floor' | 'shaft' };
 
 export type Layout = {
   pos: Record<SpaceId, { x: number; y: number }>;
@@ -51,6 +55,10 @@ const MAX_EDGE_LABELS = 8; // spaces
 const MIN_SCALE = 0.7;
 const FULL_SIZE_AT = 6;
 const MIN_SCALE_AT = 24;
+// A stack of many small levels (a tower: 5 levels of 2x2) would be far taller than wide
+// and the panel would stretch it to several screens. Above this height/width ratio each
+// level's rows are flattened into one row (row-major, so floor edges still align).
+const MAX_ASPECT = 1.6;
 
 /** The six-space ring, exactly as the split view has always drawn demo-6. */
 const RING: Record<string, [number, number]> = { S1: [0, 0], S2: [1, 0], S3: [2, 0], S6: [0, 1], S5: [1, 1], S4: [2, 1] };
@@ -124,8 +132,10 @@ export function layoutPlan(plan: LayoutPlan): Layout {
   const levels = [...new Set(plan.spaces.map((s) => s.level))].sort((a, b) => a - b);
   const multiLevel = levels.length > 1;
 
+  if (n === 0) return { pos, W: 2 * MARGIN, H: 2 * MARGIN, CW, CH, scale, bands: [], labelW: 0, labelEdges, vertical: [] };
+
   // The ring: unchanged.
-  if (!multiLevel && n === 6 && ids.every((id) => id in RING)) {
+  if (!multiLevel && n === 6 && ids.every((id) => Object.hasOwn(RING, id))) {
     for (const id of ids) {
       const [col, row] = RING[id]!;
       pos[id] = { x: MARGIN + col * PX, y: MARGIN + row * PY };
@@ -149,13 +159,19 @@ export function layoutPlan(plan: LayoutPlan): Layout {
     const [upper, lower] = la > lb ? [e.a, e.b] : [e.b, e.a];
     if (!below.has(upper)) below.set(upper, lower);
   }
-  for (const level of levels) {
+  const place = (flatten: boolean): void => {
+    slots.clear();
+    rowsOf.clear();
+    for (const level of levels) placeLevel(level, flatten);
+  };
+  const placeLevel = (level: number, flatten: boolean): void => {
     const members = byLevel.get(level)!;
     const grid = gridSlots(members);
     if (grid) {
-      for (const [id, s] of grid) slots.set(id, s);
-      rowsOf.set(level, 1 + Math.max(...members.map((id) => grid.get(id)!.row)));
-      continue;
+      const gridCols = 1 + Math.max(...[...grid.values()].map((s) => s.col));
+      for (const [id, s] of grid) slots.set(id, flatten ? { col: s.row * gridCols + s.col, row: 0 } : s);
+      rowsOf.set(level, flatten ? 1 : 1 + Math.max(...members.map((id) => grid.get(id)!.row)));
+      return;
     }
     const order = bfsOrder(members, plan.edges);
     const taken = new Set<string>();
@@ -170,34 +186,45 @@ export function layoutPlan(plan: LayoutPlan): Layout {
       } else pending.push(id);
     }
     // Second pass: fill the remaining slots in BFS order.
+    const cols = flatten ? Math.max(wrapCols, members.length) : wrapCols;
     let k = 0;
     for (const id of pending) {
-      while (taken.has(`${k % wrapCols},${Math.floor(k / wrapCols)}`)) k++;
-      const s = { col: k % wrapCols, row: Math.floor(k / wrapCols) };
+      while (taken.has(`${k % cols},${Math.floor(k / cols)}`)) k++;
+      const s = { col: k % cols, row: Math.floor(k / cols) };
       slots.set(id, s);
       taken.add(`${s.col},${s.row}`);
       k++;
     }
     rowsOf.set(level, 1 + Math.max(...members.map((id) => slots.get(id)!.row)));
-  }
+  };
 
   const labelW = multiLevel ? LABEL_W : 0;
-  const cols = 1 + Math.max(...[...slots.values()].map((s) => s.col));
-  const bands: Band[] = [];
-  let y = MARGIN;
-  for (const level of [...levels].reverse()) {
-    const rows = rowsOf.get(level)!;
-    const h = (rows - 1) * PY + CH;
-    if (multiLevel) bands.push({ level, label: `LEVEL ${level}`, y, h });
-    for (const id of byLevel.get(level)!) {
-      const s = slots.get(id)!;
-      pos[id] = { x: MARGIN + labelW + s.col * PX, y: y + s.row * PY };
+  const build = (): Omit<Layout, 'vertical'> => {
+    const cols = 1 + Math.max(...[...slots.values()].map((s) => s.col));
+    const bands: Band[] = [];
+    const out: Record<SpaceId, { x: number; y: number }> = {};
+    let y = MARGIN;
+    for (const level of [...levels].reverse()) {
+      const rows = rowsOf.get(level)!;
+      const h = (rows - 1) * PY + CH;
+      if (multiLevel) bands.push({ level, label: `LEVEL ${level}`, y, h });
+      for (const id of byLevel.get(level)!) {
+        const s = slots.get(id)!;
+        out[id] = { x: MARGIN + labelW + s.col * PX, y: y + s.row * PY };
+      }
+      y += h + BAND_GAP;
     }
-    y += h + BAND_GAP;
+    const H = y - BAND_GAP + MARGIN;
+    const W = MARGIN + labelW + (cols - 1) * PX + CW + MARGIN;
+    return { pos: out, W, H, CW, CH, scale, bands, labelW, labelEdges };
+  };
+  place(false);
+  let partial = build();
+  if (multiLevel && partial.H / partial.W > MAX_ASPECT) {
+    place(true);
+    const flat = build();
+    if (flat.H / flat.W < partial.H / partial.W) partial = flat;
   }
-  const H = y - BAND_GAP + MARGIN;
-  const W = MARGIN + labelW + (cols - 1) * PX + CW + MARGIN;
-  const partial = { pos, W, H, CW, CH, scale, bands, labelW, labelEdges };
   return { ...partial, vertical: verticalConnectors(plan, partial) };
 }
 
@@ -222,11 +249,12 @@ function verticalConnectors(plan: LayoutPlan, layout: Omit<Layout, 'vertical'>):
     if (!bandUpper || !bandLower) continue;
     const y1 = bandUpper.y + bandUpper.h;
     const y2 = bandLower.y;
-    const x = upper.x + layout.CW / 2;
-    const key = `${x},${y1}`;
+    const x1 = upper.x + layout.CW / 2;
+    const x2 = lower.x + layout.CW / 2;
+    const key = `${x1},${y1},${x2}`;
     const kind = e.kind === 'shaft' ? 'shaft' : 'floor';
     const prev = out.get(key);
-    if (!prev || (prev.kind === 'floor' && kind === 'shaft')) out.set(key, { x, y1, y2, kind });
+    if (!prev || (prev.kind === 'floor' && kind === 'shaft')) out.set(key, { x1, y1, x2, y2, kind });
   }
-  return [...out.values()].sort((p, q) => p.y1 - q.y1 || p.x - q.x);
+  return [...out.values()].sort((p, q) => p.y1 - q.y1 || p.x1 - q.x1 || p.x2 - q.x2);
 }
