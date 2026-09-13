@@ -7,7 +7,6 @@ import { useSim } from '../store';
 import { ScenarioPanel } from '../panels/ScenarioPanel';
 import { ChaosPanel } from '../panels/ChaosPanel';
 import { Scene } from './Scene';
-import { truthFrame } from './frame';
 import { droneRows } from '../droneLayout';
 import '../split/split.css';
 import '../panels/panels.css';
@@ -20,7 +19,6 @@ export function SceneView() {
   const levels = useMemo(() => [...new Set(s.plan.spaces.map((x) => x.level))].sort((a, b) => a - b), [s.plan]);
   const [maxLevel, setMaxLevel] = useState<number>(levels[levels.length - 1] ?? 1);
   useEffect(() => { setMaxLevel(levels[levels.length - 1] ?? 1); }, [levels]);
-  const frame = useMemo(() => (rec ? truthFrame(rec, s.plan) : null), [rec, s.plan]);
 
   const burningNow = rec ? rec.truth.spaces.filter((x) => x.burning).map((x) => x.id) : [];
   const brainNames = s.data?.brainNames ?? [];
@@ -45,7 +43,7 @@ export function SceneView() {
           </div>
           {s.error && <pre className="err">{s.error}</pre>}
           <div className="scene-canvas">
-            {frame && rec ? <Scene plan={s.plan} frame={frame} maxLevel={maxLevel} drones={{ rec, prev, playing: s.playing, speed: s.speed }} /> : <div className="scene-empty">Press Run.</div>}
+            {rec ? <Scene plan={s.plan} rec={rec} view="truth" maxLevel={maxLevel} drones={{ prev, playing: s.playing, speed: s.speed }} /> : <div className="scene-empty">Press Run.</div>}
           </div>
           <p className="note">Truth only. Box color is temperature (slate → amber → red at 400 °C → white-hot at 600). Pulsing boxes are burning. Lines are heat paths: gray doors and passages, dim bulkheads, blue floors and shafts; a dim red line is a door that has shut. Spheres are fixed sensors as the brain sees them this tick: green reporting, amber lying by more than 30 °C, red silent. Drones ring above their space: cyan cylinder tether (dashed hose to resupply), green retardant, white scout, yellow relay, orange hatch; the bar beneath is resource; a gray X is where one died. Arrows are the brain's commands, coloured by task, faded on arrival.</p>
         </main>
