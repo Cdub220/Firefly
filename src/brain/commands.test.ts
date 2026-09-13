@@ -73,9 +73,11 @@ describe('planCommands', () => {
     expect(d.kept).toEqual([new Set(dark.belief.burningSet)]);
     expect(dark.commands).toEqual([]);
 
-    // reset() clears prev.
+    // reset() clears prev: the tick before reset handed out a command, and it must not survive.
+    hook.mockReturnValueOnce(sentinel);
+    expect(brain.step(obs(5)).commands).toBe(sentinel);
     brain.reset();
     brain.step(obs(1));
-    expect(hook.mock.calls[4]![0].prev).toEqual([]);
+    expect(hook.mock.calls[5]![0].prev).toEqual([]);
   });
 });

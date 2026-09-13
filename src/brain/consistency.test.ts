@@ -219,10 +219,9 @@ describe('checkConsistency', () => {
         else expect(suspect.filter((s) => s.sensorId === 'D1:temp')).toEqual([]);
         prev = { ...ambientEstimate(plan), ...Object.fromEntries(trusted.map((r) => [r.spaceId, r.temp])) };
       }
-      // Six flat ticks are needed AFTER the move (ticks 3..8), so nothing before tick 8.
-      expect(caughtAt).not.toBeNull();
-      expect(caughtAt!).toBeGreaterThanOrEqual(8);
-      expect(caughtAt!).toBeLessThanOrEqual(11);
+      // Six flat ticks are needed AFTER the move (ticks 3..8): caught at tick 8 exactly, the
+      // same six-tick streak a fixed sensor needs.
+      expect(caughtAt).toBe(8);
     });
 
     it('a drone that keeps moving is never frozen even when its reading repeats, and its flight is not counted as its old space moving', () => {
@@ -284,6 +283,16 @@ describe('checkConsistency', () => {
         updateHistory(history, o);
         const { suspect } = checkConsistency(plan, o, prev, history);
         expect(suspect).toEqual([]);
+      }
+      // A stationary sensor that misses one tick and returns lying is NOT a first observation:
+      // the exemption is keyed on the sensor, so a gap-then-lie is still an impossible rise.
+      const history3: SensorHistory = new Map();
+      for (let t = 5; t <= 8; t++) {
+        const o = obs(t, t === 7 ? [reading('F3', 'S3', 300, t), reading('F2', 'S2', 200, t)] : [reading('F1', 'S1', t < 8 ? 60 : 500, t), reading('F3', 'S3', 300, t), reading('F2', 'S2', 200, t)]);
+        updateHistory(history3, o);
+        const { suspect } = checkConsistency(plan, o, prev, history3);
+        if (t === 8) expect(suspect).toEqual([{ sensorId: 'F1', reason: 'impossible-rise' }]);
+        else expect(suspect).toEqual([]);
       }
       // Whereas a sensor that WAS observed there last tick is held to physics from that estimate.
       const history2: SensorHistory = new Map();

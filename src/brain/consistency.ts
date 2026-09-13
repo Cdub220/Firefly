@@ -41,13 +41,15 @@ const HISTORY_CAP = FROZEN_TICKS + 4;
  * cannot move: if its spaceId differs from its previous entry it is judged against its
  * own last reading (a sensor does not teleport into a hotter room).
  *
- * First observations. A space that no sensor reported from last tick has an estimate
- * that is a hypothesis, not a measurement: the physics rollout of whichever explanation
- * scored best. The first reading to arrive there (a scout flying into an unsensed room)
- * is what settles the hypothesis, so it cannot be judged an impossible rise or drop
- * against the guess it is there to test. The same allowance already applies to unsensed
- * NEIGHBOURS in the bounds below, and to every space in the first ticks. Stale, frozen,
- * cold-in-hot-neighbourhood and no-heat-path still apply to it.
+ * First observations. A SENSOR's first reading from a space (no previous entry at all,
+ * or its previous entry was taken somewhere else, i.e. a drone that just flew in) is not
+ * judged for rise or drop against the space's estimate: an unsensed space's estimate is a
+ * hypothesis, the physics rollout of whichever explanation scored best, and the reading
+ * that arrives there is what settles it. The same allowance already applies to unsensed
+ * NEIGHBOURS in the bounds below, and to every space in the first ticks. It is keyed on
+ * the sensor, not the space: a stationary sensor that misses a tick and comes back is
+ * still held to physics from the estimate, so a gap-then-lie is not a way in. Stale,
+ * frozen, cold-in-hot-neighbourhood and no-heat-path still apply to a first observation.
  */
 const ownPrev = (history: SensorHistory, r: Reading): { t: number; temp: number; spaceId: SpaceId } | undefined => {
   const h = history.get(r.sensorId) ?? [];
@@ -111,12 +113,13 @@ export function checkConsistency(
   const frozenIds = new Set<SensorId>();
   for (const r of trusted) {
     const h = history.get(r.sensorId) ?? [];
-    const window = h.filter((x) => x.t >= obs.t - FROZEN_TICKS);
+    // The streak restarts at a move: only entries since the sensor last changed space
+    // count. A drone that has sat still for the whole window IS subject to the rule (a
+    // stuck drone lies like a stuck sensor).
+    let since = h.length;
+    while (since > 0 && h[since - 1]!.spaceId === r.spaceId) since -= 1;
+    const window = h.slice(since).filter((x) => x.t >= obs.t - FROZEN_TICKS);
     if (window.length < FROZEN_TICKS) continue;
-    // A sensor that moved within the window is not frozen: the streak restarts at the move.
-    // A drone that has sat still for the whole window IS subject to the rule (a stuck
-    // drone lies like a stuck sensor).
-    if (window.some((x) => x.spaceId !== r.spaceId)) continue;
     const flat = window.every((x, i) => i === 0 || Math.abs(x.temp - window[i - 1]!.temp) < FROZEN_EPS_C);
     if (!flat) continue;
     const moves = neighborsOf(r.spaceId)
@@ -141,11 +144,10 @@ export function checkConsistency(
   // ambient for the drop bound). Only warm unsensed spaces get the allowance; an
   // unsensed space the physics puts at ambient with cold surroundings is not a hidden fire.
   const sensedNow = new Set(trusted.map((r) => r.spaceId));
-  const observedLastTick = new Set<SpaceId>();
-  for (const h of history.values()) {
-    for (const x of h) if (x.t === obs.t - 1) observedLastTick.add(x.spaceId);
-  }
-  const firstObservation = (r: Reading): boolean => !observedLastTick.has(r.spaceId) && movedFixed(history, r) === undefined;
+  const firstObservation = (r: Reading): boolean => {
+    const p = ownPrev(history, r);
+    return p === undefined || (p.spaceId !== r.spaceId && r.source !== 'fixed');
+  };
   const hiBound: Record<SpaceId, number> = {};
   const loBound: Record<SpaceId, number> = {};
   for (const s of plan.spaces) {
