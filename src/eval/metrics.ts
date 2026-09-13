@@ -58,7 +58,9 @@ export type MetricsOptions = {
 const PROB_DECISION = 0.5; // probability at or above this counts as "called burning"
 const RECOVERY_TICKS = 5; // consecutive exact matches that count as recovered
 
-const sameSet = (a: string[], b: Set<string>): boolean => a.length === b.size && a.every((id) => b.has(id));
+/** Sets compared as sorted id lists, exactly as specified (a duplicate id is a difference). */
+const sortedKey = (ids: readonly string[]): string => [...ids].sort().join(',');
+const sameSet = (a: readonly string[], b: readonly string[]): boolean => sortedKey(a) === sortedKey(b);
 
 export function computeMetrics(trace: TickRecord[], opts: MetricsOptions): Metrics {
   const onset = opts.onset;
@@ -89,8 +91,7 @@ export function computeMetrics(trace: TickRecord[], opts: MetricsOptions): Metri
     }
     const truthBurning = rec.truth.spaces.filter((s) => s.burning).map((s) => s.id);
     const truthSet = new Set(truthBurning);
-    const beliefSet = new Set(rec.belief.burningSet);
-    const isExact = sameSet(truthBurning, beliefSet);
+    const isExact = sameSet(truthBurning, rec.belief.burningSet);
     exact.push(isExact);
     if (rec.belief.confidence >= threshold && !isExact) falseCertain += 1;
     const ambiguous = new Set(rec.belief.ambiguous.flat());

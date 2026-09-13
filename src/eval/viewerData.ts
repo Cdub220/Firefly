@@ -2,7 +2,7 @@
  * Shape the loop's traces into the compact record the split view renders.
  * Used by the browser UI (src/ui/split) and the standalone exporter (npm run viewer).
  */
-import type { TickRecord } from '../loop';
+import { onsetOf, type TickRecord } from '../loop';
 import type { Belief, CorruptionConfig, Edge, FixedSensor, SpaceId, StructurePlan } from '../shared/types';
 import { layoutPlan, type Layout } from './layout';
 
@@ -57,7 +57,7 @@ export function buildViewerData(
 ): ViewerData {
   const names = Object.keys(traces);
   const first = traces[names[0]!]!;
-  const onset = cfg.corruption.mode === 'none' ? null : (cfg.corruption.onset ?? 5);
+  const onset = first[0]?.onset ?? onsetOf(cfg.corruption);
   return {
     plan: { name: plan.name, spaces: plan.spaces.map((s) => ({ id: s.id, level: s.level })), edges: plan.edges, sensors: plan.sensors },
     layout: layoutPlan(plan),

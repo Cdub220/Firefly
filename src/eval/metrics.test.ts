@@ -130,6 +130,13 @@ describe('computeMetrics', () => {
     expect(m.ambiguityCoverage).toBeCloseTo(3 / 4, 10);
   });
 
+  it('sets are compared as sorted id lists: order does not matter, a duplicate id does', () => {
+    const same = rec({ t: 5, burning: ['A', 'B'], belief: { burningSet: ['B', 'A'], confidence: 0.99 } });
+    expect(computeMetrics([same], { onset: 5 }).falseCertainty).toBe(0);
+    const dup = rec({ t: 5, burning: ['A'], belief: { burningSet: ['A', 'A'], confidence: 0.99 } });
+    expect(computeMetrics([dup], { onset: 5 }).falseCertainty).toBe(1);
+  });
+
   it('confidenceThreshold is an option (default 0.9)', () => {
     const trace = [rec({ t: 5, burning: ['A'], belief: { burningSet: ['B'], confidence: 0.8 } })];
     expect(computeMetrics(trace, { onset: 5 }).falseCertainty).toBe(0);

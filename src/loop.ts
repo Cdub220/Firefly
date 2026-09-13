@@ -9,7 +9,7 @@
  * (`npm run sim`), it prints truth and both brains' beliefs, one line per tick.
  */
 import { createWorld } from './world';
-import { createCorruptor } from './corruption';
+import { createCorruptor, DEFAULT_CORRUPTION } from './corruption';
 import { createBrain } from './brain';
 import { createKalmanBrain } from './brain/kalman';
 import demoPlan from '../data/structures/demo-6.json';
@@ -37,9 +37,8 @@ export type TickRecord = {
 /** The onset a corruption config implies for the metrics window: null for a clean run. */
 export function onsetOf(corruption: Omit<CorruptionConfig, 'seed'> | undefined): number | null {
   if (!corruption || corruption.mode === 'none') return null;
-  return corruption.onset ?? DEFAULT_ONSET;
+  return corruption.onset ?? DEFAULT_CORRUPTION.onset;
 }
-const DEFAULT_ONSET = 5; // mirrors DEFAULT_CORRUPTION.onset in src/corruption
 
 const now = (): number => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
