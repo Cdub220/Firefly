@@ -53,7 +53,29 @@ export type Metrics = {
    * when there is not, at every level of sure. Keys are the thresholds as strings ('0.9').
    */
   falseCertaintyByP: Record<string, number>;
+  /**
+   * Fraction of ticks >= onset where belief.ambiguous is non-empty AND the tick's commands
+   * target at least two different spaces inside one ambiguous group: the allocator hedged.
+   * Zero on an open-loop trace (no commands recorded). (Additive, Dean, CP4 prompt 2.)
+   */
+  hedgeRate: number;
+  /**
+   * Spaces burning in truth at the last tick with the allocator minus the same with a null
+   * allocator. Not computable from one trace: filled in by runContainment() in
+   * src/eval/containment.ts, undefined otherwise. (Additive, Dean, CP4 prompt 2.)
+   */
+  containmentDelta?: number;
 };
+
+/** True when `commands` name two or more different spaces inside one of the ambiguous groups. */
+export function isHedge(ambiguous: readonly (readonly string[])[], commands: readonly { goTo: string }[]): boolean {
+  for (const group of ambiguous) {
+    const inGroup = new Set(group);
+    const targets = new Set(commands.filter((c) => inGroup.has(c.goTo)).map((c) => c.goTo));
+    if (targets.size >= 2) return true;
+  }
+  return false;
+}
 
 /** Thresholds for falseCertaintyByP. */
 export const P_THRESHOLDS = [0.5, 0.7, 0.8, 0.9, 0.95] as const;
@@ -88,6 +110,7 @@ export function computeMetrics(trace: TickRecord[], opts: MetricsOptions): Metri
   let fn = 0;
   let positives = 0;
   let msSum = 0;
+  let hedged = 0;
   const fcByP = P_THRESHOLDS.map(() => 0);
   const exact: boolean[] = []; // per windowed tick, in order
   const windowTicks: number[] = [];
@@ -109,6 +132,7 @@ export function computeMetrics(trace: TickRecord[], opts: MetricsOptions): Metri
     const reported = new Set([...rec.belief.burningSet, ...ambiguous]);
     if (truthBurning.every((id) => reported.has(id))) covered += 1;
     if (rec.belief.burningSet.some((id) => !truthSet.has(id) && !ambiguous.has(id))) wrong += 1;
+    if (rec.belief.ambiguous.length > 0 && isHedge(rec.belief.ambiguous, rec.commands)) hedged += 1;
     let maxWrongP = 0; // highest probability given to a space that is not burning
     for (const s of rec.truth.spaces) {
       // A brain that reports no probability is scored as if it said 0 everywhere.
@@ -147,5 +171,6 @@ export function computeMetrics(trace: TickRecord[], opts: MetricsOptions): Metri
     falsePositiveRate: negatives ? fp / negatives : 0,
     falseNegativeRate: positives ? fn / positives : 0,
     falseCertaintyByP: Object.fromEntries(P_THRESHOLDS.map((th, i) => [String(th), windowN ? fcByP[i]! / windowN : 0])),
+    hedgeRate: windowN ? hedged / windowN : 0,
   };
 }
