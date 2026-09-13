@@ -43,8 +43,8 @@ describe('graded belief on the freeze run', () => {
   });
 
   it('Brier score: ours is better calibrated than Kalman on this run, and ours is never false-certain', () => {
-    const ours = computeMetrics(traces['ours']!, 0.9, 5);
-    const kalman = computeMetrics(traces['kalman']!, 0.9, 5);
+    const ours = computeMetrics(traces['ours']!, { onset: 5 });
+    const kalman = computeMetrics(traces['kalman']!, { onset: 5 });
     expect(ours.brierScore).toBeLessThan(kalman.brierScore);
     expect(ours.falseCertainty).toBe(0);
     for (const m of [ours, kalman]) {

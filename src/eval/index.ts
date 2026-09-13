@@ -20,5 +20,5 @@ if (isMain) {
   const seed = num('--seed', 42);
   const ticks = num('--ticks', 200);
   const trace = runLoop({ plan: DEMO_PLAN, seed, ticks });
-  console.log(JSON.stringify({ plan: DEMO_PLAN.name, seed, ticks, ...computeMetrics(trace) }, null, 2));
+  console.log(JSON.stringify({ plan: DEMO_PLAN.name, seed, ticks, ...computeMetrics(trace, { onset: 0 }) }, null, 2));
 }

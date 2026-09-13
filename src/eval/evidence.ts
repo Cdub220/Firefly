@@ -60,7 +60,7 @@ function runMode(mode: CorruptionMode): Row[] {
       primary: 'ours',
     });
     for (const [name, trace] of Object.entries(traces)) {
-      const m = computeMetrics(trace, 0.9, ONSET);
+      const m = computeMetrics(trace, { onset: ONSET });
       const acc = perBrain.get(name) ?? { fc: [], cov: [], err: [], brier: [], fpr: [], fnr: [] };
       acc.fc.push(m.falseCertainty);
       acc.cov.push(m.ambiguityCoverage);
