@@ -56,6 +56,19 @@ const worldStream = (plan: StructurePlan, start: Record<SpaceId, number>, burnin
 };
 
 describe('Belief.probability', () => {
+  it('(0) one tick of unanimity is not certainty: P(burning) is capped at 0.9 until a space has been in every survivor for two ticks', () => {
+    const brain = createBrain({ plan: line3, seed: 42 });
+    const temps = worldStream(line3, { A: 450, B: 20, C: 20 }, new Set(['A']), 8);
+    const ps: number[] = [];
+    for (let t = 1; t <= 8; t++) {
+      const T = temps[t - 1]!;
+      const out = brain.step(obs(t, [reading('FA', 'A', T['A']!, t), reading('FB', 'B', T['B']!, t), reading('FC', 'C', T['C']!, t)]));
+      ps.push(out.belief.probability['A']!);
+    }
+    expect(ps[0]).toBeLessThanOrEqual(0.9); // first tick A is unanimous: capped
+    expect(Math.max(...ps.slice(2))).toBeGreaterThan(0.9); // a sustained fire still earns near-1
+  });
+
   it('(1) two equally good hypotheses {A} and {B}: both ~0.5', () => {
     // A and B each open onto C; only C has a sensor. C warms exactly as a fire in A
     // would warm it, which is exactly as a fire in B would: the data cannot tell them

@@ -214,6 +214,32 @@ describe('createBrain v1', () => {
     }
   });
 
+  it('blackout after a known fire: the last known set is carried forward, unconfirmed, and recovers when data returns', () => {
+    const brain = createBrain({ plan, seed: 42 });
+    const temps = stream(30);
+    let last = brain.step(obs(1, []));
+    for (let t = 1; t <= 12; t++) {
+      const T = temps[t - 1]!;
+      last = brain.step(obs(t, [reading('F1', 'S1', T['S1']!, t), reading('F2', 'S2', T['S2']!, t), reading('F3', 'S3', T['S3']!, t)]));
+    }
+    const known = last.belief.burningSet;
+    expect(known).toContain('S1');
+    // Every sensor dies at once. "No fire" would be a clean sheet nobody asked for.
+    for (let t = 13; t <= 22; t++) {
+      const out = brain.step(obs(t, []));
+      expect(out.belief.burningSet).toEqual(known);
+      expect(out.belief.confidence).toBe(0.05);
+      expect(out.belief.estimate['S1']!).toBeGreaterThan(250); // physics keeps carrying the warmth
+    }
+    // Readings resume: the brain must climb back out of the floor.
+    let conf = 0;
+    for (let t = 23; t <= 30; t++) {
+      const T = temps[t - 1]!;
+      conf = brain.step(obs(t, [reading('F1', 'S1', T['S1']!, t), reading('F2', 'S2', T['S2']!, t), reading('F3', 'S3', T['S3']!, t)])).belief.confidence;
+    }
+    expect(conf).toBeGreaterThan(0.05);
+  });
+
   it('zero readings from the first tick: confidence stays at the floor forever', () => {
     const brain = createBrain({ plan, seed: 42 });
     for (let t = 1; t <= 20; t++) {

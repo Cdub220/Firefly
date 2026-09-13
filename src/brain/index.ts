@@ -59,6 +59,12 @@ const VOLATILE_CONF_CAP = 0.7;
 // scoring decides, as it did before this rule existed.
 const FORCED_STREAK_TICKS = 3;
 const FUEL_MARGIN_TICKS = 5;
+// A space's P(burning) may exceed this only after it has been in EVERY surviving
+// hypothesis for AGREED_TICKS_FOR_CERTAINTY consecutive ticks. A forced hot space can
+// drag a wrong neighbour into every survivor for a single tick (seen in blind mode);
+// one tick of unanimity is not certainty.
+const P_CAP_UNTIL_AGREED = 0.9;
+const AGREED_TICKS_FOR_CERTAINTY = 2;
 
 export function createBrain(config: BrainConfig): Brain {
   let rng: Rng = makeRng(config.seed).fork('brain');
@@ -80,6 +86,8 @@ export function createBrain(config: BrainConfig): Brain {
   let lastBurningKey = '';
   let hotStreak = new Map<SpaceId, number>(); // consecutive ticks a space's trusted reading was above ignition
   let burnTicks = new Map<SpaceId, number>(); // ticks a space has been in the best hypothesis (fuel does not regenerate)
+  let agreedStreak = new Map<SpaceId, number>(); // consecutive ticks a space was in every kept hypothesis
+  let lastBelief: Belief | null = null; // carried forward under total blackout: last known fire, unconfirmed
   const init = (): void => {
     history = new Map();
     prevEstimate = {};
@@ -90,6 +98,8 @@ export function createBrain(config: BrainConfig): Brain {
     lastBurningKey = '';
     hotStreak = new Map();
     burnTicks = new Map();
+    agreedStreak = new Map();
+    lastBelief = null;
   };
   init();
 
@@ -127,6 +137,28 @@ export function createBrain(config: BrainConfig): Brain {
       };
       updateHistory(history, sane);
       const { trusted, suspect } = checkConsistency(config.plan, sane, prevEstimate, history);
+
+      // Total blackout: no reading can be trusted. Every hypothesis fits zero data equally,
+      // so scoring would fall to the tie-break and report "no fire". A commander with no
+      // data wants the last known fire, marked unconfirmed, not a clean sheet: carry the
+      // previous belief forward at floor confidence and let physics move the estimate.
+      if (trusted.length === 0 && lastBelief !== null) {
+        const estimate = predict(config.plan, prevBurning, prevEstimate, 1);
+        prevEstimate = estimate;
+        estHistory.push(estimate);
+        while (estHistory.length > ROLLOUT) estHistory.shift();
+        stableTicks = 0;
+        for (const id of spaceIds) hotStreak.set(id, 0); // no trusted above-ignition reading this tick
+        for (const id of prevBurning) burnTicks.set(id, (burnTicks.get(id) ?? 0) + 1);
+        const belief: Belief = {
+          ...lastBelief,
+          estimate,
+          suspectSensors: suspect.map((x) => x.sensorId).sort(),
+          confidence: MIN_CONFIDENCE,
+        };
+        lastBelief = belief;
+        return { belief, commands: [] };
+      }
 
       // Seed candidates from hot READINGS and hot ESTIMATES: a fire whose sensors died
       // must stay in the pool — the estimate remembers it even when no reading does.
@@ -176,7 +208,9 @@ export function createBrain(config: BrainConfig): Brain {
       let burning = kept
         .map((x) => x.set)
         .reduce((acc, s) => new Set([...acc].filter((id) => s.has(id))));
+      const unanimous = new Set(burning);
       if (burning.size === 0) burning = best.set;
+      for (const id of spaceIds) agreedStreak.set(id, unanimous.has(id) ? (agreedStreak.get(id) ?? 0) + 1 : 0);
 
       const union = new Set<SpaceId>(kept.flatMap((x) => [...x.set]));
       const contested = new Set<SpaceId>([...union].filter((id) => !burning.has(id)));
@@ -239,6 +273,7 @@ export function createBrain(config: BrainConfig): Brain {
         });
         p = weightSum > 0 ? p / weightSum : 0;
         p *= Math.pow(SUSPECT_PENALTY, suspectsInSpace.get(id) ?? 0);
+        if ((agreedStreak.get(id) ?? 0) < AGREED_TICKS_FOR_CERTAINTY) p = Math.min(p, P_CAP_UNTIL_AGREED);
         probability[id] = Math.min(1, Math.max(0, p));
       }
 
@@ -258,6 +293,7 @@ export function createBrain(config: BrainConfig): Brain {
         confidence,
         probability,
       };
+      lastBelief = belief;
       return { belief, commands: [] };
     },
     reset(): void {
