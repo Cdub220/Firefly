@@ -100,7 +100,7 @@ const DATA = __DATA__;
   const F = { temp: Math.max(16, Math.round(24 * SC)), id: Math.max(10, Math.round(12 * SC)), chip: Math.max(9, Math.round(10.5 * SC * 10) / 10), tag: Math.max(8, Math.round(10 * SC)) };
   const fs = px => SC === 1 ? '' : ` font-size="${px}px"`;
   const levelOf = {}; plan.spaces.forEach(s => { levelOf[s.id] = s.level; });
-  const detour = new Set((L.detours || []).map(d => `${d.a}|${d.b}`));
+  const detour = new Map((L.detours || []).map(d => [`${d.a}|${d.b}`, d.depth]));
   const compact = SC < 0.85; // too narrow for id + tag: only WRONG / MISS are written out
   const compactTag = tag => tag === 'WRONG' ? 'WRONG' : tag === 'MISSED' ? 'MISS' : '';
   const sensorSpace = {}; plan.sensors.forEach(s => sensorSpace[s.id] = s.spaceId);
@@ -117,12 +117,12 @@ const DATA = __DATA__;
   function esc(s) { return String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
 
   function edgeLines() {
-    let k = 0;
     const same = plan.edges.map(e => {
       if (levelOf[e.a] !== levelOf[e.b]) return '';
       const a = pos[e.a], b = pos[e.b]; if (!a || !b) return '';
-      if (detour.has(`${e.a}|${e.b}`)) {
-        const y = Math.max(a.y, b.y) + CH + 12 + 6 * (k++ % 3);
+      const depth = detour.get(`${e.a}|${e.b}`);
+      if (depth !== undefined) {
+        const y = Math.max(a.y, b.y) + CH + depth;
         return `<path class="edge ${e.kind}" fill="none" d="M${a.x + CW / 2} ${a.y + CH} V${y} H${b.x + CW / 2} V${b.y + CH}"/>`;
       }
       return `<line class="edge ${e.kind}" x1="${a.x + CW / 2}" y1="${a.y + CH / 2}" x2="${b.x + CW / 2}" y2="${b.y + CH / 2}"/>`;

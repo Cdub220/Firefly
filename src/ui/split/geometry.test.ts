@@ -171,7 +171,7 @@ describe('round-3 regressions', () => {
     // Every A-B passage on a flattened band is a detour; doors between adjacent cells are not.
     const passages = tower.edges.filter((e) => e.kind === 'passage');
     expect(g.detours.length).toBe(passages.length);
-    for (const p of passages) expect(g.detours).toContainEqual({ a: p.a, b: p.b });
+    for (const p of passages) expect(g.detours.some((d) => d.a === p.a && d.b === p.b)).toBe(true);
     // And the renderer draws them as brackets, not lines.
     const data = run(tower, 8);
     const svg = brainSvg(data, geometry(data), data.ticks[7]!, 'ours');
@@ -219,5 +219,36 @@ describe('round-3 regressions', () => {
     const data = run({ ...plan, name: 'skip', ambient: 22, sensors: [{ id: 'F', spaceId: 'a' }], resupply: ['a'], ignition: ['a'] }, 3);
     const svg = truthSvg(data, geometry(data), data.ticks[2]!);
     expect((svg.match(/class="edge floor"/g) ?? []).length).toBe(2); // one connector, one same-level line
+  });
+});
+
+describe('round-4 regressions (bracket clipping)', () => {
+  it('every bracket, including those under the bottom band, lies inside the canvas', () => {
+    for (const plan of [makeGridFixture({ levels: 5, rows: 2, cols: 2 }), makeGridFixture({ levels: 6, rows: 3, cols: 2 }), makeGridFixture({ levels: 8, rows: 3, cols: 3 })]) {
+      const g = layoutPlan(plan);
+      expect(g.detours.length).toBeGreaterThan(0);
+      for (const d of g.detours) {
+        const y = Math.max(g.pos[d.a]!.y, g.pos[d.b]!.y) + g.CH + d.depth;
+        expect(y).toBeLessThanOrEqual(g.H - 2);
+      }
+      // Lanes restart on every level: the first bracket of each band is at the shallowest depth.
+      const levelOf = new Map(plan.spaces.map((s) => [s.id, s.level]));
+      const firstPerLevel = new Map<number, number>();
+      for (const d of g.detours) {
+        const l = levelOf.get(d.a)!;
+        if (!firstPerLevel.has(l)) firstPerLevel.set(l, d.depth);
+      }
+      for (const depth of firstPerLevel.values()) expect(depth).toBe(12);
+    }
+    const data = run(makeGridFixture({ levels: 5, rows: 2, cols: 2 }), 4);
+    const g = geometry(data);
+    const svg = truthSvg(data, g, data.ticks[3]!);
+    for (const m of svg.matchAll(/ V(\d+(?:\.\d+)?) H/g)) expect(Number(m[1])).toBeLessThanOrEqual(g.H - 2);
+  });
+
+  it('flattening never produces a ribbon: a wide two-level plan keeps its rows', () => {
+    const g = layoutPlan(makeGridFixture({ levels: 2, rows: 4, cols: 4 }));
+    expect(g.W / g.H).toBeLessThanOrEqual(3);
+    expect(g.bands[0]!.h).toBeGreaterThan(g.CH); // not flattened
   });
 });

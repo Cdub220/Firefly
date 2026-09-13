@@ -44,19 +44,17 @@ export const isCompact = (g: Geometry): boolean => g.scale < COMPACT_BELOW;
 const compactTag = (tag: string): string => (tag === 'WRONG' ? 'WRONG' : tag === 'MISSED' ? 'MISS' : '');
 
 const levelMap = (data: ViewerData): Map<string, number> => new Map(data.plan.spaces.map((s) => [s.id, s.level]));
-const DETOUR_DEPTH = 12; // px below the cells for a bracketed edge; successive brackets step down
-
 export function edgeLines(data: ViewerData, g: Geometry): string {
   const levelOf = levelMap(data);
-  const detour = new Set(g.detours.map((d) => `${d.a}|${d.b}`));
-  let k = 0;
+  const detour = new Map(g.detours.map((d) => [`${d.a}|${d.b}`, d.depth]));
   const same = data.plan.edges.map((e) => {
     // A cross-level edge is a connector; a same-level edge of any kind is drawn here.
     if (levelOf.get(e.a) !== levelOf.get(e.b)) return '';
     const a = g.pos[e.a], b = g.pos[e.b]; if (!a || !b) return '';
-    if (detour.has(`${e.a}|${e.b}`)) {
+    const depth = detour.get(`${e.a}|${e.b}`);
+    if (depth !== undefined) {
       // Bracket below the row: the straight line would pass through another cell.
-      const y = Math.max(a.y, b.y) + g.CH + DETOUR_DEPTH + 6 * (k++ % 3);
+      const y = Math.max(a.y, b.y) + g.CH + depth;
       return `<path class="edge ${e.kind}" fill="none" d="M${a.x + g.CW / 2} ${a.y + g.CH} V${y} H${b.x + g.CW / 2} V${b.y + g.CH}"/>`;
     }
     return `<line class="edge ${e.kind}" x1="${a.x + g.CW / 2}" y1="${a.y + g.CH / 2}" x2="${b.x + g.CW / 2}" y2="${b.y + g.CH / 2}"/>`;

@@ -47,7 +47,7 @@ export type Layout = {
    * cell (a flattened row's cross-row passages, mostly). Renderers route these as a
    * bracket below the row instead of drawing a phantom link through the cell between.
    */
-  detours: Array<{ a: SpaceId; b: SpaceId }>;
+  detours: Array<{ a: SpaceId; b: SpaceId; depth: number }>;
 };
 
 const BASE_CW = 104;
@@ -65,6 +65,12 @@ const MIN_SCALE_AT = 24;
 // and the panel would stretch it to several screens. Above this height/width ratio each
 // level's rows are flattened into one row (row-major, so floor edges still align).
 const MAX_ASPECT = 1.6;
+// ...but flattening must not produce a ribbon either: a flattened layout wider than this
+// many times its height is rejected and the stacked one kept (the CSS cap handles it).
+const MAX_WIDE = 3;
+const DETOUR_DEPTH = 12; // px below the cells for a bracketed edge
+const DETOUR_STEP = 6; // successive brackets on one band step down by this
+const DETOUR_LANES = 3;
 
 /** The six-space ring, exactly as the split view has always drawn demo-6. */
 const RING: Record<string, [number, number]> = { S1: [0, 0], S2: [1, 0], S3: [2, 0], S6: [0, 1], S5: [1, 1], S4: [2, 1] };
@@ -237,9 +243,17 @@ export function layoutPlan(plan: LayoutPlan): Layout {
   if (multiLevel && partial.H / partial.W > MAX_ASPECT) {
     place(true);
     const flat = build();
-    if (flat.H / flat.W < partial.H / partial.W) partial = flat;
+    if (flat.H / flat.W < partial.H / partial.W && flat.W / flat.H <= MAX_WIDE) partial = flat;
   }
-  return { ...partial, vertical: verticalConnectors(plan, partial), detours: detours(plan, partial) };
+  const routed = detours(plan, partial);
+  // Brackets hang below their row; the bottom band's brackets need canvas below the cells.
+  const bottom = Math.max(...Object.values(partial.pos).map((p) => p.y + CH), 0);
+  const overhang = Math.max(0, ...routed.map((d) => {
+    const a = partial.pos[d.a]!, b = partial.pos[d.b]!;
+    return Math.max(a.y, b.y) + CH + d.depth + 2 - bottom;
+  }));
+  const H = partial.H + Math.max(0, overhang - (partial.H - bottom - MARGIN));
+  return { ...partial, H: Math.max(partial.H, H), vertical: verticalConnectors(plan, partial), detours: routed };
 }
 
 /** Does the segment p-q cross the rectangle r (with a small inset so touching edges do not count)? */
@@ -259,19 +273,28 @@ function crosses(p: { x: number; y: number }, q: { x: number; y: number }, r: { 
   return t0 < t1;
 }
 
-/** Same-level edges whose straight line passes through a third cell. */
-function detours(plan: LayoutPlan, layout: Omit<Layout, 'vertical' | 'detours'>): Array<{ a: SpaceId; b: SpaceId }> {
+/**
+ * Same-level edges whose straight line passes through a third cell, each with the depth
+ * (px below the cells) its bracket is drawn at. Depths cycle through a few lanes per
+ * level so brackets on one row do not sit on top of each other.
+ */
+function detours(plan: LayoutPlan, layout: Omit<Layout, 'vertical' | 'detours'>): Array<{ a: SpaceId; b: SpaceId; depth: number }> {
   const levelOf = new Map(plan.spaces.map((s) => [s.id, s.level]));
-  const out: Array<{ a: SpaceId; b: SpaceId }> = [];
+  const out: Array<{ a: SpaceId; b: SpaceId; depth: number }> = [];
+  const lane = new Map<number, number>();
   for (const e of plan.edges) {
-    if (levelOf.get(e.a) !== levelOf.get(e.b)) continue;
+    const level = levelOf.get(e.a);
+    if (level === undefined || level !== levelOf.get(e.b)) continue;
     const a = layout.pos[e.a];
     const b = layout.pos[e.b];
     if (!a || !b) continue;
     const p = { x: a.x + layout.CW / 2, y: a.y + layout.CH / 2 };
     const q = { x: b.x + layout.CW / 2, y: b.y + layout.CH / 2 };
     const blocked = plan.spaces.some((s) => s.id !== e.a && s.id !== e.b && layout.pos[s.id] !== undefined && crosses(p, q, layout.pos[s.id]!, layout.CW, layout.CH));
-    if (blocked) out.push({ a: e.a, b: e.b });
+    if (!blocked) continue;
+    const k = lane.get(level) ?? 0;
+    lane.set(level, k + 1);
+    out.push({ a: e.a, b: e.b, depth: DETOUR_DEPTH + DETOUR_STEP * (k % DETOUR_LANES) });
   }
   return out;
 }
