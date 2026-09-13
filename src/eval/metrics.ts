@@ -46,7 +46,17 @@ export type Metrics = {
   falsePositiveRate: number;
   /** Fraction of (space, tick >= onset) pairs burning in truth where probability < 0.5. */
   falseNegativeRate: number;
+  /**
+   * False certainty defined on the PROBABILITY output rather than the scalar confidence:
+   * for each threshold in P_THRESHOLDS, the fraction of ticks >= onset where some space that
+   * is NOT burning in truth was given probability >= threshold. "Sure there is a fire here"
+   * when there is not, at every level of sure. Keys are the thresholds as strings ('0.9').
+   */
+  falseCertaintyByP: Record<string, number>;
 };
+
+/** Thresholds for falseCertaintyByP. */
+export const P_THRESHOLDS = [0.5, 0.7, 0.8, 0.9, 0.95] as const;
 
 export type MetricsOptions = {
   /** First tick of the evaluation window. Use the corruption onset; 0 for a clean run. */
@@ -78,6 +88,7 @@ export function computeMetrics(trace: TickRecord[], opts: MetricsOptions): Metri
   let fn = 0;
   let positives = 0;
   let msSum = 0;
+  const fcByP = P_THRESHOLDS.map(() => 0);
   const exact: boolean[] = []; // per windowed tick, in order
   const windowTicks: number[] = [];
   for (const rec of trace) {
@@ -98,9 +109,11 @@ export function computeMetrics(trace: TickRecord[], opts: MetricsOptions): Metri
     const reported = new Set([...rec.belief.burningSet, ...ambiguous]);
     if (truthBurning.every((id) => reported.has(id))) covered += 1;
     if (rec.belief.burningSet.some((id) => !truthSet.has(id) && !ambiguous.has(id))) wrong += 1;
+    let maxWrongP = 0; // highest probability given to a space that is not burning
     for (const s of rec.truth.spaces) {
       // A brain that reports no probability is scored as if it said 0 everywhere.
       const p = rec.belief.probability?.[s.id] ?? 0;
+      if (!s.burning && p > maxWrongP) maxWrongP = p;
       const y = s.burning ? 1 : 0;
       brierSum += (p - y) * (p - y);
       brierN += 1;
@@ -112,6 +125,9 @@ export function computeMetrics(trace: TickRecord[], opts: MetricsOptions): Metri
         if (p >= PROB_DECISION) fp += 1;
       }
     }
+    P_THRESHOLDS.forEach((th, i) => {
+      if (maxWrongP >= th) fcByP[i] = (fcByP[i] ?? 0) + 1;
+    });
   }
   let timeToRecovery: number | null = null;
   for (let i = 0; i + RECOVERY_TICKS <= exact.length; i++) {
@@ -130,5 +146,6 @@ export function computeMetrics(trace: TickRecord[], opts: MetricsOptions): Metri
     brierScore: brierN ? brierSum / brierN : 0,
     falsePositiveRate: negatives ? fp / negatives : 0,
     falseNegativeRate: positives ? fn / positives : 0,
+    falseCertaintyByP: Object.fromEntries(P_THRESHOLDS.map((th, i) => [String(th), windowN ? fcByP[i]! / windowN : 0])),
   };
 }

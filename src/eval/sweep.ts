@@ -15,7 +15,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createBrain } from '../brain';
-import { createKalmanBrain } from '../brain/kalman';
+import { createGatedKalmanBrain, createKalmanBrain } from '../brain/kalman';
 import { runLoop, runLoopMulti } from '../loop';
 import { edgeMap } from '../shared/plan';
 import { loadPlan, PLAN_NAMES } from '../shared/structures';
@@ -25,7 +25,9 @@ import { computeMetrics, type Metrics } from './metrics';
 export type TargetKind = 'ignition' | 'neighbor' | 'far' | 'random';
 export const TARGET_KINDS: readonly TargetKind[] = ['ignition', 'neighbor', 'far', 'random'];
 export const SWEEP_MODES: readonly CorruptionMode[] = ['freeze', 'blind', 'saturate', 'flashover', 'mixed'];
-const BRAINS = { ours: createBrain, kalman: createKalmanBrain } as const;
+const BRAINS = { ours: createBrain, kalman: createKalmanBrain, 'kalman-gated': createGatedKalmanBrain } as const;
+const BRAIN_ORDER: readonly string[] = ['ours', 'kalman', 'kalman-gated'];
+const BASELINES: readonly BrainName[] = ['kalman', 'kalman-gated'];
 export type BrainName = keyof typeof BRAINS;
 
 export type SweepOptions = {
@@ -152,6 +154,8 @@ export type Aggregate = {
   /** Mean time to recovery over the seeds that recovered, and how many did. */
   timeToRecovery: number | null; recovered: number;
   computeMsPerTick: number; brierScore: number;
+  /** False certainty on probability at 0.9 (see Metrics.falseCertaintyByP). */
+  falseCertaintyP90: number;
 };
 
 const mean = (xs: number[]): number => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
@@ -175,11 +179,12 @@ export function aggregate(rows: SweepRow[]): Aggregate[] {
       recovered: ttr.length,
       computeMsPerTick: mean(g.map((r) => r.computeMsPerTick)),
       brierScore: mean(g.map((r) => r.brierScore)),
+      falseCertaintyP90: mean(g.map((r) => r.falseCertaintyByP['0.9'] ?? 0)),
     };
   });
 }
 
-/** Cells where ours has higher false certainty or wrong dispatch than kalman. */
+/** Cells where ours has higher false certainty or wrong dispatch than the BEST Kalman baseline (naive or gated). */
 export function whereOursLoses(aggs: Aggregate[]): Array<{ ours: Aggregate; kalman: Aggregate; on: string[] }> {
   const out: Array<{ ours: Aggregate; kalman: Aggregate; on: string[] }> = [];
   const byCell = new Map<string, Partial<Record<BrainName, Aggregate>>>();
@@ -190,12 +195,15 @@ export function whereOursLoses(aggs: Aggregate[]): Array<{ ours: Aggregate; kalm
   }
   const EPS = 1e-9;
   for (const cell of byCell.values()) {
-    const { ours, kalman } = cell;
-    if (!ours || !kalman) continue;
+    const ours = cell.ours;
+    const baselines = BASELINES.map((b) => cell[b]).filter((b): b is Aggregate => b !== undefined);
+    if (!ours || baselines.length === 0) continue;
     const on: string[] = [];
-    if (ours.falseCertainty > kalman.falseCertainty + EPS) on.push(`falseCert ${pct(ours.falseCertainty)} > ${pct(kalman.falseCertainty)}`);
-    if (ours.wrongDispatch > kalman.wrongDispatch + EPS) on.push(`wrongDispatch ${pct(ours.wrongDispatch)} > ${pct(kalman.wrongDispatch)}`);
-    if (on.length) out.push({ ours, kalman, on });
+    const bestFc = baselines.reduce((a, b) => (b.falseCertainty < a.falseCertainty ? b : a));
+    const bestWd = baselines.reduce((a, b) => (b.wrongDispatch < a.wrongDispatch ? b : a));
+    if (ours.falseCertainty > bestFc.falseCertainty + EPS) on.push(`falseCert ${pct(ours.falseCertainty)} > ${bestFc.brain} ${pct(bestFc.falseCertainty)}`);
+    if (ours.wrongDispatch > bestWd.wrongDispatch + EPS) on.push(`wrongDispatch ${pct(ours.wrongDispatch)} > ${bestWd.brain} ${pct(bestWd.wrongDispatch)}`);
+    if (on.length) out.push({ ours, kalman: bestFc, on });
   }
   return out;
 }
@@ -205,19 +213,19 @@ const ttrText = (a: Aggregate): string => (a.timeToRecovery === null ? `never (0
 
 /** Plain fixed-width text: it goes in a video. */
 export function formatSummary(aggs: Aggregate[]): string {
-  const cols = ['plan', 'mode', 'k', 'target', 'brain', 'falseCert', 'coverage', 'wrongDisp', 'err C', 'ttr', 'ms/tick'];
-  const widths = [12, 10, 3, 9, 7, 10, 9, 10, 7, 16, 8];
+  const cols = ['plan', 'mode', 'k', 'target', 'brain', 'falseCert', 'fc@P.9', 'coverage', 'wrongDisp', 'err C', 'ttr', 'ms/tick'];
+  const widths = [12, 10, 3, 9, 13, 10, 7, 9, 10, 7, 16, 8];
   const line = (cells: string[]): string => cells.map((c, i) => (i < 5 ? c.padEnd(widths[i]!) : c.padStart(widths[i]!))).join(' ');
   const out = [line(cols)];
   const sorted = [...aggs].sort((a, b) =>
     a.plan.localeCompare(b.plan) || SWEEP_MODES.indexOf(a.mode) - SWEEP_MODES.indexOf(b.mode) || a.k - b.k ||
-    TARGET_KINDS.indexOf(a.target) - TARGET_KINDS.indexOf(b.target) || (a.brain === 'ours' ? -1 : 1) - (b.brain === 'ours' ? -1 : 1));
+    TARGET_KINDS.indexOf(a.target) - TARGET_KINDS.indexOf(b.target) || BRAIN_ORDER.indexOf(a.brain) - BRAIN_ORDER.indexOf(b.brain));
   let lastCell = '';
   for (const a of sorted) {
     const cell = [a.plan, a.mode, a.k, a.target].join('|');
     if (lastCell && cell !== lastCell && a.brain === 'ours') out.push('');
     lastCell = cell;
-    out.push(line([a.plan, a.mode, String(a.k), a.target, a.brain, pct(a.falseCertainty), pct(a.ambiguityCoverage), pct(a.wrongDispatch), a.estimationError.toFixed(1), ttrText(a), a.computeMsPerTick.toFixed(2)]));
+    out.push(line([a.plan, a.mode, String(a.k), a.target, a.brain, pct(a.falseCertainty), pct(a.falseCertaintyP90), pct(a.ambiguityCoverage), pct(a.wrongDispatch), a.estimationError.toFixed(1), ttrText(a), a.computeMsPerTick.toFixed(2)]));
   }
   return out.join('\n');
 }
@@ -233,7 +241,7 @@ export const K_NOTE = 'note: k (freeze/blind budget) only changes the freeze, bl
 export function formatLosses(losses: ReturnType<typeof whereOursLoses>): string {
   const out = ['WHERE OURS LOSES'];
   if (losses.length === 0) {
-    out.push('  (no aggregated cell where ours has higher false certainty or wrong dispatch than kalman)');
+    out.push('  (no aggregated cell where ours has higher false certainty or wrong dispatch than the best Kalman baseline, naive or gated)');
     return out.join('\n');
   }
   for (const l of losses) {

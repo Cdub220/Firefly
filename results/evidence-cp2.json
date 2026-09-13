@@ -16,24 +16,106 @@
   ],
   "rows": [
     {
+      "mode": "none",
+      "brain": "ours",
+      "falseCertainty": 0,
+      "ambiguityCoverage": 0.9499999999999998,
+      "meanAbsErr": 0.37189328413736683,
+      "brierScore": 0.04330428900899466,
+      "falsePositiveRate": 0.21305931068079403,
+      "falseNegativeRate": 0.017946866999798673,
+      "falseCertaintyByP": {
+        "0.5": 0.23571428571428568,
+        "0.7": 0.06071428571428571,
+        "0.8": 0.03214285714285714,
+        "0.9": 0.007142857142857143,
+        "0.95": 0.007142857142857143
+      }
+    },
+    {
+      "mode": "none",
+      "brain": "kalman",
+      "falseCertainty": 0.65,
+      "ambiguityCoverage": 1,
+      "meanAbsErr": 2.162672472340667,
+      "brierScore": 0.13014637509920068,
+      "falsePositiveRate": 0.6472000974302764,
+      "falseNegativeRate": 0,
+      "falseCertaintyByP": {
+        "0.5": 0.65,
+        "0.7": 0.6357142857142858,
+        "0.8": 0.6321428571428571,
+        "0.9": 0.6321428571428571,
+        "0.95": 0.6321428571428571
+      }
+    },
+    {
+      "mode": "none",
+      "brain": "kalman-gated",
+      "falseCertainty": 0.6714285714285714,
+      "ambiguityCoverage": 1,
+      "meanAbsErr": 18.74262311188594,
+      "brierScore": 0.13868013093040324,
+      "falsePositiveRate": 0.6938363171355498,
+      "falseNegativeRate": 0,
+      "falseCertaintyByP": {
+        "0.5": 0.6714285714285714,
+        "0.7": 0.6714285714285714,
+        "0.8": 0.6714285714285714,
+        "0.9": 0.6714285714285714,
+        "0.95": 0.6714285714285714
+      }
+    },
+    {
       "mode": "freeze",
       "brain": "ours",
       "falseCertainty": 0,
       "ambiguityCoverage": 0.9321428571428572,
       "meanAbsErr": 4.943128197201269,
-      "brierScore": 0.06723547396342659,
+      "brierScore": 0.06738428348723612,
       "falsePositiveRate": 0.14004018998903908,
-      "falseNegativeRate": 0.1010012873875112
+      "falseNegativeRate": 0.1010012873875112,
+      "falseCertaintyByP": {
+        "0.5": 0.15714285714285717,
+        "0.7": 0.04642857142857143,
+        "0.8": 0.025,
+        "0.9": 0,
+        "0.95": 0
+      }
     },
     {
       "mode": "freeze",
       "brain": "kalman",
-      "falseCertainty": 0.65,
+      "falseCertainty": 0.6464285714285715,
       "ambiguityCoverage": 1,
-      "meanAbsErr": 44.752922174350985,
-      "brierScore": 0.1230315101417582,
-      "falsePositiveRate": 0.6414017781025454,
-      "falseNegativeRate": 0
+      "meanAbsErr": 42.31837651328271,
+      "brierScore": 0.1289621659271845,
+      "falsePositiveRate": 0.6384606016319572,
+      "falseNegativeRate": 0,
+      "falseCertaintyByP": {
+        "0.5": 0.6464285714285715,
+        "0.7": 0.6357142857142858,
+        "0.8": 0.6321428571428571,
+        "0.9": 0.6321428571428571,
+        "0.95": 0.6321428571428571
+      }
+    },
+    {
+      "mode": "freeze",
+      "brain": "kalman-gated",
+      "falseCertainty": 0.6178571428571429,
+      "ambiguityCoverage": 1,
+      "meanAbsErr": 37.36867131648102,
+      "brierScore": 0.13608743955252087,
+      "falsePositiveRate": 0.6822396784800877,
+      "falseNegativeRate": 0,
+      "falseCertaintyByP": {
+        "0.5": 0.6714285714285714,
+        "0.7": 0.6642857142857143,
+        "0.8": 0.6642857142857143,
+        "0.9": 0.6642857142857143,
+        "0.95": 0.6642857142857143
+      }
     },
     {
       "mode": "blind",
@@ -41,19 +123,50 @@
       "falseCertainty": 0,
       "ambiguityCoverage": 0.925,
       "meanAbsErr": 5.115892015652643,
-      "brierScore": 0.06885488516598413,
+      "brierScore": 0.06877750421360318,
       "falsePositiveRate": 0.14004018998903908,
-      "falseNegativeRate": 0.10025222371709921
+      "falseNegativeRate": 0.10025222371709921,
+      "falseCertaintyByP": {
+        "0.5": 0.15714285714285717,
+        "0.7": 0.05357142857142857,
+        "0.8": 0.03214285714285714,
+        "0.9": 0.007142857142857143,
+        "0.95": 0
+      }
     },
     {
       "mode": "blind",
       "brain": "kalman",
       "falseCertainty": 0.7214285714285713,
       "ambiguityCoverage": 0.3321428571428572,
-      "meanAbsErr": 122.66216508496659,
-      "brierScore": 0.1809646758725359,
+      "meanAbsErr": 122.62887582225692,
+      "brierScore": 0.18438003804488529,
       "falsePositiveRate": 0.3607465594933626,
-      "falseNegativeRate": 0.13991384632972673
+      "falseNegativeRate": 0.13991384632972673,
+      "falseCertaintyByP": {
+        "0.5": 0.36071428571428565,
+        "0.7": 0.3571428571428571,
+        "0.8": 0.35357142857142854,
+        "0.9": 0.35357142857142854,
+        "0.95": 0.35357142857142854
+      }
+    },
+    {
+      "mode": "blind",
+      "brain": "kalman-gated",
+      "falseCertainty": 0.6857142857142857,
+      "ambiguityCoverage": 0.775,
+      "meanAbsErr": 91.32097468657815,
+      "brierScore": 0.14935895386019843,
+      "falsePositiveRate": 0.5566581415174766,
+      "falseNegativeRate": 0.0471298361617611,
+      "falseCertaintyByP": {
+        "0.5": 0.6,
+        "0.7": 0.5964285714285713,
+        "0.8": 0.5928571428571429,
+        "0.9": 0.5821428571428571,
+        "0.95": 0.5821428571428571
+      }
     },
     {
       "mode": "flashover",
@@ -61,19 +174,50 @@
       "falseCertainty": 0,
       "ambiguityCoverage": 0.9250000000000002,
       "meanAbsErr": 10.869089410202626,
-      "brierScore": 0.07816607018167457,
+      "brierScore": 0.07823154637215077,
       "falsePositiveRate": 0.24502983802216538,
-      "falseNegativeRate": 0.046383546489904115
+      "falseNegativeRate": 0.046383546489904115,
+      "falseCertaintyByP": {
+        "0.5": 0.28214285714285714,
+        "0.7": 0.03571428571428571,
+        "0.8": 0.017857142857142856,
+        "0.9": 0.0035714285714285713,
+        "0.95": 0
+      }
     },
     {
       "mode": "flashover",
       "brain": "kalman",
-      "falseCertainty": 0.6392857142857143,
+      "falseCertainty": 0.6428571428571429,
       "ambiguityCoverage": 1,
-      "meanAbsErr": 44.69130647748604,
-      "brierScore": 0.11704775136718708,
-      "falsePositiveRate": 0.6384191937644623,
-      "falseNegativeRate": 0
+      "meanAbsErr": 12.87538433541385,
+      "brierScore": 0.12981087550251239,
+      "falsePositiveRate": 0.6413603702350505,
+      "falseNegativeRate": 0,
+      "falseCertaintyByP": {
+        "0.5": 0.6428571428571429,
+        "0.7": 0.6321428571428571,
+        "0.8": 0.6321428571428571,
+        "0.9": 0.6321428571428571,
+        "0.95": 0.6321428571428571
+      }
+    },
+    {
+      "mode": "flashover",
+      "brain": "kalman-gated",
+      "falseCertainty": 0.6178571428571429,
+      "ambiguityCoverage": 1,
+      "meanAbsErr": 23.206322944175337,
+      "brierScore": 0.13839061225673327,
+      "falsePositiveRate": 0.6938363171355498,
+      "falseNegativeRate": 0,
+      "falseCertaintyByP": {
+        "0.5": 0.6714285714285714,
+        "0.7": 0.6714285714285714,
+        "0.8": 0.6714285714285714,
+        "0.9": 0.6714285714285714,
+        "0.95": 0.6714285714285714
+      }
     }
   ]
 }

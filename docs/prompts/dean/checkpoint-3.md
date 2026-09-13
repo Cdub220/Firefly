@@ -100,7 +100,8 @@ NO estimator or corruption logic. If you find a bug, report it; a human decides 
 fix before freezing.
 
 1. Run `npm run sweep` (full, not quick). Commit results/sweep-latest.json.
-2. Write docs/06-freeze.md:
+2. Write docs/06-freeze.md. Start by copying sections 1 (scope) and 2 (held-out families) of
+   docs/06-freeze-plan.md verbatim; they were written before the freeze on purpose. Then add:
    - The commit hash of HEAD after step 1.
    - The exact CorruptionConfig type and the list of modes as frozen.
    - A one-paragraph description of the estimator as frozen: consistency rules, hypothesis
@@ -118,7 +119,9 @@ fix before freezing.
    the multi-level plan behave differently from the single-level one? This file is the
    script for the check-in 3 video. Three to five findings, each one paragraph, each with
    a number from the sweep.
-5. Add src/eval/freeze.test.ts that reads docs/06-freeze.md, extracts the hash, and runs
+5. In .github/workflows/ci.yml set `fetch-depth: 0` on actions/checkout so the freeze test can
+   diff against the recorded hash in CI.
+6. Add src/eval/freeze.test.ts that reads docs/06-freeze.md, extracts the hash, and runs
    git diff <hash> HEAD --stat -- src/brain/index.ts src/brain/consistency.ts src/brain/hypotheses.ts src/brain/physics.ts src/corruption/
    via child_process, asserting the output is empty. From now on, any change to frozen
    files fails the test suite. Skip the test if docs/06-freeze.md does not exist so it

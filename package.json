@@ -16,7 +16,8 @@
     "test": "vitest run",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
-    "viewer": "tsx src/eval/export-viewer.ts"
+    "viewer": "tsx src/eval/export-viewer.ts",
+    "probe:mismatch": "tsx src/eval/mismatch.ts"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",
