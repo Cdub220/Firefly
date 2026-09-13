@@ -7,6 +7,7 @@ import { BRIEF_SWEEP_DEFAULTS, formatMeans, meansBy, parseBriefSweepArgs, runBri
 describe('brief sweep', () => {
   it('parses flags and rejects nonsense', () => {
     expect(parseBriefSweepArgs([])).toEqual(BRIEF_SWEEP_DEFAULTS);
+    expect(parseBriefSweepArgs(['--out', 'x']).outDir).toBe('x');
     expect(parseBriefSweepArgs(['--plans', 'demo-6', '--modes', 'freeze,blind', '--seeds', '7,8', '--ticks', '30', '--brains', 'ours'])).toEqual({ plans: ['demo-6'], modes: ['freeze', 'blind'], seeds: [7, 8], ticks: 30, brains: ['ours'] });
     expect(() => parseBriefSweepArgs(['--plans', 'nope'])).toThrow(/unknown plan/);
     expect(() => parseBriefSweepArgs(['--modes', 'bogus'])).toThrow(/--modes/);

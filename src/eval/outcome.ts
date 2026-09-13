@@ -149,7 +149,7 @@ export function computeOutcome(trace: TickRecord[], plan: StructurePlan): Outcom
       if (isUse(c) && !burningSet.has(c.goTo) && !adjacent.has(c.goTo)) wrongFloor += 1;
       const prev = lastCmd.get(c.droneId);
       if (isUse(c) && (!prev || prev.goTo !== c.goTo || prev.task !== c.task)) {
-        const from = prevAt.get(c.droneId) ?? atNow.get(c.droneId) ?? '?';
+        const from = atNow.get(c.droneId) ?? prevAt.get(c.droneId) ?? '?'; // where the drone is when the command takes effect
         events.push({ t: rec.t, kind: 'dispatch', text: `${c.droneId} (${cls ?? '?'}) ${from} -> ${c.goTo} ${c.task}` });
       }
       lastCmd.set(c.droneId, c);

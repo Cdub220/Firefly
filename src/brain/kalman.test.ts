@@ -2,9 +2,10 @@
  * Kalman baseline tests. Observations are built by hand: the brain sees only Observation.
  */
 import { describe, expect, it } from 'vitest';
-import { createGatedKalmanBrain, createKalmanBrain, createSourceKalmanBrain, GATE_REACCEPT, normalCdf, SOURCE_MIN_C_PER_TICK } from './kalman';
+import { createGatedKalmanBrain, createKalmanBrain, createKalmanDispatching, createSourceKalmanBrain, GATE_REACCEPT, normalCdf, SOURCE_MIN_C_PER_TICK, withAllocator } from './kalman';
+import { allocate } from './allocator';
 import { forward } from './physics';
-import type { Observation, Reading, StructurePlan } from '../shared/types';
+import type { Command, Observation, Reading, StructurePlan } from '../shared/types';
 
 const plan: StructurePlan = {
   name: 'test-3',
@@ -328,5 +329,44 @@ describe('createSourceKalmanBrain (augmented-state source filter, the fair basel
     expect(Number.isFinite(out.belief.confidence)).toBe(true);
     expect(Object.keys(out.belief.estimate)).toHaveLength(3);
     expect(out.commands).toEqual([]);
+  });
+});
+
+describe('withAllocator (dispatching baselines)', () => {
+  const drones = [{ id: 'D3', class: 'tether' as const, at: 'S3', resource: 1, alive: true, linked: true }, { id: 'D1', class: 'scout' as const, at: 'S3', resource: 1, alive: true, linked: true }];
+  const withDrones = (t: number): Observation => ({ ...tick(t), drones });
+
+  it('commands are allocate() on [burningSet] as the single hypothesis; the belief is the inner brain\'s, untouched', () => {
+    const inner = createKalmanBrain({ plan, seed: 42 });
+    const brain = createKalmanDispatching({ plan, seed: 42 });
+    let prev: Command[] = [];
+    for (let t = 1; t <= 6; t++) {
+      const a = inner.step(withDrones(t));
+      const b = brain.step(withDrones(t));
+      expect(b.belief).toEqual(a.belief);
+      expect(b.commands).toEqual(allocate(plan, a.belief, [new Set(a.belief.burningSet)], drones, prev));
+      prev = b.commands;
+    }
+    expect(prev.some((c) => c.task === 'suppress')).toBe(true); // a tether was actually sent
+  });
+
+  it('carries last tick\'s commands as prev (hysteresis) and reset() clears them and the inner filter', () => {
+    const calls: Command[][] = [];
+    const spyFactory = withAllocator((cfg) => {
+      const inner = createKalmanBrain(cfg);
+      return { step: (o) => inner.step(o), reset: () => inner.reset() };
+    });
+    const brain = spyFactory({ plan, seed: 42 });
+    const first = brain.step(withDrones(1)).commands;
+    const second = brain.step(withDrones(2)).commands;
+    calls.push(first, second);
+    // With prev = first the second call is the hysteresis-aware result; recompute both ways.
+    const inner = createKalmanBrain({ plan, seed: 42 });
+    inner.step(withDrones(1));
+    const b2 = inner.step(withDrones(2)).belief;
+    expect(second).toEqual(allocate(plan, b2, [new Set(b2.burningSet)], drones, first));
+    brain.reset();
+    const again = brain.step(withDrones(1)).commands;
+    expect(again).toEqual(first); // same state as the very first call: prev cleared, filter reset
   });
 });

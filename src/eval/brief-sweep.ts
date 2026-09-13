@@ -7,14 +7,14 @@
  * the overall means, and writes results/brief-sweep.md and .json. No API call.
  *
  *   npm run brief:sweep
- *   npm run brief:sweep -- --plans demo-6 --modes freeze --seeds 7,8 --ticks 60
+ *   npm run brief:sweep -- --plans demo-6 --modes freeze --seeds 7,8 --ticks 60 --out /tmp/x   (--out keeps results/ intact)
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { loadPlan } from '../shared/structures';
 import type { CorruptionMode } from '../shared/types';
 import { BRIEF_DEFAULTS, BRIEF_MODES, cell, runBriefs, TABLE_COLUMNS, type BriefOptions, type TableColumn } from './brief-cli';
 
-export type BriefSweepOptions = { plans: string[]; modes: CorruptionMode[]; seeds: number[]; ticks: number; brains: string[] };
+export type BriefSweepOptions = { plans: string[]; modes: CorruptionMode[]; seeds: number[]; ticks: number; brains: string[]; outDir?: string };
 export const BRIEF_SWEEP_DEFAULTS: BriefSweepOptions = { plans: ['demo-6', 'vessel-3x8', 'tower-5x4'], modes: ['freeze', 'blind', 'flashover'], seeds: [7, 8, 9], ticks: 120, brains: [...BRIEF_DEFAULTS.brains] };
 
 export type BriefSweepRow = { plan: string; mode: CorruptionMode; seed: number; brain: string } & Record<TableColumn, number | null>;
@@ -109,6 +109,8 @@ export function parseBriefSweepArgs(argv: string[]): BriefSweepOptions {
   }
   const brains = list(get('--brains'));
   if (brains) o.brains = brains;
+  const out = get('--out');
+  if (out !== undefined) o.outDir = out;
   for (const [name, v] of [['plans', o.plans], ['modes', o.modes], ['seeds', o.seeds], ['brains', o.brains]] as const) {
     if (v.length === 0) throw new Error(`--${name}: expected at least one value`);
   }
@@ -129,8 +131,9 @@ if (isMain) {
   const text = ['BY PLAN', formatMeans(byPlan), '', 'BY MODE', formatMeans(byMode), '', 'OVERALL', formatMeans(overall)].join('\n');
   console.log('');
   console.log(text);
-  mkdirSync('results', { recursive: true });
-  writeFileSync('results/brief-sweep.md', `# Commander's brief sweep\n\n\`${process.argv.slice(2).join(' ') || 'defaults'}\`: plans ${o.plans.join(', ')}; modes ${o.modes.join(', ')}; seeds ${o.seeds.join(', ')}; ${o.ticks} ticks; closed loop, same allocator.\n\n\`\`\`\n${text}\n\`\`\`\n`);
-  writeFileSync('results/brief-sweep.json', JSON.stringify({ options: o, rows, byPlan, byMode, overall }, null, 1));
-  console.log('\nwrote results/brief-sweep.md and results/brief-sweep.json');
+  const dir = o.outDir ?? 'results';
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(`${dir}/brief-sweep.md`, `# Commander's brief sweep\n\n\`${process.argv.slice(2).join(' ') || 'defaults'}\`: plans ${o.plans.join(', ')}; modes ${o.modes.join(', ')}; seeds ${o.seeds.join(', ')}; ${o.ticks} ticks; closed loop, same allocator.\n\n\`\`\`\n${text}\n\`\`\`\n`);
+  writeFileSync(`${dir}/brief-sweep.json`, JSON.stringify({ options: o, rows, byPlan, byMode, overall }, null, 1));
+  console.log(`\nwrote ${dir}/brief-sweep.md and ${dir}/brief-sweep.json`);
 }
