@@ -161,3 +161,147 @@ Diagnosis is the deliverable; tuning is a human call because the freeze is at ho
 
 DO NOT TOUCH: src/world, src/ui.
 ```
+
+---
+
+## Prompt 4 · Graded belief (pre-freeze, added Sat night)
+
+Why this exists: in the split view, late in the freeze run every space reads over 800° from a fresh honest sensor, yet the brain reports only one or two as certain and the rest as one flat MAYBE. A commander would rather see "these three at 95%, that one at 50%." This adds a per-space probability so ambiguity is graded, and tightens the rule that fresh, physically consistent, above-ignition readings count as burning. It must land before the hour-36 freeze.
+
+```
+You are working in the Firefly repo as Dean. Before anything else read CLAUDE.md, docs/00-README.md, docs/04-who-does-what.md, docs/decisions.md, and src/shared/types.ts. Respect the directory ownership and lint boundaries in docs/04. Make reasonable assumptions instead of asking questions. Run `npm test && npm run lint && npm run typecheck` before you finish and do not report done unless all three are green. Commit in logical chunks with clear messages. Do not push. Finish by listing (1) what you built, (2) assumptions you made, (3) anything that did not work or that you skipped, (4) any contract change you need from Chase.
+
+CONTEXT: src/brain/index.ts is the v1 estimator: consistency check -> candidate burning
+sets -> score with k-residual dropping -> keep every hypothesis within tolerance of the
+best -> burningSet = intersection, ambiguous = contested spaces, confidence = 1/kept x
+penalties, capped until stable. Run `npm run viewer` and open results/viewer-freeze.html,
+scrub to tick 50: truth has five spaces burning and S3 burned out; ours reports S1,S2
+certain and S3..S6 as one MAYBE group at confidence 0.16, even though F4,F5,F6 are fresh,
+honest, and reading over 800°. That is the defect. Kalman calls all six burning at 0.97,
+including S3 whose only sensor froze at tick 5.
+
+TASK, three parts. The estimator is NOT frozen yet; this is the last change to it.
+
+PART A — per-space probability (additive contract change; tell Chase; the split view in
+src/ui/split already renders it when present).
+  - Add `probability: Record<SpaceId, number>` to Belief in src/shared/types.ts.
+  - In src/brain/index.ts, compute it from the kept hypotheses: weight each kept
+    hypothesis by exp(-(score - best) / T) with T = the tolerance, so a hypothesis at the
+    edge of tolerance weighs ~e^-1 of the best. probability[s] = weighted fraction of kept
+    hypotheses containing s. Every space gets a value, including 0 for spaces in no
+    hypothesis.
+  - Multiply probability[s] by the consistency penalty ONLY for spaces whose own sensor is
+    suspect (a distrusted sensor lowers certainty about its own space, not about every
+    space).
+  - Kalman brain: probability[s] = 1 if estimate > 200 else 0, times its scalar confidence.
+    It has no notion of per-space doubt; that is the point.
+  - Keep burningSet and ambiguous exactly as they are so nothing downstream breaks.
+
+PART B — fresh honest hot readings count. Add to the hypothesis scoring a rule, implemented
+as a candidate-generation change not a threshold override: any space with a TRUSTED reading
+above the ignition temperature (copy the constant from src/world/constants.ts with a comment
+that it is an assumed property of the structure) for 3 consecutive ticks is included in
+every candidate. Rationale: physics says a space that stays above ignition with fuel is
+burning; the hypothesis set should not be allowed to omit it. A space whose sensor is
+suspect gets no such rule. Test that on the freeze run at tick 50, S4,S5,S6 are in
+burningSet and S3 is ambiguous with probability between 0.3 and 0.7.
+
+PART C — surface it.
+  - src/eval/metrics.ts: add `brierScore` (mean over spaces and ticks >= onset of
+    (probability - truthBurning)^2) and per-space `falsePositiveRate` / `falseNegativeRate`
+    at probability >= 0.5, for both brains. Brier is the calibration number: a brain that
+    says 0.5 when it is right half the time scores better than one that says 0.97 and is
+    wrong. Add these to the evidence table and to results/evidence-cp2.json.
+  - `npm run viewer` regenerates results/viewer-freeze.html; confirm the cells show
+    "P(burning) NN%".
+  - docs/decisions.md: one row for this change with the before/after numbers.
+
+TESTS: src/brain/probability.test.ts. Hand-built observations. (1) Two equally good
+hypotheses {A} and {B}: probability[A] and probability[B] both ~0.5. (2) One hypothesis:
+its spaces ~1.0 (before the stability cap), others 0. (3) A space with a suspect sensor
+gets a lower probability than the same space with a trusted sensor, same readings. (4) A
+space reading 700° from a trusted sensor for 3 ticks is in burningSet. (5) Every
+probability in [0,1]; sum of probabilities is not constrained.
+
+DO NOT TOUCH: src/world, src/ui (except nothing — the split view already handles it),
+src/corruption, src/brain/kalman.ts beyond the probability field.
+
+Report the new evidence table. If falseCertainty for ours rises above 0 or Kalman's Brier
+beats ours on any mode, stop and say so rather than tuning; a human decides.
+```
+
+---
+
+## Prompt 5 · Split view v2, the checkpoint 2 demo (added Sat night)
+
+Why this exists: checkpoint 2's video is the split view. Today it only lays out the six-space ring, is hardcoded to demo-6, and has no one-click demo beats. Chase's multi-level plans land this checkpoint and must look right in it. `src/ui/split/`, `src/ui/store.ts`, and `src/ui/App.tsx` are Dean's by decision (docs/decisions.md); do not touch anything else under src/ui.
+
+```
+You are working in the Firefly repo as Dean. Before anything else read CLAUDE.md, docs/00-README.md, docs/04-who-does-what.md, docs/decisions.md, and src/shared/types.ts. Respect the directory ownership and lint boundaries in docs/04. Make reasonable assumptions instead of asking questions. Run `npm test && npm run lint && npm run typecheck` before you finish and do not report done unless all three are green. Commit in logical chunks with clear messages. Do not push. Finish by listing (1) what you built, (2) assumptions you made, (3) anything that did not work or that you skipped, (4) any contract change you need from Chase.
+
+CONTEXT: src/ui/split/ is the live truth | ours | kalman view (svg.ts builds SVG strings,
+SplitView.tsx composes them, store.ts runs runLoopMulti). src/eval/viewerData.ts shapes
+traces for it; src/eval/export-viewer.ts writes a standalone HTML. geometry() in svg.ts
+hardcodes a 3x2 ring for six spaces and falls back to a flat grid. Belief may now carry
+`probability` per space (rendered as "P(burning) NN%" if present). Chase may have added
+data/structures/vessel-3x8.json and tower-5x4.json and src/shared/structures.ts with
+PLAN_NAMES and loadPlan(name); check git log and the files. If they are not there yet,
+build against the shape in docs/prompts/chase/checkpoint-2.md Prompt 1 and add a tiny
+src/shared/structures.ts yourself that exports PLAN_NAMES and loadPlan over whatever JSON
+files exist (tell Chase; it is shared/, additive).
+
+TASK: make the split view demo-ready for a multi-level plan.
+
+1. LEVEL-AWARE LAYOUT in src/ui/split/svg.ts geometry():
+   - Group spaces by `level`. Each level is a horizontal band; higher levels sit higher
+     on the SVG (level 3 on top). Label each band at the left: "LEVEL 3", "DECK 2" is not
+     allowed, the word is level.
+   - Within a band, if ids match the generator's "L{n}-{row}{col}" pattern, place on that
+     grid; otherwise order by a deterministic BFS over same-level edges from the
+     lowest id. Spaces joined by a 'floor' edge must share x so vertical edges are
+     vertical.
+   - Cell size scales with count: 6 spaces at the current size; 24 spaces at ~70% with the
+     temperature number still >= 16px; the chip text may drop to the reading value only.
+   - Floor and shaft edges drawn as vertical lines between bands, shaft brighter and
+     thicker. Same-level edges as now. Edge labels only when there are <= 8 spaces;
+     beyond that, kind is encoded by line style and a legend line under the panel.
+   - Keep the six-space ring exactly as it renders today (snapshot the SVG string for
+     demo-6 tick 40 in a test and assert it is unchanged).
+2. PLAN PICKER in the controls: a select over PLAN_NAMES. Changing it resets the
+   ignition picker to that plan's ignition and the target chips to that plan's spaces.
+   Store: `planName` replaces the hardcoded DEMO_PLAN; `plan` is derived.
+3. DEMO BEATS: a row of buttons above the controls, each sets everything and runs:
+   - "Clean": mode none, current plan.
+   - "Freeze the fire's sensor": freeze, k=1, target = ignition space, onset 5.
+   - "Blind the neighbor": blind, k=1, target = the ignition space's hottest neighbor
+     (compute from a clean run at tick 10), onset 5.
+   - "Flashover": flashover, no target, onset 5.
+   - "Different building": switch to the next plan in PLAN_NAMES with the same failure
+     mode as currently selected.
+   Each beat sets a one-sentence caption shown under the header, e.g. "The sensor in the
+   burning room froze at tick 5. Watch the right panel stay at 0.97 while the fire moves."
+   Number keys 1-5 trigger them. Space plays. Arrows step.
+4. RECORDING MODE: `?demo=1` or a toggle hides the scenario controls and the how-to-read
+   paragraph, enlarges panel headers and the caption, and leaves: beats row, playback,
+   three panels, strip, caption. Everything must fit at 1440x900 without scrolling for the
+   six-space plan, and with at most one scroll for the 24-space plan.
+5. STRIP for multi-level plans: unchanged, it is per-tick not per-space.
+6. EXPORT: `npm run viewer -- --plan vessel-3x8 --mode flashover` works and the standalone
+   HTML uses the same geometry (move geometry into src/eval/viewerData.ts or a shared
+   module both the template and svg.ts import; the template is plain JS, so export a JSON
+   of positions in the data instead of duplicating the algorithm).
+7. ROBUSTNESS: the store's run() already try/catches. Add: a plan with zero sensors, a
+   plan where ignition is not in spaces, and ticks=0 must show an error string, not a
+   blank page. Test those three through the store under node.
+
+TESTS: src/ui/split/geometry.test.ts (level bands ordered top-down, floor-edge x
+alignment, demo-6 snapshot unchanged, 24-space plan has no overlapping cells);
+src/ui/store.test.ts additions for the three robustness cases and for each demo beat
+producing a trace with the expected corruption config.
+
+Screenshot at a flashover tick on the largest plan in recording mode, save to
+docs/img/cp2-split.png, commit it. If no screenshot tool is available, say so.
+
+DO NOT TOUCH: src/world, src/corruption, src/brain, src/eval/metrics.ts, src/loop.ts,
+anything in src/ui outside split/, store.ts, App.tsx.
+```

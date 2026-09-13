@@ -9,6 +9,7 @@ import { brainSvg, brainVerdictHtml, geometry, stripSvg, truthSvg, truthVerdictH
 import './split.css';
 
 const MODES: CorruptionMode[] = ['none', 'freeze', 'blind', 'saturate', 'flashover', 'mixed'];
+const MODE_LABEL: Record<CorruptionMode, string> = { none: 'none (clean sensors)', freeze: 'freeze (stale value)', blind: 'blind (reads cold)', saturate: 'saturate (pins at max)', flashover: 'flashover (all die)', mixed: 'mixed (everything)' };
 const BRAIN_LABEL: Record<string, { title: string; sub: string }> = {
   ours: { title: 'Our brain', sub: 'physics + hypothesis sets' },
   kalman: { title: 'Kalman baseline', sub: 'trusts every reading' },
@@ -59,14 +60,19 @@ export function SplitView() {
       </p>
 
       <div className="controls" role="group" aria-label="scenario">
-        <label htmlFor="mode">break it
+        <label>fire starts in
+          <span className="chips">
+            {spaceIds.map((id) => (
+              <button key={id} type="button" aria-pressed={s.ignition === id} onClick={() => s.setIgnition(id)}>{id}</button>
+            ))}
+          </span>
+        </label>
+        <label htmlFor="mode">failure mode
           <select id="mode" value={s.corruption.mode} onChange={(e) => s.setCorruption({ mode: e.target.value as CorruptionMode })}>
-            {MODES.map((m) => <option key={m} value={m}>{m}</option>)}
+            {MODES.map((m) => <option key={m} value={m}>{MODE_LABEL[m]}</option>)}
           </select>
         </label>
-        <label htmlFor="k">k <input id="k" type="number" min={0} max={8} value={s.corruption.k ?? 1} onChange={(e) => s.setCorruption({ k: Number(e.target.value) })} /></label>
-        <label htmlFor="onset">onset <input id="onset" type="number" min={0} max={200} value={s.corruption.onset ?? 5} onChange={(e) => s.setCorruption({ onset: Number(e.target.value) })} /></label>
-        <label>target
+        <label>which sensors
           <span className="chips">
             {spaceIds.map((id) => {
               const on = target.includes(id);
@@ -74,10 +80,18 @@ export function SplitView() {
             })}
           </span>
         </label>
+        <label htmlFor="k">how many break <input id="k" type="number" min={0} max={8} value={s.corruption.k ?? 1} onChange={(e) => s.setCorruption({ k: Number(e.target.value) })} /></label>
+        <label htmlFor="onset">break at tick <input id="onset" type="number" min={0} max={200} value={s.corruption.onset ?? 5} onChange={(e) => s.setCorruption({ onset: Number(e.target.value) })} /></label>
         <label htmlFor="seed">seed <input id="seed" type="number" value={s.seed} onChange={(e) => s.setSeed(Number(e.target.value))} /></label>
         <label htmlFor="ticks">ticks <input id="ticks" type="number" min={5} max={400} value={s.ticks} onChange={(e) => s.setTicks(Number(e.target.value))} /></label>
         <button id="run" type="button" className="primary" onClick={s.run}>Run</button>
       </div>
+      <p className="note">
+        Fire starts in the chosen space. Failure mode is how the sensors break: freeze = keeps reporting its last value with an old timestamp;
+        blind = reads room temperature no matter what; saturate = pins at 300° once it gets hotter; flashover = every sensor in a space over 500° dies;
+        mixed = all of those. “Which sensors” limits the breakage to those spaces (empty = any). “How many break” is the budget k for freeze and blind.
+        “Break at tick” is when it starts.
+      </p>
 
       {s.error && <pre className="err">{s.error}</pre>}
 

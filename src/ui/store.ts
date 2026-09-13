@@ -15,6 +15,8 @@ type Corr = Omit<CorruptionConfig, 'seed'>;
 type SimState = {
   plan: StructurePlan;
   planName: string;
+  /** Where the fire starts. The plan file's ignition space by default; the picker overrides it for demos. */
+  ignition: string;
   seed: number;
   ticks: number;
   corruption: Corr;
@@ -29,6 +31,7 @@ type SimState = {
   run: () => void;
   setPlanName: (name: string) => void;
   setSeed: (seed: number) => void;
+  setIgnition: (id: string) => void;
   setTicks: (ticks: number) => void;
   setCorruption: (patch: Partial<Corr>) => void;
   setCursor: (i: number) => void;
@@ -40,10 +43,11 @@ type SimState = {
 };
 
 const KEY = 'firefly.split.v1';
-function load(): Partial<Pick<SimState, 'seed' | 'ticks' | 'corruption'>> {
-  try { const raw = localStorage.getItem(KEY); return raw ? (JSON.parse(raw) as Partial<Pick<SimState, 'seed' | 'ticks' | 'corruption'>>) : {}; } catch { return {}; }
+type Saved = Partial<Pick<SimState, 'seed' | 'ticks' | 'corruption' | 'ignition'>>;
+function load(): Saved {
+  try { const raw = localStorage.getItem(KEY); return raw ? (JSON.parse(raw) as Saved) : {}; } catch { return {}; }
 }
-function save(s: Pick<SimState, 'seed' | 'ticks' | 'corruption'>): void {
+function save(s: Saved): void {
   try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { /* ignore */ }
 }
 
@@ -64,9 +68,16 @@ export function sanitizeCorruption(corr: Corr, plan: StructurePlan): Corr {
   return { ...corr, target };
 }
 
+/** An ignition space must exist in the plan; otherwise use the plan's own. */
+export function sanitizeIgnition(ignition: string | undefined, plan: StructurePlan): string {
+  if (ignition !== undefined && plan.spaces.some((s) => s.id === ignition)) return ignition;
+  return plan.ignition[0] ?? plan.spaces[0]?.id ?? '';
+}
+
 export const useSim = create<SimState>((set, get) => ({
   plan: DEMO_PLAN,
   planName: DEMO_PLAN.name,
+  ignition: sanitizeIgnition(saved.ignition, DEMO_PLAN),
   seed: saved.seed ?? 42,
   ticks: saved.ticks ?? 60,
   corruption: sanitizeCorruption(saved.corruption ?? DEFAULT_CORR, DEMO_PLAN),
@@ -77,10 +88,13 @@ export const useSim = create<SimState>((set, get) => ({
   playing: false,
   speed: 4,
   run: () => {
-    const { plan, seed, ticks } = get();
-    const corruption = sanitizeCorruption(get().corruption, plan);
-    if (corruption !== get().corruption) set({ corruption });
-    save({ seed, ticks, corruption });
+    const { plan: base, seed, ticks } = get();
+    const corruption = sanitizeCorruption(get().corruption, base);
+    const ignition = sanitizeIgnition(get().ignition, base);
+    if (corruption !== get().corruption || ignition !== get().ignition) set({ corruption, ignition });
+    save({ seed, ticks, corruption, ignition });
+    // The plan file says where the fire starts; the picker overrides it for demos.
+    const plan: StructurePlan = { ...base, ignition: [ignition] };
     try {
       const traces = runLoopMulti({ plan, seed, ticks, corruption, brains: { ours: createBrain, kalman: createKalmanBrain }, primary: 'ours' });
       const data = buildViewerData(plan, traces, { seed, corruption });
@@ -94,9 +108,11 @@ export const useSim = create<SimState>((set, get) => ({
     const plan = loadPlan(name);
     // A corruption target from the old plan is meaningless here; aim at the new ignition space.
     const corruption = sanitizeCorruption({ ...get().corruption, target: [...plan.ignition] }, plan);
-    set({ plan, planName: name, corruption, data: null, trace: null, cursor: 0, playing: false, error: null });
+    const ignition = sanitizeIgnition(undefined, plan);
+    set({ plan, planName: name, ignition, corruption, data: null, trace: null, cursor: 0, playing: false, error: null });
   },
   setSeed: (seed) => set({ seed }),
+  setIgnition: (ignition) => set({ ignition }),
   setTicks: (ticks) => set({ ticks }),
   setCorruption: (patch) => set({ corruption: { ...get().corruption, ...patch } }),
   setCursor: (i) => {
