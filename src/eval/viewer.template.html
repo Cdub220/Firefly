@@ -135,7 +135,11 @@ const DATA = __DATA__;
       chip = `<rect x="${p.x + 5}" y="${p.y + CH - 21}" width="${CW - 10}" height="16" rx="3" fill="#0e1116" stroke="#2a3240"/>` +
         `<text class="chip" x="${p.x + CW / 2}" y="${p.y + CH - 9.5}" text-anchor="middle" fill="${col}" ${opts.suspect ? 'text-decoration="line-through"' : ''}>${esc(txt)}${opts.suspect ? ' ✕' : ''}</text>`;
     }
-    const fuel = opts.fuel == null ? '' : `<text class="chip" x="${p.x + CW / 2}" y="${p.y + 68}" text-anchor="middle" fill="${opts.fuel <= 0 ? '#ff8a5c' : '#aab4c3'}">fuel ${Math.round(opts.fuel * 100)}%</text>`;
+    const fuel = opts.fuel != null
+      ? `<text class="chip" x="${p.x + CW / 2}" y="${p.y + 68}" text-anchor="middle" fill="${opts.fuel <= 0 ? '#ff8a5c' : '#aab4c3'}">fuel ${Math.round(opts.fuel * 100)}%</text>`
+      : opts.prob != null
+        ? `<text class="chip" x="${p.x + CW / 2}" y="${p.y + 68}" text-anchor="middle" fill="#aab4c3">P(burning) ${Math.round(opts.prob * 100)}%</text>`
+        : '';
     return `<g><rect x="${p.x}" y="${p.y}" width="${CW}" height="${CH}" rx="5" fill="#1b212a" stroke="${stroke}" stroke-width="${sw}" ${dash}/>` +
       `<rect x="${p.x + 1}" y="${p.y + 1}" width="${CW - 2}" height="7" rx="3" fill="${barCol}"/>` +
       `<text class="id" x="${p.x + 8}" y="${p.y + 22}" fill="${ink}">${id}</text>${tag}` +
@@ -180,7 +184,8 @@ const DATA = __DATA__;
         let state = bs.has(id) ? 'believed' : amb.has(id) ? 'ambiguous' : '', tag = bs.has(id) ? 'BURNING' : amb.has(id) ? 'MAYBE' : '', verdict = '', tagColor;
         if (bs.has(id) && !truly) { verdict = 'wrong'; tag = 'WRONG'; tagColor = '#ff5c5c'; }
         else if (truly && !bs.has(id) && !amb.has(id)) { verdict = 'wrong'; tag = 'MISSED'; tagColor = '#ff5c5c'; }
-        return cell(id, T, { state, tag, tagColor, verdict, reading, suspect: r && sus.has(r.sensorId) });
+        const prob = b.probability && b.probability[id] != null ? b.probability[id] : undefined;
+        return cell(id, T, { state, tag, tagColor, verdict, reading, suspect: r && sus.has(r.sensorId), prob });
       }).join('')}${edgeLabels()}</svg>`;
       const parts = [];
       parts.push(`Burning: <b>${b.burningSet.join(', ') || 'nothing'}</b>`);

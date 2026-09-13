@@ -2,7 +2,7 @@
  * The checkpoint-2 number: both brains on identical corrupted observations across the
  * three headline corruption modes, five seeds each. `npm run evidence [--verbose]`.
  *
- * Prints mode | brain | falseCertainty | ambiguityCoverage | meanAbsErr, writes
+ * Prints mode | brain | falseCertainty | ambiguityCoverage | meanAbsErr | brier | FPR | FNR, writes
  * results/evidence-cp2.json, and ends with the one sentence for the video.
  * --verbose additionally prints, per tick of the first seed of each mode, our brain's
  * suspect sensors and both burning sets against truth — the diagnosis view.
@@ -34,6 +34,9 @@ type Row = {
   falseCertainty: number;
   ambiguityCoverage: number;
   meanAbsErr: number;
+  brierScore: number;
+  falsePositiveRate: number;
+  falseNegativeRate: number;
 };
 
 const mean = (xs: number[]): number => xs.reduce((a, b) => a + b, 0) / xs.length;
@@ -46,7 +49,7 @@ function runMode(mode: CorruptionMode): Row[] {
     onset: ONSET,
     ambient: DEMO_PLAN.ambient,
   };
-  const perBrain = new Map<string, { fc: number[]; cov: number[]; err: number[] }>();
+  const perBrain = new Map<string, { fc: number[]; cov: number[]; err: number[]; brier: number[]; fpr: number[]; fnr: number[] }>();
   for (const seed of SEEDS) {
     const traces = runLoopMulti({
       plan: DEMO_PLAN,
@@ -58,10 +61,13 @@ function runMode(mode: CorruptionMode): Row[] {
     });
     for (const [name, trace] of Object.entries(traces)) {
       const m = computeMetrics(trace, 0.9, ONSET);
-      const acc = perBrain.get(name) ?? { fc: [], cov: [], err: [] };
+      const acc = perBrain.get(name) ?? { fc: [], cov: [], err: [], brier: [], fpr: [], fnr: [] };
       acc.fc.push(m.falseCertainty);
       acc.cov.push(m.ambiguityCoverage);
       acc.err.push(m.estimationError);
+      acc.brier.push(m.brierScore);
+      acc.fpr.push(m.falsePositiveRate);
+      acc.fnr.push(m.falseNegativeRate);
       perBrain.set(name, acc);
     }
     if (VERBOSE && seed === SEEDS[0]) printVerbose(mode, traces);
@@ -72,6 +78,9 @@ function runMode(mode: CorruptionMode): Row[] {
     falseCertainty: mean(a.fc),
     ambiguityCoverage: mean(a.cov),
     meanAbsErr: mean(a.err),
+    brierScore: mean(a.brier),
+    falsePositiveRate: mean(a.fpr),
+    falseNegativeRate: mean(a.fnr),
   }));
 }
 
@@ -99,10 +108,13 @@ console.log(
 );
 const rows = MODES.flatMap(runMode);
 
-console.log(`\n  ${'mode'.padEnd(11)}${'brain'.padEnd(9)}${'falseCert'.padStart(10)}${'coverage'.padStart(10)}${'meanErr C'.padStart(11)}`);
+console.log(
+  `\n  ${'mode'.padEnd(11)}${'brain'.padEnd(9)}${'falseCert'.padStart(10)}${'coverage'.padStart(10)}${'meanErr C'.padStart(11)}${'brier'.padStart(8)}${'FPR'.padStart(7)}${'FNR'.padStart(7)}`,
+);
 for (const r of rows) {
   console.log(
-    `  ${r.mode.padEnd(11)}${r.brain.padEnd(9)}${pct(r.falseCertainty).padStart(10)}${pct(r.ambiguityCoverage).padStart(10)}${r.meanAbsErr.toFixed(1).padStart(11)}`,
+    `  ${r.mode.padEnd(11)}${r.brain.padEnd(9)}${pct(r.falseCertainty).padStart(10)}${pct(r.ambiguityCoverage).padStart(10)}${r.meanAbsErr.toFixed(1).padStart(11)}` +
+      `${r.brierScore.toFixed(3).padStart(8)}${pct(r.falsePositiveRate).padStart(7)}${pct(r.falseNegativeRate).padStart(7)}`,
   );
 }
 
@@ -117,6 +129,7 @@ for (const mode of MODES) {
   const ours = rows.find((r) => r.mode === mode && r.brain === 'ours')!;
   const kal = rows.find((r) => r.mode === mode && r.brain === 'kalman')!;
   console.log(
-    `${mode}: kalman false-certain ${pct(kal.falseCertainty)} of ticks, ours ${pct(ours.falseCertainty)}, coverage ${pct(ours.ambiguityCoverage)}.`,
+    `${mode}: kalman false-certain ${pct(kal.falseCertainty)} of ticks, ours ${pct(ours.falseCertainty)}, coverage ${pct(ours.ambiguityCoverage)}; ` +
+      `Brier ours ${ours.brierScore.toFixed(2)} vs kalman ${kal.brierScore.toFixed(2)}.`,
   );
 }

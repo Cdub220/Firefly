@@ -19,43 +19,61 @@
       "mode": "freeze",
       "brain": "ours",
       "falseCertainty": 0,
-      "ambiguityCoverage": 0.9142857142857143,
-      "meanAbsErr": 3.556129953326053
+      "ambiguityCoverage": 0.9321428571428572,
+      "meanAbsErr": 4.6370963894086845,
+      "brierScore": 0.06723547396342659,
+      "falsePositiveRate": 0.14004018998903908,
+      "falseNegativeRate": 0.1010012873875112
     },
     {
       "mode": "freeze",
       "brain": "kalman",
       "falseCertainty": 0.65,
       "ambiguityCoverage": 1,
-      "meanAbsErr": 41.97721995197852
+      "meanAbsErr": 41.97721995197852,
+      "brierScore": 0.1230315101417582,
+      "falsePositiveRate": 0.6414017781025454,
+      "falseNegativeRate": 0
     },
     {
       "mode": "blind",
       "brain": "ours",
       "falseCertainty": 0,
-      "ambiguityCoverage": 0.9142857142857143,
-      "meanAbsErr": 3.7033262652945864
+      "ambiguityCoverage": 0.925,
+      "meanAbsErr": 4.7983426199633,
+      "brierScore": 0.06885488516598413,
+      "falsePositiveRate": 0.14004018998903908,
+      "falseNegativeRate": 0.10025222371709921
     },
     {
       "mode": "blind",
       "brain": "kalman",
       "falseCertainty": 0.7214285714285713,
       "ambiguityCoverage": 0.3321428571428572,
-      "meanAbsErr": 114.69251333521977
+      "meanAbsErr": 114.69251333521977,
+      "brierScore": 0.1809646758725359,
+      "falsePositiveRate": 0.3607465594933626,
+      "falseNegativeRate": 0.13991384632972673
     },
     {
       "mode": "flashover",
       "brain": "ours",
       "falseCertainty": 0,
-      "ambiguityCoverage": 0.9142857142857143,
-      "meanAbsErr": 7.980727718014411
+      "ambiguityCoverage": 0.9250000000000002,
+      "meanAbsErr": 10.167993521543286,
+      "brierScore": 0.07816607018167457,
+      "falsePositiveRate": 0.24502983802216538,
+      "falseNegativeRate": 0.046383546489904115
     },
     {
       "mode": "flashover",
       "brain": "kalman",
       "falseCertainty": 0.6392857142857143,
       "ambiguityCoverage": 1,
-      "meanAbsErr": 41.91971196823791
+      "meanAbsErr": 41.91971196823791,
+      "brierScore": 0.11704775136718708,
+      "falsePositiveRate": 0.6384191937644623,
+      "falseNegativeRate": 0
     }
   ]
 }
