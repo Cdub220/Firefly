@@ -20,7 +20,7 @@ Every checkpoint submission is a 60-second video plus the repo link. Every one i
 
 **What the video says.** One number. False certainty, ours versus Kalman, on one corruption case, across five seeds. "Kalman is confidently wrong N% of the time after the sensor freezes, ours M%, and ours covers the true fire P% of the time." First proof the idea works.
 
-**Definition of done.** `npm run evidence` prints the table and the one-sentence summary. The render shows vessel-3x8 with fire on two levels.
+**Definition of done.** `npm run evidence` prints the table and the one-sentence summary. The split view (`npm run dev`) lays out vessel-3x8 by level with fire on two levels, has one-click demo beats, and shows per-space probabilities. The video is a screen recording of the split view, not the terminal.
 
 ## Checkpoint 3 · hour 36 · Mon 12:00 AM ET (Sun midnight) · "The method is frozen"
 
