@@ -15,7 +15,19 @@ import { isPlanName, loadPlan } from '../shared/structures';
 import type { CorruptionConfig, StructurePlan } from '../shared/types';
 
 export type Corr = Omit<CorruptionConfig, 'seed'>;
+/** A partial where undefined is allowed and means "remove this key". */
+export type CorrPatch = { [K in keyof Corr]?: Corr[K] | undefined };
 export type Brains = 'ours' | 'both';
+
+/** Pure: apply a CorrPatch to a Corr. Exported for tests. */
+export function applyCorruptionPatch(base: Corr, patch: CorrPatch): Corr {
+  const next: Record<string, unknown> = { ...base };
+  for (const [k, v] of Object.entries(patch)) {
+    if (v === undefined || (k === 'target' && Array.isArray(v) && v.length === 0)) delete next[k];
+    else next[k] = v;
+  }
+  return next as Corr;
+}
 
 /** Brain factories by name. `primary` is always 'ours'; its commands drive the world. */
 export const BRAIN_FACTORIES: Record<Brains, Record<string, BrainFactory>> = {
@@ -51,7 +63,12 @@ export type SimState = {
   setSeed: (seed: number) => void;
   setIgnition: (id: string) => void;
   setTicks: (ticks: number) => void;
-  setCorruption: (patch: Partial<Corr>) => void;
+  /**
+   * Merge a patch. A key set to undefined is REMOVED (back to the corruptor's default);
+   * an empty `target` array is removed too, because to the corruptor `[]` means "no sensor
+   * qualifies" while an absent target means "any sensor".
+   */
+  setCorruption: (patch: CorrPatch) => void;
   setBrains: (brains: Brains) => void;
   play: () => void;
   pause: () => void;
@@ -181,7 +198,7 @@ export const useSim = create<SimState>((set, get) => ({
   setSeed: (seed) => { if (Number.isFinite(seed)) set({ seed: Math.round(seed) }); },
   setIgnition: (ignition) => set({ ignition }),
   setTicks: (ticks) => { if (Number.isFinite(ticks)) set({ ticks: Math.max(1, Math.round(ticks)) }); },
-  setCorruption: (patch) => set({ corruption: { ...get().corruption, ...patch } }),
+  setCorruption: (patch) => set({ corruption: applyCorruptionPatch(get().corruption, patch) }),
   setBrains: (brains) => set({ brains }),
 
   play: () => {

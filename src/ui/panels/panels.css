@@ -1,0 +1,31 @@
+/* Scenario and chaos panels. Share the .fx tokens from split.css. */
+.panel-box { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.panel-box h2 { font: 600 12px var(--sans); color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em; margin: 4px 0 0; }
+.panel-box label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em; }
+.panel-box label.row, .panel-box .row { flex-direction: row; align-items: center; gap: 8px; flex-wrap: wrap; }
+.panel-box .row > label { flex: 1 1 auto; }
+.panel-box input[type=number], .panel-box select { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 4px 6px; font: 13px var(--mono); width: 100%; min-width: 0; }
+.panel-box select { font-family: var(--sans); }
+.panel-box input[type=range] { flex: 1 1 80px; min-width: 60px; accent-color: var(--uncertain); }
+.panel-box .row input[type=number] { width: 7ch; }
+.panel-box button { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 5px 10px; font: 500 12px var(--sans); cursor: pointer; }
+.panel-box button:hover { border-color: var(--ink-2); }
+.panel-box button:disabled { opacity: 0.45; cursor: default; }
+.panel-box button.primary { background: var(--uncertain); color: #0e1116; border-color: var(--uncertain); font-weight: 600; }
+.panel-box button.wide { width: 100%; }
+.panel-box button.tiny { padding: 2px 6px; font-size: 11px; }
+.panel-box :focus-visible { outline: 2px solid var(--uncertain); outline-offset: 2px; }
+.panel-box .seg { display: inline-flex; }
+.panel-box .seg button { border-radius: 0; }
+.panel-box .seg button:first-child { border-radius: 4px 0 0 4px; }
+.panel-box .seg button:last-child { border-radius: 0 4px 4px 0; }
+.panel-box .seg button.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.panel-box .scrub .tick { font-family: var(--mono); color: var(--ink); text-transform: none; letter-spacing: 0; margin-left: 6px; }
+.panel-box .chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.panel-box .chips button { padding: 2px 6px; font: 500 11px var(--mono); }
+.panel-box .chips button[aria-pressed=true] { background: var(--wrong); color: #0e1116; border-color: var(--wrong); }
+.panel-box .presets { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.panel-box .knobs { display: flex; flex-direction: column; gap: 8px; }
+.panel-box .knob-label em { font-style: normal; color: var(--muted); text-transform: none; letter-spacing: 0; }
+.panel-box .readout { font: 12px var(--mono); color: var(--ink-2); border-top: 1px solid var(--line); padding-top: 8px; }
+.panel-box .readout .missing { color: var(--wrong); }
