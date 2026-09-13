@@ -44,12 +44,23 @@ describe('hedge', () => {
     expect(rows.some((l) => /D\d->\S+ (observe|suppress|coat|hold|refill)/.test(l))).toBe(true);
     expect(lines[0]).toContain(`roster=${run.withAllocator[0]!.truth.drones.map((d) => `${d.id}:${d.class}`).join(',')}`);
     expect(run.withAllocator[0]!.truth.drones.map((d) => d.class)).toEqual(HEDGE_ROSTER.map((d) => d.class));
-    // The corruption really targets the ignition space: some reading from it diverges after onset.
+    // The corruption really targets the ignition space and nothing else: under freeze the only
+    // readings that ever lag are the ignition space's (a random victim would be elsewhere too).
     const ign = loadPlan('demo-6').ignition[0]!;
-    expect(run.withAllocator.some((r) => r.t >= 5 && r.obs.readings.filter((x) => x.spaceId === ign).length < run.withAllocator[0]!.obs.readings.filter((x) => x.spaceId === ign).length)).toBe(true);
+    const frozen = hedgeReport({ ...o, mode: 'freeze' }).run.withAllocator;
+    const lagging = frozen.flatMap((r) => r.obs.readings.filter((x) => x.t < r.obs.t));
+    expect(lagging.length).toBeGreaterThan(0);
+    expect(lagging.every((x) => x.spaceId === ign)).toBe(true);
     // The numbers are the metrics' numbers, and the hedged-tick list matches the metric.
     expect(hedgeRate).toBe(computeMetrics(run.withAllocator, { onset: 5 }).hedgeRate);
     expect(hedgedTicks.filter((t) => t >= 5).length / run.withAllocator.filter((r) => r.t >= 5).length).toBeCloseTo(hedgeRate, 12);
+    // And hedgeRate is the strict per-group number, not the broader spread diagnostic: on the
+    // prompt's own configuration the two differ (1 strict hedge, 4 spread ticks in 56).
+    const strict = hedgeReport(HEDGE_DEFAULTS);
+    const spread = Number(/ALL groups: (\d+)%/.exec(strict.text)![1]);
+    expect(strict.hedgedTicks).toEqual([36]);
+    expect(strict.hedgeRate).toBeCloseTo(1 / 56, 12);
+    expect(spread).toBeGreaterThan(Math.round(100 * strict.hedgeRate));
     expect(text).toContain('hedgeRate = ');
     expect(text).toContain('hedged ticks: ');
     expect(text).toContain('containmentDelta = ');

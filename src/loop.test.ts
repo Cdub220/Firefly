@@ -102,6 +102,12 @@ describe('runLoop', () => {
     expect(blind.some((r) => r.belief.ambiguous.some((g) => g.length >= 2))).toBe(true);
     const hedged = hedgedWhileBurning(blind);
     expect(hedged.length).toBeGreaterThan(0);
+    // The recorded fact (docs/decisions.md, results/hedge-cp4-vessel-3x8-blind-1.txt): the hedge
+    // is at tick 7, a scout and the tethers split across one group while L1-B3 burns.
+    expect(hedged.map((r) => r.t)).toContain(7);
+    const t7 = blind.find((r) => r.t === 7)!;
+    expect(t7.belief.ambiguous.some((g) => g.length >= 2 && g.includes('L1-B3'))).toBe(true);
+    expect(new Set(t7.commands.map((c) => c.droneId)).size).toBeGreaterThanOrEqual(3);
     for (const r of hedged) {
       const group = r.belief.ambiguous.find((g) => new Set(r.commands.filter((c) => g.includes(c.goTo)).map((c) => c.goTo)).size >= 2)!;
       expect(group.length).toBeGreaterThanOrEqual(2);
@@ -113,31 +119,5 @@ describe('runLoop', () => {
     // The prompt's own configuration: recorded as it is. If this ever starts hedging while
     // burning, update docs/decisions.md and results/hedge-cp4.txt rather than this line.
     expect(hedgedWhileBurning(run('flashover')).length).toBe(0);
-  });
-
-  it('a drone roster passes through to the world', () => {
-    const trace = runLoop({ plan: DEMO_PLAN, seed: 1, ticks: 2, drones: [{ id: 'X1', class: 'scout', at: 'S1' }, { id: 'X2', class: 'tether', at: 'S2' }] });
-    expect(trace[0]!.truth.drones.map((d) => d.id)).toEqual(['X1', 'X2']);
-    expect(trace[0]!.obs.readings.filter((r) => r.source === 'drone').map((r) => r.droneId)).toEqual(['X1', 'X2']);
-  });
-  it('CP4 hedge: when a two-way ambiguity exists in the closed-loop flashover run, at least two drones have different goTo inside that group', () => {
-    // The hedge script's configuration: flashover on the ignition space, k=2, largest plan,
-    // 2 scouts + 2 tethers + 1 retardant, commands applied to the world.
-    const plan = loadPlan(largestPlanName());
-    const home = plan.resupply[0]!;
-    const trace = runLoop({
-      plan, seed: HEDGE_DEFAULTS.seed, ticks: HEDGE_DEFAULTS.ticks, dispatch: true,
-      corruption: { mode: 'flashover', k: 2, onset: 5, target: [plan.ignition[0]!], ambient: plan.ambient },
-      drones: HEDGE_ROSTER.map((d) => ({ ...d, at: home })),
-    });
-    const twoWay = trace.filter((r) => r.belief.ambiguous.some((g) => g.length >= 2) || r.belief.ambiguous.length >= 2);
-    expect(twoWay.length).toBeGreaterThan(0);
-    const hedgedTicks = trace.filter((r) => isHedge(r.belief.ambiguous, r.commands));
-    expect(hedgedTicks.length).toBeGreaterThan(0);
-    for (const r of hedgedTicks) {
-      const group = r.belief.ambiguous.find((g) => new Set(r.commands.filter((c) => g.includes(c.goTo)).map((c) => c.goTo)).size >= 2)!;
-      const drones = r.commands.filter((c) => group.includes(c.goTo));
-      expect(new Set(drones.map((c) => c.droneId)).size).toBeGreaterThanOrEqual(2);
-    }
   });
 });
