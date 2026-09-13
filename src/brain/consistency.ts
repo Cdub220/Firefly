@@ -145,8 +145,9 @@ export function checkConsistency(
   // unsensed space the physics puts at ambient with cold surroundings is not a hidden fire.
   const sensedNow = new Set(trusted.map((r) => r.spaceId));
   const firstObservation = (r: Reading): boolean => {
+    if (r.source === 'fixed') return false; // a fixed sensor is always held to physics from the estimate
     const p = ownPrev(history, r);
-    return p === undefined || (p.spaceId !== r.spaceId && r.source !== 'fixed');
+    return p === undefined || p.spaceId !== r.spaceId;
   };
   const hiBound: Record<SpaceId, number> = {};
   const loBound: Record<SpaceId, number> = {};

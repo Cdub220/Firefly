@@ -294,6 +294,15 @@ describe('checkConsistency', () => {
         if (t === 8) expect(suspect).toEqual([{ sensorId: 'F1', reason: 'impossible-rise' }]);
         else expect(suspect).toEqual([]);
       }
+      // A FIXED sensor that has never reported before is not a first observation either: it
+      // is part of the structure, so a late first reading is held to physics from the estimate.
+      const history4: SensorHistory = new Map();
+      for (let t = 5; t <= 8; t++) {
+        const o = obs(t, t < 8 ? [reading('F3', 'S3', 300, t), reading('F2', 'S2', 200, t)] : [reading('F1', 'S1', 500, t), reading('F3', 'S3', 300, t), reading('F2', 'S2', 200, t)]);
+        updateHistory(history4, o);
+        const { suspect } = checkConsistency(plan, o, prev, history4);
+        if (t === 8) expect(suspect).toEqual([{ sensorId: 'F1', reason: 'impossible-rise' }]);
+      }
       // Whereas a sensor that WAS observed there last tick is held to physics from that estimate.
       const history2: SensorHistory = new Map();
       for (let t = 5; t <= 8; t++) {
