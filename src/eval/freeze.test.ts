@@ -31,9 +31,11 @@ describe('method freeze', () => {
     expect(type).toBe('commit');
   });
 
-  it.skipIf(!exists)('the frozen files have not changed since the freeze commit', () => {
+  it.skipIf(!exists)('the frozen files have not changed since the freeze commit, committed or not', () => {
     const hash = freezeHash(readFileSync(FREEZE_DOC, 'utf8'))!;
-    const out = execFileSync('git', ['diff', hash, 'HEAD', '--stat', '--', ...FROZEN_PATHS], { encoding: 'utf8' });
+    // Working tree against the freeze commit (no HEAD argument), so an uncommitted edit to a
+    // frozen file fails the suite too: the stop gate runs on the uncommitted tree.
+    const out = execFileSync('git', ['diff', hash, '--stat', '--', ...FROZEN_PATHS], { encoding: 'utf8' });
     expect(out.trim()).toBe('');
   });
 
