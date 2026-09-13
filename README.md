@@ -83,4 +83,4 @@ Every way a reading can be wrong lives in `src/corruption`, configured by `Corru
 
 Estimator logic freezes at hour 36 (Mon Sept 14, 12:00 AM ET, i.e. Sunday midnight). Record the commit hash here when it happens. Eval cases after that point are chosen post-freeze.
 
-Freeze commit: _not yet_
+Freeze commit: `457de46847453854b93bdbaa807c0a17a2e844d4` (Sun Sept 13, hour 36). The record, the frozen failure model and estimator in one paragraph each, the full sweep table and the cells where ours loses are in [docs/06-freeze.md](docs/06-freeze.md); `src/eval/freeze.test.ts` fails the suite if a frozen file changes. What the sweep taught us is in [docs/07-what-surprised-us.md](docs/07-what-surprised-us.md).
