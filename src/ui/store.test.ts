@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadPlan } from '../shared/structures';
-import { sanitizeCorruption, sanitizeIgnition, useSim } from './store';
+import { BRAIN_FACTORIES, coerceCorruption, sanitizeCorruption, sanitizeIgnition, useSim } from './store';
 
 const demo = loadPlan('demo-6');
 const vessel = loadPlan('vessel-3x8');
@@ -167,11 +167,118 @@ describe('store', () => {
     expect(useSim.getState().cursor).toBe(n - 1);
   });
 
-  it('a brain exception is captured as an error string, not thrown', () => {
+  it('a brain exception is captured as an error string, not thrown, and the old run is kept', () => {
+    useSim.getState().run();
+    const good = useSim.getState().traces;
+    const real = BRAIN_FACTORIES.both.ours!;
+    BRAIN_FACTORIES.both.ours = () => ({ step: () => { throw new Error('brain exploded'); }, reset: () => {} });
+    try {
+      expect(() => useSim.getState().run()).not.toThrow();
+      expect(useSim.getState().error).toMatch(/brain exploded/);
+      expect(useSim.getState().traces).toBe(good);
+    } finally {
+      BRAIN_FACTORIES.both.ours = real;
+    }
+  });
+
+  it('ticks below 1 is an error string, not an empty trace', () => {
+    useSim.setState({ ticks: 0 });
+    useSim.getState().run();
+    expect(useSim.getState().error).toMatch(/ticks/);
     useSim.setState({ ticks: Number.NaN });
-    expect(() => useSim.getState().run()).not.toThrow();
-    // NaN ticks is coerced away by setTicks in the UI; direct state injection is the failure path.
-    const s = useSim.getState();
-    expect(s.error === null || typeof s.error === 'string').toBe(true);
+    useSim.getState().run();
+    expect(useSim.getState().error).toMatch(/ticks/);
+  });
+
+  it('the opening cursor never lands past the end of a short run', () => {
+    useSim.setState({ ticks: 5, corruption: { mode: 'freeze', k: 1, onset: 100, target: ['S3'] } });
+    useSim.getState().run();
+    expect(useSim.getState().error).toBeNull();
+    expect(useSim.getState().cursor).toBe(4);
+    useSim.setState({ ticks: 30, corruption: { mode: 'freeze', k: 1, onset: 5, target: ['S3'] } });
+    useSim.getState().run();
+    expect(useSim.getState().cursor).toBe(3);
+    useSim.setState({ corruption: { mode: 'none' } });
+    useSim.getState().run();
+    expect(useSim.getState().cursor).toBe(0);
+  });
+});
+
+describe('coerceCorruption', () => {
+  const fb = { mode: 'freeze' as const, k: 1 };
+  it('keeps known modes, finite numbers and string-array targets; drops the rest', () => {
+    expect(coerceCorruption({ mode: 'blind', k: 2, onset: 9, target: ['S1'] }, fb)).toEqual({ mode: 'blind', k: 2, onset: 9, target: ['S1'] });
+    expect(coerceCorruption({ mode: 'bogus', k: 'abc', target: 'S3' }, fb)).toEqual({ mode: 'freeze' });
+    expect(coerceCorruption({ mode: 'freeze', target: null, onset: Number.NaN }, fb)).toEqual({ mode: 'freeze' });
+    expect(coerceCorruption(5, fb)).toBe(fb);
+    expect(coerceCorruption(null, fb)).toBe(fb);
+  });
+});
+
+describe('persistence', () => {
+  const mem = new Map<string, string>();
+  const fakeStorage = {
+    getItem: (k: string) => mem.get(k) ?? null,
+    setItem: (k: string, v: string) => { mem.set(k, v); },
+    removeItem: (k: string) => { mem.delete(k); },
+  };
+  beforeEach(() => { mem.clear(); vi.stubGlobal('localStorage', fakeStorage); vi.resetModules(); });
+  afterEach(() => { vi.unstubAllGlobals(); vi.resetModules(); });
+
+  async function freshStore() {
+    const mod = await import('./store');
+    return mod.useSim;
+  }
+
+  it('run() saves planName/seed/ticks/corruption/ignition/brains and a fresh import restores them', async () => {
+    const a = await freshStore();
+    a.getState().setPlan('tower-5x4');
+    a.getState().setSeed(7);
+    a.getState().setTicks(12);
+    a.getState().setBrains('ours');
+    a.getState().setCorruption({ mode: 'blind', k: 2 });
+    a.getState().setIgnition('L3-A2');
+    a.getState().run();
+    expect(JSON.parse(mem.get('firefly.sim.v2')!)).toEqual({
+      planName: 'tower-5x4', seed: 7, ticks: 12, ignition: 'L3-A2', brains: 'ours',
+      corruption: { mode: 'blind', k: 2, onset: 5, target: ['L2-B2'] },
+    });
+    vi.resetModules();
+    const b = await freshStore();
+    const s = b.getState();
+    expect(s.planName).toBe('tower-5x4');
+    expect(s.seed).toBe(7);
+    expect(s.ticks).toBe(12);
+    expect(s.brains).toBe('ours');
+    expect(s.ignition).toBe('L3-A2');
+    expect(s.corruption).toEqual({ mode: 'blind', k: 2, onset: 5, target: ['L2-B2'] });
+  });
+
+  it('survives garbage in storage: unknown plan, bad numbers, wrong shapes, unparsable JSON', async () => {
+    mem.set('firefly.sim.v2', JSON.stringify({ planName: 'nope', seed: 'x', ticks: -3, corruption: { mode: 'bogus', target: 'S3', k: 'abc' }, ignition: 'ZZZ', brains: 'kalman-only' }));
+    let s = (await freshStore()).getState();
+    expect(s.planName).toBe('demo-6');
+    expect(s.seed).toBe(42);
+    expect(s.ticks).toBe(60);
+    expect(s.brains).toBe('both');
+    expect(s.ignition).toBe('S3');
+    // A non-array target is dropped, which means "any sensor", not a crash.
+    expect(s.corruption).toEqual({ mode: 'freeze' });
+    vi.resetModules();
+    mem.set('firefly.sim.v2', '{not json');
+    s = (await freshStore()).getState();
+    expect(s.planName).toBe('demo-6');
+    vi.resetModules();
+    mem.set('firefly.sim.v2', JSON.stringify({ corruption: 5 }));
+    s = (await freshStore()).getState();
+    expect(s.corruption.mode).toBe('freeze');
+  });
+
+  it('a storage that throws does not stop a run', async () => {
+    vi.stubGlobal('localStorage', { getItem: () => { throw new Error('denied'); }, setItem: () => { throw new Error('denied'); } });
+    const a = await freshStore();
+    a.getState().run();
+    expect(a.getState().error).toBeNull();
+    expect(a.getState().trace?.length).toBe(60);
   });
 });

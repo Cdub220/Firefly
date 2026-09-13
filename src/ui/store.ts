@@ -103,6 +103,28 @@ export function sanitizeIgnition(ignition: string | undefined, plan: StructurePl
   return plan.ignition[0] ?? plan.spaces[0]?.id ?? '';
 }
 
+const MODES: readonly CorruptionConfig['mode'][] = ['none', 'freeze', 'blind', 'saturate', 'flashover', 'mixed'];
+const NUMERIC_FIELDS = ['k', 'onset', 'flashoverTemp', 'saturateAt', 'ambient'] as const;
+
+/**
+ * Persisted corruption is untrusted: keep only a known mode, finite numbers, and a string
+ * array target. Anything else is dropped so a hand-edited or stale blob cannot crash the
+ * store at module load. Pure; exported for tests.
+ */
+export function coerceCorruption(raw: unknown, fallback: Corr): Corr {
+  if (raw === null || typeof raw !== 'object') return fallback;
+  const r = raw as Record<string, unknown>;
+  const mode = typeof r['mode'] === 'string' && (MODES as readonly string[]).includes(r['mode']) ? (r['mode'] as CorruptionConfig['mode']) : fallback.mode;
+  const out: Corr = { mode };
+  for (const key of NUMERIC_FIELDS) {
+    const v = r[key];
+    if (typeof v === 'number' && Number.isFinite(v)) out[key] = v;
+  }
+  const t = r['target'];
+  if (Array.isArray(t) && t.every((x) => typeof x === 'string')) out.target = t as string[];
+  return out;
+}
+
 const saved = load();
 const initialPlan: StructurePlan = saved.planName !== undefined && isPlanName(saved.planName) ? loadPlan(saved.planName) : DEMO_PLAN;
 const DEFAULT_CORR: Corr = { mode: 'freeze', k: 1, onset: 5, target: [...initialPlan.ignition] };
@@ -114,7 +136,7 @@ export const useSim = create<SimState>((set, get) => ({
   ignition: sanitizeIgnition(saved.ignition, initialPlan),
   seed: typeof saved.seed === 'number' && Number.isFinite(saved.seed) ? Math.round(saved.seed) : 42,
   ticks: typeof saved.ticks === 'number' && Number.isFinite(saved.ticks) && saved.ticks >= 1 ? Math.round(saved.ticks) : 60,
-  corruption: sanitizeCorruption(saved.corruption ?? DEFAULT_CORR, initialPlan),
+  corruption: sanitizeCorruption(saved.corruption === undefined ? DEFAULT_CORR : coerceCorruption(saved.corruption, DEFAULT_CORR), initialPlan),
   brains: isBrains(saved.brains) ? saved.brains : 'both',
   traces: {},
   primary: PRIMARY,
@@ -134,10 +156,14 @@ export const useSim = create<SimState>((set, get) => ({
     // The plan file says where the fire starts; the picker overrides it for demos.
     const plan: StructurePlan = { ...base, ignition: [ignition] };
     try {
+      if (!Number.isFinite(ticks) || ticks < 1) throw new Error(`ticks must be at least 1 (got ${ticks})`);
       const traces = runLoopMulti({ plan, seed, ticks, corruption, brains: BRAIN_FACTORIES[brains], primary: PRIMARY });
       const data = buildViewerData(plan, traces, { seed, corruption });
-      // Open two ticks before the failure begins (data.startAt) so the demo starts where it matters.
-      set({ traces, data, trace: traces[PRIMARY] ?? null, error: null, cursor: data.startAt, playing: false });
+      const trace = traces[PRIMARY] ?? null;
+      // Open two ticks before the failure begins (data.startAt) so the demo starts where it
+      // matters, but never past the end of a short run.
+      const cursor = Math.max(0, Math.min(data.startAt, (trace?.length ?? 1) - 1));
+      set({ traces, data, trace, error: null, cursor, playing: false });
     } catch (e) {
       set({ error: e instanceof Error ? `${e.message}\n${e.stack ?? ''}` : String(e), playing: false });
     }
