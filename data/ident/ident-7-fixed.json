@@ -1,0 +1,105 @@
+{
+  "name": "ident-7-fixed",
+  "ambient": 20,
+  "spaces": [
+    {
+      "id": "P",
+      "level": 1,
+      "occupants": 0
+    },
+    {
+      "id": "Q",
+      "level": 1,
+      "occupants": 2
+    },
+    {
+      "id": "R",
+      "level": 1,
+      "occupants": 0
+    },
+    {
+      "id": "A1",
+      "level": 1,
+      "occupants": 1
+    },
+    {
+      "id": "A2",
+      "level": 1,
+      "occupants": 0,
+      "fuel": 0
+    },
+    {
+      "id": "B1",
+      "level": 1,
+      "occupants": 1
+    },
+    {
+      "id": "B2",
+      "level": 1,
+      "occupants": 0,
+      "fuel": 0
+    }
+  ],
+  "edges": [
+    {
+      "a": "P",
+      "b": "A1",
+      "kind": "bulkhead",
+      "rate": 0.05
+    },
+    {
+      "a": "A1",
+      "b": "A2",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "P",
+      "b": "B1",
+      "kind": "bulkhead",
+      "rate": 0.05
+    },
+    {
+      "a": "B1",
+      "b": "B2",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "P",
+      "b": "Q",
+      "kind": "passage",
+      "rate": 0.2
+    },
+    {
+      "a": "Q",
+      "b": "R",
+      "kind": "door",
+      "rate": 0.15
+    }
+  ],
+  "sensors": [
+    {
+      "id": "FP",
+      "spaceId": "P"
+    },
+    {
+      "id": "FQ",
+      "spaceId": "Q"
+    },
+    {
+      "id": "FR",
+      "spaceId": "R"
+    },
+    {
+      "id": "FA1",
+      "spaceId": "A1"
+    }
+  ],
+  "resupply": [
+    "R"
+  ],
+  "ignition": [
+    "A1"
+  ]
+}

@@ -1,0 +1,191 @@
+IDENTIFIABILITY: two fire states the sensor set cannot tell apart
+plan ident-7: 7 spaces, sensors at P, Q, R; H1 = {A1} (truth), H2 = {B1}; sigma = 2 C
+
+   P is a central passage; two mirror-image wings hang off it (A1-A2 and B1-B2, no sensors);
+   Q and R lead away from P. Edge rates are identical on both wings.
+
+      A2 --door-- A1 --bulkhead-- P --bulkhead-- B1 --door-- B2
+                                  |
+                               passage
+                                  |
+                                  Q --door-- R (resupply)
+                              [FP] [FQ] [FR] fixed sensors
+
+STEP 1  steady-state temperature at every sensor
+  sensor  space     H1={A1}   H2={B1}   |diff|
+  FP      P           288.3     288.3      0.0
+  FQ      Q           242.6     242.6      0.0
+  FR      R           214.0     214.0      0.0
+  max |difference| over sensors = 0.0 C  (threshold 2 sigma = 4 C)
+  => No estimator can distinguish H1 from H2 with this sensor set, ours included: the two fire states produce
+     measurement vectors that differ by less than the sensor noise at every sensor, so any decision between
+     them is a coin toss dressed as an inference. (Exactly equal here: swapping the wings is a symmetry of
+     the plan that fixes every sensor.)
+
+STEP 2  which sensor a k=1 corruption would need to hit (the brain's own residual rule, one downward residual droppable)
+  remove FP   score(H1)    0.4  score(H2)    0.4  identical
+  remove FQ   score(H1)    0.4  score(H2)    0.4  identical
+  remove FR   score(H1)    0.4  score(H2)    0.4  identical
+  => on ident-7 the scores are already identical with every sensor present: no single sensor carries the
+     distinction, so a k=1 attacker needs to hit nothing. The freeze runs below target FP, the only sensor that
+     carries any fire signal at all.
+  on ident-7-fixed (step 5's plan) the sensor whose removal makes them identical again: FA1
+  remove FP   score(H1)    0.2  score(H2)  273.9  distinguishable
+  remove FQ   score(H1)    0.2  score(H2)  273.9  distinguishable
+  remove FR   score(H1)    0.2  score(H2)  273.9  distinguishable
+  remove FA1  score(H1)    0.4  score(H2)    0.4  identical
+
+STEP 3  what each brain does, open loop, truth = H1, seed 1, 60 ticks
+  mode none
+    t= 5  truth [A1]  P=93.1 C
+         ours           A wing (H1) [A1,A2] ambiguous {B1} conf 0.25
+         kalman         neither wing conf 0.87
+         kalman-source  neither wing conf 0.54
+    t=10  truth [A1]  P=133.6 C
+         ours           neither wing ambiguous {A1,A2} {B1,B2} conf 0.14
+         kalman         neither wing conf 0.86
+         kalman-source  neither wing conf 0.42
+    t=20  truth [A1]  P=185.6 C
+         ours           neither wing ambiguous {A1,A2} {B1,B2} conf 0.14
+         kalman         neither wing conf 0.85
+         kalman-source  neither wing conf 0.42
+    t=30  truth [A1]  P=219.4 C
+         ours           B wing (H2) [B1] ambiguous {A1,A2} {B2} conf 0.14
+         kalman         neither wing conf 0.85
+         kalman-source  neither wing conf 0.42
+    t=40  truth [A1]  P=242.9 C
+         ours           B wing (H2) [B1] ambiguous {A1,A2} {B2} conf 0.14
+         kalman         neither wing conf 0.84
+         kalman-source  neither wing conf 0.42
+    (the passage ignites and the fire reaches the B wing at tick 60; after that both wings really burn)
+    metrics over ticks >= 0 (the whole run):
+         ours           falseCertainty 0%  wrongDispatch 37%  coverage 93%  fc@P.9 0%
+         kalman         falseCertainty 0%  wrongDispatch 47%  coverage 18%  fc@P.9 40%
+         kalman-source  falseCertainty 0%  wrongDispatch 57%  coverage 15%  fc@P.9 82%
+  mode freeze on FP (space P) from tick 5
+    t= 5  truth [A1]  P=93.1 C
+         ours           A wing (H1) [A1,A2] ambiguous {B1} conf 0.25
+         kalman         neither wing conf 0.87
+         kalman-source  neither wing conf 0.54
+    t=10  truth [A1]  P=133.6 C
+         ours           B wing (H2) [B1] ambiguous {A1,A2,P} {B2} conf 0.08
+         kalman         neither wing conf 0.86
+         kalman-source  neither wing conf 0.42
+    t=20  truth [A1]  P=185.6 C
+         ours           B wing (H2) [B1] ambiguous {A1,A2,P} {B2} conf 0.08
+         kalman         neither wing conf 0.85
+         kalman-source  neither wing conf 0.42
+    t=30  truth [A1]  P=219.4 C
+         ours           neither wing ambiguous {A1,A2,B1,B2,P} conf 0.08
+         kalman         neither wing conf 0.85
+         kalman-source  neither wing conf 0.42
+    t=40  truth [A1]  P=242.9 C
+         ours           neither wing ambiguous {A1,A2,B1,B2,P} conf 0.08
+         kalman         neither wing conf 0.84
+         kalman-source  neither wing conf 0.42
+    (the passage ignites and the fire reaches the B wing at tick 60; after that both wings really burn)
+    metrics over ticks >= 5 (the whole run):
+         ours           falseCertainty 0%  wrongDispatch 25%  coverage 96%  fc@P.9 0%
+         kalman         falseCertainty 0%  wrongDispatch 9%  coverage 0%  fc@P.9 7%
+         kalman-source  falseCertainty 0%  wrongDispatch 71%  coverage 0%  fc@P.9 63%
+  => desired outcome: the baselines commit, ours hedges. Read the verdicts above; the numbers are not tuned.
+
+STEP 4  operational cost, closed loop (dispatch on), roster D1:scout, D2:scout, D3:tether from R
+  ident-7        drone-ticks in A wing   63, in B wing  104 (scouts 7/104); first scout enters A at t=54, B at t=5; belief resolved to A1 at t=5
+                 burning at t=30: 1, at t=60: 0; spaces ever burned: 1
+                 commands at t=2: D1->A1 observe  D2->B1 observe  D3->P suppress
+  ident-7-fixed  drone-ticks in A wing   57, in B wing    0 (scouts 0/0); first scout enters A at t=never, B at t=never; belief resolved to A1 at t=1
+                 burning at t=30: 1, at t=60: 0; spaces ever burned: 1
+                 commands at t=2: D1->B1 observe  D2->B2 observe  D3->A1 suppress
+  => the ambiguity costs 104 drone-ticks in the wing that is not burning (104 vs 0).
+
+STEP 5  resolution: ident-7-fixed = the same plan plus one fixed sensor in A1
+  sensor  space     H1={A1}   H2={B1}   |diff|
+  FP      P           288.3     288.3      0.0
+  FQ      Q           242.6     242.6      0.0
+  FR      R           214.0     214.0      0.0
+  FA1     A1          710.9     163.0    547.9
+  max |difference| over sensors = 547.9 C  (was 0.0)
+  mode none
+    t= 5  truth [A1]  P=93.1 C
+         ours           A wing (H1) [A1] ambiguous {A2} conf 0.50
+         kalman         A wing (H1) [A1,A2] conf 0.90
+         kalman-source  A wing (H1) [A1] conf 0.66
+    t=10  truth [A1]  P=133.6 C
+         ours           A wing (H1) [A1] ambiguous {A2} conf 0.50
+         kalman         A wing (H1) [A1,A2] conf 0.90
+         kalman-source  A wing (H1) [A1] conf 0.58
+    t=20  truth [A1]  P=185.6 C
+         ours           A wing (H1) [A1] ambiguous {A2} conf 0.50
+         kalman         A wing (H1) [A1,A2] conf 0.90
+         kalman-source  A wing (H1) [A1] conf 0.55
+    t=30  truth [A1]  P=219.4 C
+         ours           A wing (H1) [A1] ambiguous {A2} {B1} conf 0.33
+         kalman         A wing (H1) [A1,A2] conf 0.89
+         kalman-source  A wing (H1) [A1] conf 0.55
+    t=40  truth [A1]  P=242.9 C
+         ours           A wing (H1) [A1] ambiguous {A2} {B1} conf 0.33
+         kalman         A wing (H1) [A1,A2] conf 0.89
+         kalman-source  A wing (H1) [A1] conf 0.55
+    (the passage ignites and the fire reaches the B wing at tick 60; after that both wings really burn)
+    metrics over ticks >= 0 (the whole run):
+         ours           falseCertainty 0%  wrongDispatch 0%  coverage 95%  fc@P.9 2%
+         kalman         falseCertainty 13%  wrongDispatch 97%  coverage 98%  fc@P.9 97%
+         kalman-source  falseCertainty 0%  wrongDispatch 18%  coverage 93%  fc@P.9 23%
+    ours first names A1 with nothing in the B wing in play at tick 1; ticks 1-40 with the B wing still in play: 18
+  mode freeze on FA1 (the resolving sensor) from tick 5
+    t= 5  truth [A1]  P=93.1 C
+         ours           A wing (H1) [A1] ambiguous {A2} conf 0.50
+         kalman         A wing (H1) [A1,A2] conf 0.90
+         kalman-source  A wing (H1) [A1] conf 0.66
+    t=10  truth [A1]  P=133.6 C
+         ours           A wing (H1) [A1,A2] ambiguous {B1} conf 0.16
+         kalman         A wing (H1) [A1,A2] conf 0.90
+         kalman-source  A wing (H1) [A1] conf 0.58
+    t=20  truth [A1]  P=185.6 C
+         ours           A wing (H1) [A1] ambiguous {A2} {B1} conf 0.16
+         kalman         A wing (H1) [A1,A2] conf 0.90
+         kalman-source  A wing (H1) [A1] conf 0.55
+    t=30  truth [A1]  P=219.4 C
+         ours           A wing (H1) [A1] ambiguous {A2} {B1} conf 0.16
+         kalman         A wing (H1) [A1,A2] conf 0.89
+         kalman-source  A wing (H1) [A1] conf 0.55
+    t=40  truth [A1]  P=242.9 C
+         ours           A wing (H1) [A1] ambiguous {A2} {B1} conf 0.20
+         kalman         A wing (H1) [A1,A2] conf 0.89
+         kalman-source  A wing (H1) [A1] conf 0.55
+    (the passage ignites and the fire reaches the B wing at tick 60; after that both wings really burn)
+    metrics over ticks >= 5 (the whole run):
+         ours           falseCertainty 0%  wrongDispatch 14%  coverage 95%  fc@P.9 0%
+         kalman         falseCertainty 11%  wrongDispatch 100%  coverage 98%  fc@P.9 100%
+         kalman-source  falseCertainty 0%  wrongDispatch 20%  coverage 93%  fc@P.9 25%
+    ours first names A1 with nothing in the B wing in play at tick 1; ticks 1-40 with the B wing still in play: 34
+  mode blind on FA1 (the resolving sensor) from tick 5
+    t= 5  truth [A1]  P=93.1 C
+         ours           A wing (H1) [A1,A2] ambiguous {B1} conf 0.20
+         kalman         A wing (H1) [A2] conf 0.90
+         kalman-source  A wing (H1) [A1] conf 0.66
+    t=10  truth [A1]  P=133.6 C
+         ours           A wing (H1) [A1] ambiguous {A2} {B1} conf 0.16
+         kalman         A wing (H1) [A2] conf 0.90
+         kalman-source  A wing (H1) [A1] conf 0.58
+    t=20  truth [A1]  P=185.6 C
+         ours           A wing (H1) [A1] ambiguous {A2} {B1,B2} conf 0.11
+         kalman         A wing (H1) [A2] conf 0.90
+         kalman-source  A wing (H1) [A1] conf 0.55
+    t=30  truth [A1]  P=219.4 C
+         ours           A wing (H1) [A1] ambiguous {A2} {B1,B2} conf 0.11
+         kalman         A wing (H1) [A2] conf 0.89
+         kalman-source  A wing (H1) [A1] conf 0.55
+    t=40  truth [A1]  P=242.9 C
+         ours           A wing (H1) [A1] ambiguous {A2} {B1,B2} conf 0.11
+         kalman         A wing (H1) [A2] conf 0.89
+         kalman-source  A wing (H1) [A1] conf 0.55
+    (the passage ignites and the fire reaches the B wing at tick 60; after that both wings really burn)
+    metrics over ticks >= 5 (the whole run):
+         ours           falseCertainty 0%  wrongDispatch 21%  coverage 95%  fc@P.9 0%
+         kalman         falseCertainty 11%  wrongDispatch 100%  coverage 20%  fc@P.9 100%
+         kalman-source  falseCertainty 0%  wrongDispatch 91%  coverage 93%  fc@P.9 93%
+    ours first names A1 with nothing in the B wing in play at tick 1; ticks 1-40 with the B wing still in play: 37
+  (for comparison, on ident-7 mode none the B wing is in play on 39 of ticks 1-40 and A1 is never named alone: never resolved)
+  => one sensor in A1 resolves the pair; a k=1 corruption of that one sensor is enough to take the resolution away again.
