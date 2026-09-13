@@ -22,16 +22,18 @@ export function instantiateSpaces(plan: StructurePlan): Space[] {
     const a = byId.get(e.a);
     const b = byId.get(e.b);
     if (!a || !b) throw new Error(`plan "${plan.name}": edge references unknown space ${e.a}-${e.b}`);
-    if (e.kind === 'floor') {
+    if (a.level !== b.level) {
+      // Vertical path (a 'floor' edge, or a 'shaft' chain between levels): sets above/below.
+      // A floor and a shaft on the same pair agree, so the second write is a no-op.
       const [lower, upper] = a.level < b.level ? [a, b] : [b, a];
       lower.above = upper.id;
       upper.below = lower.id;
     } else {
-      a.neighbors.push(b.id);
-      b.neighbors.push(a.id);
+      if (!a.neighbors.includes(b.id)) a.neighbors.push(b.id);
+      if (!b.neighbors.includes(a.id)) b.neighbors.push(a.id);
       if (e.kind === 'door' || e.kind === 'passage') {
-        a.doorsOpen.push(b.id);
-        b.doorsOpen.push(a.id);
+        if (!a.doorsOpen.includes(b.id)) a.doorsOpen.push(b.id);
+        if (!b.doorsOpen.includes(a.id)) b.doorsOpen.push(a.id);
       }
     }
   }
