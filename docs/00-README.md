@@ -12,6 +12,7 @@ This folder is the single source of truth for what we are building and the rules
 | `decisions.md` | Log of choices made during the event and why | Before changing something that looks arbitrary. It probably is not. |
 | `automation.md` | Hooks, skills, the verifier agent, CI, role detection | When a hook blocks you or you want to know what `/build` does |
 | `05` to `09` | Produced during the event: identifiability, freeze record, what surprised us, writeup, generality | When the prompts tell you to write or read them |
+| `checkpoints/` | Per-checkpoint records, the thesis in full, video scripts and judge Q&A | Before filming or pitching |
 | `prompts/` | Copy-pasteable Claude Code prompts per person per checkpoint | Starting a work session. Pick your file, run the prompts in order. |
 | `source/*.pdf` | The original PDFs the markdown was transcribed from | Only if you suspect a transcription error |
 
