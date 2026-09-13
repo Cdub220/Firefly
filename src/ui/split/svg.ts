@@ -43,12 +43,22 @@ export const COMPACT_BELOW = 0.85;
 export const isCompact = (g: Geometry): boolean => g.scale < COMPACT_BELOW;
 const compactTag = (tag: string): string => (tag === 'WRONG' ? 'WRONG' : tag === 'MISSED' ? 'MISS' : '');
 
-const isVertical = (kind: string): boolean => kind === 'floor' || kind === 'shaft';
+const levelMap = (data: ViewerData): Map<string, number> => new Map(data.plan.spaces.map((s) => [s.id, s.level]));
+const DETOUR_DEPTH = 12; // px below the cells for a bracketed edge; successive brackets step down
 
 export function edgeLines(data: ViewerData, g: Geometry): string {
+  const levelOf = levelMap(data);
+  const detour = new Set(g.detours.map((d) => `${d.a}|${d.b}`));
+  let k = 0;
   const same = data.plan.edges.map((e) => {
-    if (isVertical(e.kind)) return '';
+    // A cross-level edge is a connector; a same-level edge of any kind is drawn here.
+    if (levelOf.get(e.a) !== levelOf.get(e.b)) return '';
     const a = g.pos[e.a], b = g.pos[e.b]; if (!a || !b) return '';
+    if (detour.has(`${e.a}|${e.b}`)) {
+      // Bracket below the row: the straight line would pass through another cell.
+      const y = Math.max(a.y, b.y) + g.CH + DETOUR_DEPTH + 6 * (k++ % 3);
+      return `<path class="edge ${e.kind}" fill="none" d="M${a.x + g.CW / 2} ${a.y + g.CH} V${y} H${b.x + g.CW / 2} V${b.y + g.CH}"/>`;
+    }
     return `<line class="edge ${e.kind}" x1="${a.x + g.CW / 2}" y1="${a.y + g.CH / 2}" x2="${b.x + g.CW / 2}" y2="${b.y + g.CH / 2}"/>`;
   }).join('');
   const vertical = g.vertical.map((v) => `<line class="edge ${v.kind}" x1="${v.x1}" y1="${v.y1}" x2="${v.x2}" y2="${v.y2}"/>`).join('');
@@ -56,8 +66,9 @@ export function edgeLines(data: ViewerData, g: Geometry): string {
 }
 export function edgeLabels(data: ViewerData, g: Geometry): string {
   if (!g.labelEdges) return '';
+  const levelOf = levelMap(data);
   return data.plan.edges.map((e) => {
-    if (isVertical(e.kind)) return '';
+    if (levelOf.get(e.a) !== levelOf.get(e.b)) return '';
     const a = g.pos[e.a], b = g.pos[e.b]; if (!a || !b) return '';
     const mx = (a.x + b.x) / 2 + g.CW / 2, my = (a.y + b.y) / 2 + g.CH / 2, txt = `${e.kind} ${e.rate}`, w = txt.length * 5.6 + 10;
     return `<rect x="${mx - w / 2}" y="${my - 7}" width="${w}" height="14" rx="7" fill="${C.ground}" stroke="${C.line}"/><text class="edge-lbl" x="${mx}" y="${my + 3.5}" text-anchor="middle">${esc(txt)}</text>`;
@@ -72,6 +83,7 @@ export function bandLabels(g: Geometry): string {
 export function legendText(data: ViewerData): string {
   const parts: string[] = [];
   if (isCompact(data.layout)) parts.push('solid red border: burning', 'dashed amber: maybe', 'bright red: wrong', 'P: P(burning)');
+  if (data.layout.detours.length) parts.push('bracket under a row: a link between non-adjacent cells');
   if (data.layout.labelEdges) return parts.join(' · ');
   const kinds = new Set(data.plan.edges.map((e) => e.kind));
   if (kinds.has('door')) parts.push('door: thin line');

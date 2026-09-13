@@ -163,3 +163,61 @@ describe('awkward plan shapes', () => {
     expect(overlaps(odd)).toBe(0);
   });
 });
+
+describe('round-3 regressions', () => {
+  it('no same-level edge is drawn straight through a third cell: flattened cross-row passages become detours', () => {
+    const tower = makeGridFixture({ levels: 5, rows: 2, cols: 2 });
+    const g = layoutPlan(tower);
+    // Every A-B passage on a flattened band is a detour; doors between adjacent cells are not.
+    const passages = tower.edges.filter((e) => e.kind === 'passage');
+    expect(g.detours.length).toBe(passages.length);
+    for (const p of passages) expect(g.detours).toContainEqual({ a: p.a, b: p.b });
+    // And the renderer draws them as brackets, not lines.
+    const data = run(tower, 8);
+    const svg = brainSvg(data, geometry(data), data.ticks[7]!, 'ours');
+    expect((svg.match(/<path class="edge passage"/g) ?? []).length).toBe(passages.length);
+    expect(svg).not.toContain('<line class="edge passage"');
+    expect(legendText(data)).toContain('bracket');
+    // A wide plan has no detours and no brackets.
+    const wide = makeGridFixture({ levels: 3, rows: 2, cols: 4 });
+    expect(layoutPlan(wide).detours).toEqual([]);
+  });
+
+  it('flattening uses one column count across levels, so floor edges stay vertical when grid widths differ', () => {
+    const plan = {
+      spaces: [
+        { id: 'L1-A1', level: 1 }, { id: 'L1-A2', level: 1 }, { id: 'L1-B1', level: 1 }, { id: 'L1-B2', level: 1 },
+        { id: 'L2-A1', level: 2 }, { id: 'L2-A2', level: 2 }, { id: 'L2-A3', level: 2 }, { id: 'L2-B1', level: 2 }, { id: 'L2-B2', level: 2 }, { id: 'L2-B3', level: 2 },
+        { id: 'L3-A1', level: 3 }, { id: 'L3-A2', level: 3 }, { id: 'L3-B1', level: 3 }, { id: 'L3-B2', level: 3 },
+        { id: 'L4-A1', level: 4 }, { id: 'L4-A2', level: 4 }, { id: 'L4-B1', level: 4 }, { id: 'L4-B2', level: 4 },
+        { id: 'L5-A1', level: 5 }, { id: 'L5-A2', level: 5 }, { id: 'L5-B1', level: 5 }, { id: 'L5-B2', level: 5 },
+        { id: 'L6-A1', level: 6 }, { id: 'L6-A2', level: 6 }, { id: 'L6-B1', level: 6 }, { id: 'L6-B2', level: 6 },
+      ],
+      edges: [
+        { a: 'L1-A1', b: 'L2-A1', kind: 'floor' as const, rate: 0.08 }, { a: 'L1-B2', b: 'L2-B2', kind: 'floor' as const, rate: 0.08 },
+        { a: 'L2-B2', b: 'L3-B2', kind: 'floor' as const, rate: 0.08 }, { a: 'L3-A1', b: 'L4-A1', kind: 'floor' as const, rate: 0.08 },
+        { a: 'L4-B2', b: 'L5-B2', kind: 'floor' as const, rate: 0.08 }, { a: 'L5-B1', b: 'L6-B1', kind: 'shaft' as const, rate: 0.3 },
+      ],
+    };
+    const g = layoutPlan(plan);
+    expect(g.bands[0]!.h).toBe(g.CH); // flattened
+    for (const e of plan.edges) expect(g.pos[e.a]!.x).toBe(g.pos[e.b]!.x);
+    expect(overlaps(g)).toBe(0);
+  });
+
+  it('skip-level vertical edges each get their own connector; a same-level floor edge is drawn as a line', () => {
+    const plan = {
+      spaces: [{ id: 'a', level: 1 }, { id: 'b', level: 2 }, { id: 'c', level: 3 }, { id: 'd', level: 3 }],
+      edges: [
+        { a: 'c', b: 'a', kind: 'shaft' as const, rate: 0.3 }, // skips level 2
+        { a: 'c', b: 'b', kind: 'floor' as const, rate: 0.08 },
+        { a: 'c', b: 'd', kind: 'floor' as const, rate: 0.08 }, // malformed: same level; still visible
+      ],
+    };
+    const g = layoutPlan(plan);
+    expect(g.vertical.length).toBe(2);
+    const data = run({ ...plan, name: 'skip', ambient: 22, sensors: [{ id: 'F', spaceId: 'a' }], resupply: ['a'], ignition: ['a'] }, 3);
+    const svg = truthSvg(data, geometry(data), data.ticks[2]!);
+    expect((svg.match(/class="edge floor"/g) ?? []).length).toBe(2); // one connector, one same-level line
+  });
+});

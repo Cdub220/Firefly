@@ -52,10 +52,10 @@ export function SplitView() {
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement | null)?.tagName;
       if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return; // Cmd/Ctrl combos belong to the browser
       if (e.key === ' ') { e.preventDefault(); s.toggle(); }
       if (e.key === 'ArrowRight') s.stepBy(1);
       if (e.key === 'ArrowLeft') s.stepBy(-1);
-      if (e.metaKey || e.ctrlKey || e.altKey) return; // Cmd/Ctrl+1..5 belong to the browser
       const beat = BEATS.find((b) => b.hotkey === e.key);
       if (beat) s.runBeat(beat.key);
     };

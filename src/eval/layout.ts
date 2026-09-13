@@ -42,6 +42,12 @@ export type Layout = {
   labelEdges: boolean;
   /** Vertical connectors between bands, one per column and gap; shaft wins over floor. */
   vertical: Vertical[];
+  /**
+   * Same-level edges whose straight centre-to-centre line would pass through a third
+   * cell (a flattened row's cross-row passages, mostly). Renderers route these as a
+   * bracket below the row instead of drawing a phantom link through the cell between.
+   */
+  detours: Array<{ a: SpaceId; b: SpaceId }>;
 };
 
 const BASE_CW = 104;
@@ -132,7 +138,7 @@ export function layoutPlan(plan: LayoutPlan): Layout {
   const levels = [...new Set(plan.spaces.map((s) => s.level))].sort((a, b) => a - b);
   const multiLevel = levels.length > 1;
 
-  if (n === 0) return { pos, W: 2 * MARGIN, H: 2 * MARGIN, CW, CH, scale, bands: [], labelW: 0, labelEdges, vertical: [] };
+  if (n === 0) return { pos, W: 2 * MARGIN, H: 2 * MARGIN, CW, CH, scale, bands: [], labelW: 0, labelEdges, vertical: [], detours: [] };
 
   // The ring: unchanged.
   if (!multiLevel && n === 6 && ids.every((id) => Object.hasOwn(RING, id))) {
@@ -140,7 +146,7 @@ export function layoutPlan(plan: LayoutPlan): Layout {
       const [col, row] = RING[id]!;
       pos[id] = { x: MARGIN + col * PX, y: MARGIN + row * PY };
     }
-    return { pos, CW, CH, scale, bands: [], labelW: 0, labelEdges, vertical: [], W: MARGIN + 2 * PX + CW + MARGIN, H: MARGIN + PY + CH + MARGIN };
+    return { pos, CW, CH, scale, bands: [], labelW: 0, labelEdges, vertical: [], detours: [], W: MARGIN + 2 * PX + CW + MARGIN, H: MARGIN + PY + CH + MARGIN };
   }
 
   // Slots per level, bottom-up so a space can take the column of its partner below.
@@ -149,6 +155,15 @@ export function layoutPlan(plan: LayoutPlan): Layout {
   const rowsOf = new Map<number, number>();
   const maxPerLevel = Math.max(...[...byLevel.values()].map((l) => l.length));
   const wrapCols = Math.max(3, Math.ceil(Math.sqrt(maxPerLevel)));
+  // One column count for flattening across all levels, so floor edges stay vertical even
+  // when levels have different grid widths.
+  const gridColsAll = Math.max(
+    1,
+    ...[...byLevel.values()].map((members) => {
+      const g = gridSlots(members);
+      return g ? 1 + Math.max(...[...g.values()].map((s) => s.col)) : 1;
+    }),
+  );
   const below = new Map<SpaceId, SpaceId>(); // upper -> lower partner through a vertical edge
   const levelOf = new Map(plan.spaces.map((s) => [s.id, s.level]));
   for (const e of plan.edges) {
@@ -168,8 +183,7 @@ export function layoutPlan(plan: LayoutPlan): Layout {
     const members = byLevel.get(level)!;
     const grid = gridSlots(members);
     if (grid) {
-      const gridCols = 1 + Math.max(...[...grid.values()].map((s) => s.col));
-      for (const [id, s] of grid) slots.set(id, flatten ? { col: s.row * gridCols + s.col, row: 0 } : s);
+      for (const [id, s] of grid) slots.set(id, flatten ? { col: s.row * gridColsAll + s.col, row: 0 } : s);
       rowsOf.set(level, flatten ? 1 : 1 + Math.max(...members.map((id) => grid.get(id)!.row)));
       return;
     }
@@ -199,7 +213,7 @@ export function layoutPlan(plan: LayoutPlan): Layout {
   };
 
   const labelW = multiLevel ? LABEL_W : 0;
-  const build = (): Omit<Layout, 'vertical'> => {
+  const build = (): Omit<Layout, 'vertical' | 'detours'> => {
     const cols = 1 + Math.max(...[...slots.values()].map((s) => s.col));
     const bands: Band[] = [];
     const out: Record<SpaceId, { x: number; y: number }> = {};
@@ -225,7 +239,41 @@ export function layoutPlan(plan: LayoutPlan): Layout {
     const flat = build();
     if (flat.H / flat.W < partial.H / partial.W) partial = flat;
   }
-  return { ...partial, vertical: verticalConnectors(plan, partial) };
+  return { ...partial, vertical: verticalConnectors(plan, partial), detours: detours(plan, partial) };
+}
+
+/** Does the segment p-q cross the rectangle r (with a small inset so touching edges do not count)? */
+function crosses(p: { x: number; y: number }, q: { x: number; y: number }, r: { x: number; y: number }, w: number, h: number): boolean {
+  const inset = 2;
+  const x0 = r.x + inset, y0 = r.y + inset, x1 = r.x + w - inset, y1 = r.y + h - inset;
+  // Liang-Barsky clipping of p->q against the rectangle.
+  let t0 = 0, t1 = 1;
+  const dx = q.x - p.x, dy = q.y - p.y;
+  const checks: Array<[number, number]> = [[-dx, p.x - x0], [dx, x1 - p.x], [-dy, p.y - y0], [dy, y1 - p.y]];
+  for (const [pk, qk] of checks) {
+    if (pk === 0) { if (qk < 0) return false; continue; }
+    const t = qk / pk;
+    if (pk < 0) { if (t > t1) return false; if (t > t0) t0 = t; }
+    else { if (t < t0) return false; if (t < t1) t1 = t; }
+  }
+  return t0 < t1;
+}
+
+/** Same-level edges whose straight line passes through a third cell. */
+function detours(plan: LayoutPlan, layout: Omit<Layout, 'vertical' | 'detours'>): Array<{ a: SpaceId; b: SpaceId }> {
+  const levelOf = new Map(plan.spaces.map((s) => [s.id, s.level]));
+  const out: Array<{ a: SpaceId; b: SpaceId }> = [];
+  for (const e of plan.edges) {
+    if (levelOf.get(e.a) !== levelOf.get(e.b)) continue;
+    const a = layout.pos[e.a];
+    const b = layout.pos[e.b];
+    if (!a || !b) continue;
+    const p = { x: a.x + layout.CW / 2, y: a.y + layout.CH / 2 };
+    const q = { x: b.x + layout.CW / 2, y: b.y + layout.CH / 2 };
+    const blocked = plan.spaces.some((s) => s.id !== e.a && s.id !== e.b && layout.pos[s.id] !== undefined && crosses(p, q, layout.pos[s.id]!, layout.CW, layout.CH));
+    if (blocked) out.push({ a: e.a, b: e.b });
+  }
+  return out;
 }
 
 /**
@@ -234,7 +282,7 @@ export function layoutPlan(plan: LayoutPlan): Layout {
  * bands. Rows within a band share a column, so several floor edges collapse into one
  * line; the legend says so.
  */
-function verticalConnectors(plan: LayoutPlan, layout: Omit<Layout, 'vertical'>): Vertical[] {
+function verticalConnectors(plan: LayoutPlan, layout: Omit<Layout, 'vertical' | 'detours'>): Vertical[] {
   const out = new Map<string, Vertical>();
   const levelOf = new Map(plan.spaces.map((s) => [s.id, s.level]));
   const bandOf = (p: { y: number }): Band | undefined => layout.bands.find((band) => p.y >= band.y && p.y < band.y + band.h);
@@ -251,7 +299,7 @@ function verticalConnectors(plan: LayoutPlan, layout: Omit<Layout, 'vertical'>):
     const y2 = bandLower.y;
     const x1 = upper.x + layout.CW / 2;
     const x2 = lower.x + layout.CW / 2;
-    const key = `${x1},${y1},${x2}`;
+    const key = `${x1},${y1},${x2},${y2}`;
     const kind = e.kind === 'shaft' ? 'shaft' : 'floor';
     const prev = out.get(key);
     if (!prev || (prev.kind === 'floor' && kind === 'shaft')) out.set(key, { x1, y1, x2, y2, kind });
