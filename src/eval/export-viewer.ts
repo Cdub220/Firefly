@@ -39,10 +39,10 @@ const pick = (b: (typeof ours)[number]['belief']) => ({
 const data = {
   plan: { name: DEMO_PLAN.name, spaces: DEMO_PLAN.spaces.map((s) => ({ id: s.id })), edges: DEMO_PLAN.edges, sensors: DEMO_PLAN.sensors },
   ambient: DEMO_PLAN.ambient, seed, corruption, onset: mode === 'none' ? null : onset, startAt: Math.max(0, onset - 2),
-  note: 'Six spaces in a ring, one fixed sensor each. Left is the world as it is. Middle and right are two estimators reading the same damaged sensor feed. Solid red border: believed burning. Dashed amber: the brain cannot rule it out. Red tag: wrong. Struck-through chip: the brain has stopped trusting that sensor.',
+  note: 'Six spaces in a ring, one fixed sensor each. Left is the world as it is: a space burns until its fuel runs out, then it is hot but not burning. Middle and right are two estimators reading the same damaged sensor feed; neither can see truth. Solid red border: believed burning. Dashed amber MAYBE: the brain cannot rule it in or out. Red tag: wrong. Struck-through chip: the brain has stopped trusting that sensor.',
   ticks: ours.map((r, i) => ({
     t: r.t,
-    truth: Object.fromEntries(r.truth.spaces.map((s) => [s.id, { temp: Math.round(s.temp * 10) / 10, burning: s.burning }])),
+    truth: Object.fromEntries(r.truth.spaces.map((s) => [s.id, { temp: Math.round(s.temp * 10) / 10, burning: s.burning, fuel: Math.round(s.fuel * 100) / 100 }])),
     readings: r.obs.readings.map((x) => ({ sensorId: x.sensorId, source: x.source, spaceId: x.spaceId, temp: Math.round(x.temp * 10) / 10, t: x.t })),
     brains: { ours: pick(r.belief), kalman: pick(kalman[i]!.belief) },
   })),

@@ -21,7 +21,7 @@
   .controls button:hover { border-color: var(--ink-2); }
   .controls button:focus-visible, .controls input:focus-visible { outline: 2px solid var(--uncertain); outline-offset: 2px; }
   .tick { font-family: var(--mono); font-size: 16px; font-weight: 600; min-width: 5ch; font-variant-numeric: tabular-nums; }
-  .panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px; }
   .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px 12px 8px; min-width: 0; }
   .panel h2 { margin: 0 0 2px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
   .panel h2 .sub { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--muted); font-size: 12px; }
@@ -31,14 +31,14 @@
   .conf.hi .bar i { background: var(--wrong); }
   .conf.lo .bar i { background: var(--uncertain); }
   svg { width: 100%; height: auto; display: block; }
-  .id { font: 600 11px var(--sans); fill: var(--ink-2); letter-spacing: 0.04em; }
-  .temp { font: 600 20px var(--mono); fill: var(--ink); }
-  .tag { font: 600 9px var(--sans); letter-spacing: 0.08em; }
-  .chip { font: 10px var(--mono); }
+  .id { font: 600 12px var(--sans); fill: var(--ink-2); letter-spacing: 0.04em; }
+  .temp { font: 600 24px var(--mono); fill: var(--ink); font-variant-numeric: tabular-nums; }
+  .tag { font: 700 10px var(--sans); letter-spacing: 0.08em; }
+  .chip { font: 10.5px var(--mono); }
   .edge { stroke: var(--line); stroke-width: 2; }
   .edge.bulkhead { stroke-dasharray: 3 4; }
   .edge.passage { stroke-width: 3; }
-  .edge-lbl { font: 9px var(--mono); fill: var(--muted); }
+  .edge-lbl { font: 9.5px var(--mono); fill: var(--ink-2); }
   .verdict { margin-top: 8px; min-height: 2.6em; font-size: 12px; color: var(--ink-2); }
   .verdict b { color: var(--ink); font-weight: 600; }
   .strip { margin-top: 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px; }
@@ -56,6 +56,7 @@
   <div class="cfg" id="cfg"></div>
 </header>
 
+<p class="note" style="margin:0 0 12px">How to read it: each box is one space. The colored bar on top is temperature (slate cold, amber warm, red hot, pale white-hot). The chip at the bottom is what that space’s own sensor reported this tick. In the two brain panels, a solid red border means “believed burning” and a dashed amber MAYBE means the brain cannot rule it in or out.</p>
 <div class="controls">
   <button id="play" type="button">Play</button>
   <button id="back" type="button" aria-label="Step back">−1</button>
@@ -89,8 +90,8 @@ const DATA = __DATA__;
   // Fixed layout for a ring of six; generic 3-column grid otherwise.
   const ring = { S1: [0, 0], S2: [1, 0], S3: [2, 0], S6: [0, 1], S5: [1, 1], S4: [2, 1] };
   const pos = {};
-  ids.forEach((id, i) => { const p = ring[id] && ids.length === 6 ? ring[id] : [i % 3, Math.floor(i / 3)]; pos[id] = { x: 18 + p[0] * 108, y: 16 + p[1] * 104 }; });
-  const W = 18 + 3 * 108 + 2, H = 16 + Math.ceil(ids.length / 3) * 104 + 2, CW = 92, CH = 82;
+  ids.forEach((id, i) => { const p = ring[id] && ids.length === 6 ? ring[id] : [i % 3, Math.floor(i / 3)]; pos[id] = { x: 12 + p[0] * 146, y: 12 + p[1] * 134 }; });
+  const CW = 104, CH = 100, W = 12 + 2 * 146 + CW + 12, H = 12 + (Math.ceil(ids.length / 3) - 1) * 134 + CH + 12;
   const sensorSpace = {}; plan.sensors.forEach(s => sensorSpace[s.id] = s.spaceId);
 
   function lerp(a, b, t) { return a + (b - a) * t; }
@@ -104,33 +105,41 @@ const DATA = __DATA__;
   function inkFor(T) { return T > 520 ? '#0e1116' : '#e6eaf0'; }
   function esc(s) { return String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
 
-  function edgesSvg() {
+  function edgeLines() {
     return plan.edges.map(e => {
       const a = pos[e.a], b = pos[e.b]; if (!a || !b) return '';
-      const ax = a.x + CW / 2, ay = a.y + CH / 2, bx = b.x + CW / 2, by = b.y + CH / 2;
-      return `<line class="edge ${e.kind}" x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}"/><text class="edge-lbl" x="${(ax + bx) / 2}" y="${(ay + by) / 2 - 3}" text-anchor="middle">${e.kind} ${e.rate}</text>`;
+      return `<line class="edge ${e.kind}" x1="${a.x + CW / 2}" y1="${a.y + CH / 2}" x2="${b.x + CW / 2}" y2="${b.y + CH / 2}"/>`;
+    }).join('');
+  }
+  function edgeLabels() {
+    return plan.edges.map(e => {
+      const a = pos[e.a], b = pos[e.b]; if (!a || !b) return '';
+      const mx = (a.x + b.x) / 2 + CW / 2, my = (a.y + b.y) / 2 + CH / 2, txt = `${e.kind} ${e.rate}`, w = txt.length * 5.6 + 10;
+      return `<rect x="${mx - w / 2}" y="${my - 7}" width="${w}" height="14" rx="7" fill="#0e1116" stroke="#2a3240"/><text class="edge-lbl" x="${mx}" y="${my + 3.5}" text-anchor="middle">${txt}</text>`;
     }).join('');
   }
 
   function cell(id, T, opts) {
-    const p = pos[id], fill = tempColor(T), ink = inkFor(T);
-    let stroke = '#2a3240', sw = 1.5, dash = '';
+    const p = pos[id], barCol = tempColor(T), ink = '#e6eaf0';
+    let stroke = '#3a4656', sw = 1.5, dash = '';
     if (opts.state === 'burning') { stroke = '#e4572e'; sw = 3; }
     if (opts.state === 'believed') { stroke = '#e4572e'; sw = 3; }
     if (opts.state === 'ambiguous') { stroke = '#f0b429'; sw = 2.5; dash = 'stroke-dasharray="6 4"'; }
     if (opts.verdict === 'wrong') { stroke = '#ff5c5c'; sw = 3.5; dash = ''; }
-    const tag = opts.tag ? `<text class="tag" x="${p.x + CW - 6}" y="${p.y + 13}" text-anchor="end" fill="${opts.tagColor || stroke}">${esc(opts.tag)}</text>` : '';
+    const tag = opts.tag ? `<text class="tag" x="${p.x + CW - 7}" y="${p.y + 22}" text-anchor="end" fill="${opts.tagColor || stroke}">${esc(opts.tag)}</text>` : '';
     let chip = '';
     if (opts.reading) {
       const r = opts.reading;
       const col = r.missing ? '#6f7b8c' : r.stale ? '#ff8a5c' : r.lying ? '#f0b429' : '#5dd39e';
       const txt = r.missing ? 'no reading' : `${r.sensorId} ${Math.round(r.temp)}° t${r.t}`;
-      chip = `<rect x="${p.x + 5}" y="${p.y + CH - 19}" width="${CW - 10}" height="14" rx="3" fill="#0e1116" opacity="0.85"/>` +
-        `<text class="chip" x="${p.x + CW / 2}" y="${p.y + CH - 8.5}" text-anchor="middle" fill="${col}" ${opts.suspect ? 'text-decoration="line-through"' : ''}>${esc(txt)}${opts.suspect ? ' ✕' : ''}</text>`;
+      chip = `<rect x="${p.x + 5}" y="${p.y + CH - 21}" width="${CW - 10}" height="16" rx="3" fill="#0e1116" stroke="#2a3240"/>` +
+        `<text class="chip" x="${p.x + CW / 2}" y="${p.y + CH - 9.5}" text-anchor="middle" fill="${col}" ${opts.suspect ? 'text-decoration="line-through"' : ''}>${esc(txt)}${opts.suspect ? ' ✕' : ''}</text>`;
     }
-    return `<g><rect x="${p.x}" y="${p.y}" width="${CW}" height="${CH}" rx="5" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" ${dash}/>` +
-      `<text class="id" x="${p.x + 7}" y="${p.y + 14}" fill="${ink}">${id}</text>${tag}` +
-      `<text class="temp" x="${p.x + CW / 2}" y="${p.y + 46}" text-anchor="middle" fill="${ink}">${Math.round(T)}°</text>${chip}</g>`;
+    const fuel = opts.fuel == null ? '' : `<text class="chip" x="${p.x + CW / 2}" y="${p.y + 68}" text-anchor="middle" fill="${opts.fuel <= 0 ? '#ff8a5c' : '#aab4c3'}">fuel ${Math.round(opts.fuel * 100)}%</text>`;
+    return `<g><rect x="${p.x}" y="${p.y}" width="${CW}" height="${CH}" rx="5" fill="#1b212a" stroke="${stroke}" stroke-width="${sw}" ${dash}/>` +
+      `<rect x="${p.x + 1}" y="${p.y + 1}" width="${CW - 2}" height="7" rx="3" fill="${barCol}"/>` +
+      `<text class="id" x="${p.x + 8}" y="${p.y + 22}" fill="${ink}">${id}</text>${tag}` +
+      `<text class="temp" x="${p.x + CW / 2}" y="${p.y + 52}" text-anchor="middle" fill="${ink}">${Math.round(T)}°</text>${fuel}${chip}</g>`;
   }
 
   function readingsBySpace(rec) {
@@ -152,34 +161,35 @@ const DATA = __DATA__;
     document.getElementById('tick').textContent = 't=' + rec.t;
     // truth panel
     const tp = document.getElementById('p-truth');
-    tp.querySelector('.svgwrap').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="ground truth">${edgesSvg()}${ids.map(id => {
-      const T = rec.truth[id].temp, r = rb[id];
+    tp.querySelector('.svgwrap').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="ground truth">${edgeLines()}${ids.map(id => {
+      const tr = rec.truth[id], T = tr.temp, r = rb[id], out = !tr.burning && tr.fuel != null && tr.fuel <= 0;
       const reading = r ? { sensorId: r.sensorId, temp: r.temp, t: r.t, stale: r.t < rec.t, lying: Math.abs(r.temp - T) > 30 } : { missing: true };
-      return cell(id, T, { state: rec.truth[id].burning ? 'burning' : '', tag: rec.truth[id].burning ? 'BURNING' : '', reading });
-    }).join('')}</svg>`;
-    tp.querySelector('.verdict').innerHTML = `Burning: <b>${[...truthSet].join(', ') || 'nothing'}</b>. Chip under each space is what the sensor there reported this tick: <span style="color:var(--ok)">honest</span>, <span style="color:var(--uncertain)">off by 30°+</span>, <span style="color:var(--stale)">stale timestamp</span>.`;
+      return cell(id, T, { state: tr.burning ? 'burning' : '', tag: tr.burning ? 'BURNING' : out ? 'BURNED OUT' : '', tagColor: out ? '#ff8a5c' : undefined, reading, fuel: tr.fuel });
+    }).join('')}${edgeLabels()}</svg>`;
+    const burnedOut = ids.filter(id => !rec.truth[id].burning && rec.truth[id].fuel != null && rec.truth[id].fuel <= 0);
+    tp.querySelector('.verdict').innerHTML = `Burning: <b>${[...truthSet].join(', ') || 'nothing'}</b>.${burnedOut.length ? ` <b>${burnedOut.join(', ')}</b> ran out of fuel: still hot, no longer burning.` : ''} Chip = what that space’s sensor reported: <span style="color:var(--ok)">honest</span>, <span style="color:var(--uncertain)">off by 30°+</span>, <span style="color:var(--stale)">stale timestamp</span>.`;
     // brains
     for (const name of ['ours', 'kalman']) {
       const b = rec.brains[name], el = document.getElementById('p-' + name), v = verdictFor(b, truthSet);
       const bs = new Set(b.burningSet), amb = new Set([].concat(...b.ambiguous)), sus = new Set(b.suspectSensors);
       const conf = el.querySelector('.conf'); conf.className = 'conf ' + (b.confidence >= 0.9 ? 'hi' : b.confidence < 0.6 ? 'lo' : '');
       conf.querySelector('i').style.width = (b.confidence * 100).toFixed(0) + '%'; conf.querySelector('.confv').textContent = b.confidence.toFixed(2);
-      el.querySelector('.svgwrap').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${name} belief">${edgesSvg()}${ids.map(id => {
+      el.querySelector('.svgwrap').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${name} belief">${edgeLines()}${ids.map(id => {
         const T = b.estimate[id] ?? ambient, r = rb[id], truly = truthSet.has(id);
         const reading = r ? { sensorId: r.sensorId, temp: r.temp, t: r.t, stale: false, lying: false } : { missing: true };
-        let state = bs.has(id) ? 'believed' : amb.has(id) ? 'ambiguous' : '', tag = bs.has(id) ? 'BURNING' : amb.has(id) ? 'CAN’T RULE OUT' : '', verdict = '', tagColor;
+        let state = bs.has(id) ? 'believed' : amb.has(id) ? 'ambiguous' : '', tag = bs.has(id) ? 'BURNING' : amb.has(id) ? 'MAYBE' : '', verdict = '', tagColor;
         if (bs.has(id) && !truly) { verdict = 'wrong'; tag = 'WRONG'; tagColor = '#ff5c5c'; }
         else if (truly && !bs.has(id) && !amb.has(id)) { verdict = 'wrong'; tag = 'MISSED'; tagColor = '#ff5c5c'; }
         return cell(id, T, { state, tag, tagColor, verdict, reading, suspect: r && sus.has(r.sensorId) });
-      }).join('')}</svg>`;
+      }).join('')}${edgeLabels()}</svg>`;
       const parts = [];
       parts.push(`Burning: <b>${b.burningSet.join(', ') || 'nothing'}</b>`);
-      if (b.ambiguous.length) parts.push(`can’t rule out <b>${b.ambiguous.map(g => g.join('+')).join(' | ')}</b>`);
+      if (b.ambiguous.length) parts.push(`maybe <b>${b.ambiguous.map(g => g.join('+')).join(' | ')}</b> (several fire patterns fit the readings)`);
       if (b.suspectSensors.length) parts.push(`distrusts <b>${b.suspectSensors.join(', ')}</b>`);
       let line = parts.join('; ') + '. ';
       if (v.exact) line += `<span style="color:var(--ok)">Matches truth.</span>`;
       else if (v.state === 'wrong') line += `<span style="color:var(--wrong)">Wrong, and ${(b.confidence * 100).toFixed(0)}% sure of it.</span>`;
-      else if (v.covered) line += `<span style="color:var(--uncertain)">Hedging: truth is inside what it can’t rule out.</span>`;
+      else if (v.covered) line += `<span style="color:var(--uncertain)">Not committing, but the real fire is inside its maybe set.</span>`;
       else line += `<span style="color:var(--uncertain)">Wrong, but says so (conf ${b.confidence.toFixed(2)}).</span>`;
       el.querySelector('.verdict').innerHTML = line;
     }
