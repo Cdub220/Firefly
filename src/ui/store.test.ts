@@ -181,6 +181,17 @@ describe('store', () => {
     }
   });
 
+  it('a good run after a failure clears the error, and any run resets playing', () => {
+    useSim.setState({ ticks: 0 });
+    useSim.getState().run();
+    expect(useSim.getState().error).not.toBeNull();
+    useSim.setState({ ticks: 20, playing: true });
+    useSim.getState().run();
+    expect(useSim.getState().error).toBeNull();
+    expect(useSim.getState().playing).toBe(false);
+    expect(useSim.getState().trace).toHaveLength(20);
+  });
+
   it('ticks below 1 is an error string, not an empty trace', () => {
     useSim.setState({ ticks: 0 });
     useSim.getState().run();
@@ -272,6 +283,19 @@ describe('persistence', () => {
     mem.set('firefly.sim.v2', JSON.stringify({ corruption: 5 }));
     s = (await freshStore()).getState();
     expect(s.corruption.mode).toBe('freeze');
+  });
+
+  it('a target saved on another plan is sanitized at module load, before any run', async () => {
+    mem.set('firefly.sim.v2', JSON.stringify({ planName: 'demo-6', corruption: { mode: 'freeze', k: 1, target: ['L1-B3'] } }));
+    const s = (await freshStore()).getState();
+    expect(s.corruption.target).toEqual(['S3']);
+    // A target array with a non-string element is dropped entirely (any sensor), not crashed on.
+    mem.set('firefly.sim.v2', JSON.stringify({ planName: 'demo-6', corruption: { mode: 'freeze', target: ['L1-B3', 42] } }));
+    vi.resetModules();
+    expect((await freshStore()).getState().corruption.target).toBeUndefined();
+    mem.set('firefly.sim.v2', 'null');
+    vi.resetModules();
+    expect((await freshStore()).getState().planName).toBe('demo-6');
   });
 
   it('a storage that throws does not stop a run', async () => {
