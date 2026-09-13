@@ -20,6 +20,7 @@
 import { makeRng, type Rng } from '../shared/rng';
 import { edgeMap } from '../shared/plan';
 import { candidates, hotSpaces, predict, score } from './hypotheses';
+import { fuelTicks, IGNITE } from './physics';
 import { checkConsistency, updateHistory, type SensorHistory } from './consistency';
 import type { Belief, Brain, BrainConfig, Command, Observation, SpaceId } from '../shared/types';
 
@@ -47,6 +48,17 @@ const WARM_SEED_MARGIN_C = 30; // a reading this far above ambient seeds candida
 // vanish in one tick.
 const STABLE_TICKS_FOR_CERTAINTY = 5;
 const VOLATILE_CONF_CAP = 0.7;
+// Fresh honest hot readings count. A space whose TRUSTED sensor has read above the
+// structure's ignition temperature for this many consecutive ticks is burning by the
+// physics (a space above ignition with fuel sustains itself) and is forced into every
+// candidate: the hypothesis set may not omit it. A suspect sensor earns no such rule.
+// "With fuel" is the other half: a burned-out space stays above ignition for as long as
+// its neighbors burn, so the brain keeps an assumed fuel budget per believed-burning
+// space and stops forcing it FUEL_MARGIN_TICKS before that budget runs out (it may have
+// started counting a few ticks after the real ignition). From then on the hypothesis
+// scoring decides, as it did before this rule existed.
+const FORCED_STREAK_TICKS = 3;
+const FUEL_MARGIN_TICKS = 5;
 
 export function createBrain(config: BrainConfig): Brain {
   let rng: Rng = makeRng(config.seed).fork('brain');
@@ -66,6 +78,8 @@ export function createBrain(config: BrainConfig): Brain {
   let prevBurning = new Set<SpaceId>();
   let stableTicks = 0; // consecutive ticks with an uncontested, unchanged burning set
   let lastBurningKey = '';
+  let hotStreak = new Map<SpaceId, number>(); // consecutive ticks a space's trusted reading was above ignition
+  let burnTicks = new Map<SpaceId, number>(); // ticks a space has been in the best hypothesis (fuel does not regenerate)
   const init = (): void => {
     history = new Map();
     prevEstimate = {};
@@ -74,6 +88,8 @@ export function createBrain(config: BrainConfig): Brain {
     prevBurning = new Set();
     stableTicks = 0;
     lastBurningKey = '';
+    hotStreak = new Map();
+    burnTicks = new Map();
   };
   init();
 
@@ -132,7 +148,19 @@ export function createBrain(config: BrainConfig): Brain {
       // the hypothesis that needs no liars (full), then the smaller claim.
       const from = estHistory[0] ?? prevEstimate;
       const steps = Math.max(1, estHistory.length);
-      const sets = candidates(config.plan, prevBurning, hotSeeds);
+      // Forced spaces: trusted reading above ignition for FORCED_STREAK_TICKS in a row.
+      // A tick without a trusted above-ignition reading (sensor suspect, dead, or cool)
+      // breaks the streak.
+      const hotNow = new Set(trusted.filter((r) => r.temp > IGNITE).map((r) => r.spaceId));
+      for (const id of spaceIds) hotStreak.set(id, hotNow.has(id) ? (hotStreak.get(id) ?? 0) + 1 : 0);
+      const forced = new Set(
+        spaceIds.filter(
+          (id) =>
+            (hotStreak.get(id) ?? 0) >= FORCED_STREAK_TICKS &&
+            (burnTicks.get(id) ?? 0) < fuelTicks(config.plan, id) - FUEL_MARGIN_TICKS,
+        ),
+      );
+      const sets = candidates(config.plan, prevBurning, hotSeeds, forced);
       const scored = sets
         .map((set) => ({ set, ...score(config.plan, set, trusted, from, k, steps) }))
         .sort((a, b) => a.s - b.s || a.full - b.full || a.set.size - b.set.size);
@@ -191,12 +219,36 @@ export function createBrain(config: BrainConfig): Brain {
         estimate[id] = d ? d.sum / d.n : predicted[id]!;
       }
 
+      // Graded belief: weight each kept hypothesis by exp(-(score - best) / tolerance),
+      // so one at the edge of tolerance weighs e^-1 of the best, and P(burning) of a
+      // space is the weighted fraction of kept hypotheses containing it. Every space gets
+      // a value; a space in no hypothesis is 0. A distrusted sensor lowers certainty about
+      // ITS OWN space only, so the consistency penalty applies per space, not globally.
+      const weights = kept.map((x) => Math.exp(-(x.s - best.s) / tolerance));
+      const weightSum = weights.reduce((a, b) => a + b, 0);
+      const suspectIds = new Set(suspect.map((s) => s.sensorId));
+      const suspectsInSpace = new Map<SpaceId, number>();
+      for (const r of sane.readings) {
+        if (suspectIds.has(r.sensorId)) suspectsInSpace.set(r.spaceId, (suspectsInSpace.get(r.spaceId) ?? 0) + 1);
+      }
+      const probability: Record<SpaceId, number> = {};
+      for (const id of spaceIds) {
+        let p = 0;
+        kept.forEach((x, i) => {
+          if (x.set.has(id)) p += weights[i]!;
+        });
+        p = weightSum > 0 ? p / weightSum : 0;
+        p *= Math.pow(SUSPECT_PENALTY, suspectsInSpace.get(id) ?? 0);
+        probability[id] = Math.min(1, Math.max(0, p));
+      }
+
       // Grow next tick's candidates from the best explanation, not the (possibly
       // empty-intersection) reported set: the candidate generator needs a fire to grow.
       prevEstimate = estimate;
       estHistory.push(estimate);
       while (estHistory.length > ROLLOUT) estHistory.shift();
       prevBurning = new Set(best.set);
+      for (const id of best.set) burnTicks.set(id, (burnTicks.get(id) ?? 0) + 1);
 
       const belief: Belief = {
         estimate,
@@ -204,6 +256,7 @@ export function createBrain(config: BrainConfig): Brain {
         ambiguous,
         suspectSensors: suspect.map((s) => s.sensorId).sort(),
         confidence,
+        probability,
       };
       return { belief, commands: [] };
     },

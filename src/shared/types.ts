@@ -121,6 +121,12 @@ export type Belief = {
   ambiguous: SpaceId[][]; // groups the data cannot separate
   suspectSensors: SensorId[]; // sensors the brain believes are lying
   confidence: number; // 0..1
+  /**
+   * Per-space P(burning), 0..1, every space present. Graded ambiguity: a space in
+   * burningSet is near 1, a MAYBE space is somewhere between, a cold space is 0. Not a
+   * distribution: the values do not sum to 1. (Additive, Dean, CP2 prompt 4.)
+   */
+  probability: Record<SpaceId, number>;
 };
 
 export type Command = { droneId: DroneId; goTo: SpaceId; task: string };

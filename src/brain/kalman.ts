@@ -79,12 +79,19 @@ export function createKalmanBrain(config: BrainConfig): Brain {
       });
       const confidence =
         spaceIds.reduce((acc, _id, i) => acc + (1 - Math.min(1, Math.sqrt(Math.max(0, P[i]![i]!)) / CONF_STDDEV_SCALE_C)), 0) / n;
+      // No per-space doubt: a space is burning (1) or not (0), scaled by the one scalar
+      // confidence the filter has. That is the point of the baseline.
+      const probability: Record<SpaceId, number> = {};
+      spaceIds.forEach((id, i) => {
+        probability[id] = x[i]! > BURN_THRESHOLD_C ? confidence : 0;
+      });
       const belief: Belief = {
         estimate,
         burningSet: spaceIds.filter((_id, i) => x[i]! > BURN_THRESHOLD_C),
         ambiguous: [],
         suspectSensors: [],
         confidence,
+        probability,
       };
       return { belief, commands: [] };
     },

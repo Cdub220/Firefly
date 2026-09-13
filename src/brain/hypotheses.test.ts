@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { candidates, hotSpaces, predict, score } from './hypotheses';
-import { forward, steadyState } from './physics';
+import { forward, IGNITE, steadyState } from './physics';
 import { createBrain } from './index';
 import type { Observation, Reading, SpaceId, StructurePlan } from '../shared/types';
 
@@ -39,6 +39,25 @@ const reading = (sensorId: string, spaceId: string, temp: number, t: number): Re
 
 const ambient = (plan: StructurePlan): Record<SpaceId, number> =>
   Object.fromEntries(plan.spaces.map((s) => [s.id, plan.ambient]));
+
+/**
+ * World-consistent rollout: `burning` spaces burn, and any space at or above ignition
+ * next to a burning one ignites (the world's rule). out[i] is the temps read at tick i+1.
+ */
+const worldStream = (plan: StructurePlan, start: Record<SpaceId, number>, burning: Set<SpaceId>, ticks: number): Record<SpaceId, number>[] => {
+  let temps = start;
+  const fire = new Set(burning);
+  const out: Record<SpaceId, number>[] = [];
+  for (let t = 0; t < ticks; t++) {
+    out.push(temps);
+    for (const e of plan.edges) {
+      if (fire.has(e.a) && !fire.has(e.b) && temps[e.b]! >= IGNITE) fire.add(e.b);
+      else if (fire.has(e.b) && !fire.has(e.a) && temps[e.a]! >= IGNITE) fire.add(e.a);
+    }
+    temps = forward(plan, temps, fire);
+  }
+  return out;
+};
 
 describe('candidates', () => {
   it('covers stay, grow-by-one, shrink-by-one, and trusted-hot singles, deduped', () => {
@@ -107,54 +126,60 @@ describe('score', () => {
 });
 
 describe('estimator with hypothesis sets (A-B-C line, fire in B)', () => {
-  const steady = steadyState(line3, new Set(['B']));
   const obs = (t: number, readings: Reading[]): Observation => ({ t, readings, drones: [] });
 
   it("B's sensor flashed over: burningSet still contains B, confidence < 1 on symmetric readings", () => {
     const brain = createBrain({ plan: line3, seed: 42 }); // default k=1: one sensor may lie
+    // B burns from 450; A and C warm symmetrically through identical doors. Five ticks:
+    // long enough for B's leakage to be unmistakable, short enough that A and C have not
+    // reached ignition themselves (a 700C space next to a fire is burning, not "warm").
+    const temps = worldStream(line3, { A: 20, B: 450, C: 20 }, new Set(['B']), 5);
     let out!: ReturnType<typeof brain.step>;
-    for (let t = 1; t <= 6; t++) {
+    for (let t = 1; t <= 5; t++) {
+      const T = temps[t - 1]!;
+      expect(T['A']).toBeLessThan(IGNITE);
       // Only A and C report, symmetrically; B is silent (flashed over).
-      out = brain.step(obs(t, [reading('FA', 'A', steady['A']!, t), reading('FC', 'C', steady['A']!, t)]));
+      out = brain.step(obs(t, [reading('FA', 'A', T['A']!, t), reading('FC', 'C', T['A']!, t)]));
     }
     expect(out.belief.burningSet).toContain('B');
     expect(out.belief.confidence).toBeLessThan(1);
     expect(out.belief.ambiguous.length).toBeGreaterThan(0); // the doubt is visible, not hidden
   });
 
-  it('a trusted 450C reading at B collapses the set to one hypothesis, confidence > 0.9', () => {
+  it('trusted readings everywhere collapse the set to one hypothesis, confidence > 0.9', () => {
     // k=0: all three sensors trusted to be honest, so the data can fully separate.
     // 12 ticks: certainty is earned by stability, not granted on the collapse tick.
+    // The whole line burns at its steady state: the only fire pattern on this plan that
+    // holds every space above ignition for 12 ticks (a passively heated neighbor of a
+    // fire ignites; the world would never leave it "not burning" at 700C).
+    const all = steadyState(line3, new Set(['A', 'B', 'C']));
     const brain = createBrain({ plan: line3, seed: 42, k: 0 });
     let out!: ReturnType<typeof brain.step>;
     for (let t = 1; t <= 12; t++) {
       out = brain.step(
-        obs(t, [
-          reading('FA', 'A', steady['A']!, t),
-          reading('FB', 'B', steady['B']!, t),
-          reading('FC', 'C', steady['C']!, t),
-        ]),
+        obs(t, [reading('FA', 'A', all['A']!, t), reading('FB', 'B', all['B']!, t), reading('FC', 'C', all['C']!, t)]),
       );
     }
-    expect(out.belief.burningSet).toEqual(['B']);
+    expect(out.belief.burningSet).toEqual(['A', 'B', 'C']);
     expect(out.belief.ambiguous).toEqual([]);
     expect(out.belief.confidence).toBeGreaterThan(0.9);
   });
 
   it('B frozen at 22 while A and C rise: B suspect, and physics puts B back in burningSet within 10 ticks', () => {
     const brain = createBrain({ plan: line3, seed: 42 });
-    // Physics-consistent world: B ignites and burns; its sensor lies flat at ambient.
-    let temps: Record<SpaceId, number> = { A: 20, B: 450, C: 20 };
+    // World-consistent: B ignites and burns, A and C warm then ignite in their turn;
+    // B's sensor lies flat at ambient the whole time.
+    const temps = worldStream(line3, { A: 20, B: 450, C: 20 }, new Set(['B']), 10);
     let out!: ReturnType<typeof brain.step>;
     for (let t = 1; t <= 10; t++) {
+      const T = temps[t - 1]!;
       out = brain.step(
         obs(t, [
-          reading('FA', 'A', temps['A']!, t),
+          reading('FA', 'A', T['A']!, t),
           reading('FB', 'B', 22, t), // frozen at ambient, current timestamp
-          reading('FC', 'C', temps['C']!, t),
+          reading('FC', 'C', T['C']!, t),
         ]),
       );
-      temps = forward(line3, temps, new Set(['B']));
     }
     expect(out.belief.suspectSensors).toEqual(['FB']);
     expect(out.belief.burningSet).toContain('B');

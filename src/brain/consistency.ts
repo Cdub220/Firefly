@@ -5,7 +5,7 @@
  * the earlier rules.
  */
 import { edgeMap } from '../shared/plan';
-import { maxDrop, maxRise, SIGMA_C } from './physics';
+import { FLAME_TEMP, maxDrop, maxRise, SIGMA_C } from './physics';
 import type { Observation, Reading, SensorId, SpaceId, StructurePlan } from '../shared/types';
 
 export type Reason =
@@ -100,11 +100,28 @@ export function checkConsistency(
   // 3. impossible-rise: hotter than physics allows from where we last believed it was.
   // Skipped in the first ticks for the same reason as no-heat-path: the estimator starts
   // from ambient, and a fire that predates it would read as an impossible jump.
+  //
+  // The bound is computed from the neighbors' temperatures, and a neighbor with no
+  // trusted reading this tick is only an ESTIMATE: a space whose sensor died while it
+  // burns is routinely hotter than the physics rollout says. A rise cannot be called
+  // impossible on the strength of a neighbor the brain cannot see, so such a neighbor is
+  // allowed to be anywhere up to flame temperature for the rise bound (and down to
+  // ambient for the drop bound). Only warm unsensed spaces get the allowance; an
+  // unsensed space the physics puts at ambient with cold surroundings is not a hidden fire.
+  const sensedNow = new Set(trusted.map((r) => r.spaceId));
+  const hiBound: Record<SpaceId, number> = {};
+  const loBound: Record<SpaceId, number> = {};
+  for (const s of plan.spaces) {
+    const est = prevEstimate[s.id] ?? plan.ambient;
+    const unseenWarm = !sensedNow.has(s.id) && est > PATH_WARM_C;
+    hiBound[s.id] = unseenWarm ? Math.max(est, FLAME_TEMP) : est;
+    loBound[s.id] = unseenWarm ? Math.min(est, plan.ambient) : est;
+  }
   if (obs.t > NO_PATH_GRACE_TICKS) {
     drop(
       new Set(
         trusted
-          .filter((r) => r.temp - (prevEstimate[r.spaceId] ?? plan.ambient) > maxRise(plan, r.spaceId, prevEstimate) + 3 * SIGMA_C)
+          .filter((r) => r.temp - (prevEstimate[r.spaceId] ?? plan.ambient) > maxRise(plan, r.spaceId, hiBound) + 3 * SIGMA_C)
           .map((r) => r.sensorId),
       ),
       'impossible-rise',
@@ -118,7 +135,7 @@ export function checkConsistency(
   drop(
     new Set(
       trusted
-        .filter((r) => (prevEstimate[r.spaceId] ?? plan.ambient) - r.temp > maxDrop(plan, r.spaceId, prevEstimate) + 3 * SIGMA_C)
+        .filter((r) => (prevEstimate[r.spaceId] ?? plan.ambient) - r.temp > maxDrop(plan, r.spaceId, loBound) + 3 * SIGMA_C)
         .map((r) => r.sensorId),
     ),
     'impossible-drop',
