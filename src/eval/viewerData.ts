@@ -4,6 +4,9 @@
  */
 import type { TickRecord } from '../loop';
 import type { Belief, CorruptionConfig, Edge, FixedSensor, SpaceId, StructurePlan } from '../shared/types';
+import { layoutPlan, type Layout } from './layout';
+
+export type { Layout } from './layout';
 
 export type ViewerBelief = {
   estimate: Record<SpaceId, number>;
@@ -21,7 +24,9 @@ export type ViewerTick = {
   brains: Record<string, ViewerBelief>;
 };
 export type ViewerData = {
-  plan: { name: string; spaces: Array<{ id: SpaceId }>; edges: Edge[]; sensors: FixedSensor[] };
+  plan: { name: string; spaces: Array<{ id: SpaceId; level: number }>; edges: Edge[]; sensors: FixedSensor[] };
+  /** Positions and bands, computed once here so the live view and the exported HTML agree. */
+  layout: Layout;
   ambient: number;
   seed: number;
   corruption: Omit<CorruptionConfig, 'seed'>;
@@ -54,7 +59,8 @@ export function buildViewerData(
   const first = traces[names[0]!]!;
   const onset = cfg.corruption.mode === 'none' ? null : (cfg.corruption.onset ?? 5);
   return {
-    plan: { name: plan.name, spaces: plan.spaces.map((s) => ({ id: s.id })), edges: plan.edges, sensors: plan.sensors },
+    plan: { name: plan.name, spaces: plan.spaces.map((s) => ({ id: s.id, level: s.level })), edges: plan.edges, sensors: plan.sensors },
+    layout: layoutPlan(plan),
     ambient: plan.ambient,
     seed: cfg.seed,
     corruption: cfg.corruption,
