@@ -75,6 +75,19 @@ describe('store', () => {
     expect(useSim.getState().corruption).toEqual({ mode: 'blind', k: 3, onset: 9, target: ['S3'] });
   });
 
+  it('setCorruption removes a key set to undefined, and an empty target (which would mean "no sensor")', () => {
+    useSim.getState().setCorruption({ k: undefined });
+    expect(useSim.getState().corruption).toEqual({ mode: 'freeze', onset: 5, target: ['S3'] });
+    expect('k' in useSim.getState().corruption).toBe(false);
+    useSim.getState().setCorruption({ target: [] });
+    expect('target' in useSim.getState().corruption).toBe(false);
+    // And with no target, a flashover run actually kills sensors.
+    useSim.getState().setCorruption({ mode: 'flashover', onset: 3, flashoverTemp: 300 });
+    useSim.getState().run();
+    const last = useSim.getState().trace!.at(-1)!;
+    expect(last.obs.readings.filter((r) => r.source === 'fixed').length).toBeLessThan(6);
+  });
+
   it('a freeze with k=1 reaches the corruptor: some reading lags obs.t after onset', () => {
     useSim.getState().run();
     const trace = useSim.getState().traces['ours']!;

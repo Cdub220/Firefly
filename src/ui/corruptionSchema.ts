@@ -54,7 +54,3 @@ const _exhaustive: Record<CorruptionKey, true> = {
   ambient: true,
 };
 export const CORRUPTION_KEYS: readonly CorruptionKey[] = Object.keys(_exhaustive) as CorruptionKey[];
-
-export function schemaFor<K extends CorruptionKey>(key: K): SchemaField | undefined {
-  return CORRUPTION_SCHEMA.find((f) => f.key === key);
-}

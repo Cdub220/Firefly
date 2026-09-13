@@ -6,7 +6,7 @@
 import { DEFAULT_CORRUPTION } from '../../corruption';
 import type { CorruptionMode, SpaceId } from '../../shared/types';
 import { CORRUPTION_SCHEMA, type NumberField, type SchemaField } from '../corruptionSchema';
-import { useSim, type Corr } from '../store';
+import { useSim, type Corr, type CorrPatch } from '../store';
 import { presetsFor, sensorReadout } from './presets';
 
 const DEFAULTS = DEFAULT_CORRUPTION as Record<string, number>;
@@ -15,19 +15,20 @@ function NumberKnob({ f, value, onChange }: { f: NumberField; value: number | un
   const dflt = DEFAULTS[f.key];
   const effective = value ?? dflt ?? f.min;
   const id = `chaos-${f.key}`;
+  const clamp = (v: number): number => (Number.isFinite(v) ? Math.max(f.min, Math.min(f.max, v)) : effective);
   return (
     <label htmlFor={id} title={f.help}>
       <span className="knob-label">{f.label}{f.unit ? ` (${f.unit})` : ''}{value === undefined && <em> default {dflt}</em>}</span>
       <span className="row">
-        <input type="range" min={f.min} max={f.max} step={f.step} value={effective} aria-label={`${f.label} slider`} onChange={(e) => onChange(Number(e.target.value))} />
-        <input id={id} type="number" min={f.min} max={f.max} step={f.step} value={value ?? ''} placeholder={String(dflt ?? '')} onChange={(e) => onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
+        <input type="range" min={f.min} max={f.max} step={f.step} value={effective} aria-label={`${f.label} slider`} onChange={(e) => onChange(clamp(Number(e.target.value)))} />
+        <input id={id} type="number" min={f.min} max={f.max} step={f.step} value={value ?? ''} placeholder={String(dflt ?? '')} onChange={(e) => onChange(e.target.value === '' ? undefined : clamp(Number(e.target.value)))} />
         {value !== undefined && <button type="button" className="tiny" aria-label={`reset ${f.label}`} title="use the default" onClick={() => onChange(undefined)}>×</button>}
       </span>
     </label>
   );
 }
 
-function Knob({ f, corr, spaceIds, set }: { f: SchemaField; corr: Corr; spaceIds: SpaceId[]; set: (patch: Partial<Corr>) => void }) {
+function Knob({ f, corr, spaceIds, set }: { f: SchemaField; corr: Corr; spaceIds: SpaceId[]; set: (patch: CorrPatch) => void }) {
   switch (f.kind) {
     case 'enum':
       return (
@@ -41,13 +42,13 @@ function Knob({ f, corr, spaceIds, set }: { f: SchemaField; corr: Corr; spaceIds
     case 'int':
     case 'number': {
       const value = corr[f.key];
-      return <NumberKnob f={f} value={value} onChange={(v) => set(v === undefined ? { [f.key]: undefined } : { [f.key]: v })} />;
+      return <NumberKnob f={f} value={value} onChange={(v) => set({ [f.key]: v })} />;
     }
     case 'spaces': {
       const target = corr.target ?? [];
       return (
         <div title={f.help}>
-          <span className="knob-label">{f.label}{target.length === 0 && <em> any</em>}</span>
+          <span className="knob-label">{f.label}{target.length === 0 && <em> any (none selected)</em>}</span>
           <span className="chips">
             {spaceIds.map((id) => {
               const on = target.includes(id);
@@ -61,7 +62,7 @@ function Knob({ f, corr, spaceIds, set }: { f: SchemaField; corr: Corr; spaceIds
       const v = Boolean((corr as Record<string, unknown>)[f.key]);
       return (
         <label htmlFor={`chaos-${f.key}`} title={f.help} className="row">
-          <input id={`chaos-${f.key}`} type="checkbox" checked={v} onChange={(e) => set({ [f.key]: e.target.checked } as Partial<Corr>)} />
+          <input id={`chaos-${f.key}`} type="checkbox" checked={v} onChange={(e) => set({ [f.key]: e.target.checked } as CorrPatch)} />
           <span className="knob-label">{f.label}</span>
         </label>
       );
@@ -76,15 +77,8 @@ export function ChaosPanel() {
   const rec = s.trace?.[s.cursor];
   const readout = sensorReadout(s.plan, rec?.obs);
 
-  const set = (patch: Partial<Corr>) => {
-    // An explicit undefined means "back to the default": drop the key rather than store undefined.
-    const next: Record<string, unknown> = { ...s.corruption };
-    for (const [k, v] of Object.entries(patch)) {
-      if (v === undefined) delete next[k];
-      else next[k] = v;
-    }
-    useSim.setState({ corruption: next as Corr });
-  };
+  // The store drops undefined keys and empty targets; see setCorruption.
+  const set = (patch: CorrPatch) => s.setCorruption(patch);
 
   return (
     <section className="panel-box" aria-label="chaos">

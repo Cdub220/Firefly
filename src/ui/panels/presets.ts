@@ -41,11 +41,13 @@ export function presetsFor(plan: StructurePlan, ignition: SpaceId, trace: TickRe
   const onset = current.onset ?? 5;
   const keep = { onset, ...(current.flashoverTemp !== undefined ? { flashoverTemp: current.flashoverTemp } : {}), ...(current.saturateAt !== undefined ? { saturateAt: current.saturateAt } : {}) };
   const hot = hottestNeighbor(plan, ignition, trace, onset);
+  // No `target` key at all means "any sensor". To the corruptor an empty array means "no
+  // sensor qualifies", which would make a preset do nothing, so it is never emitted.
   return [
     { id: 'freeze-ignition', label: 'freeze the ignition sensor', help: `Sensor in ${ignition} keeps reporting its last value.`, corruption: { ...keep, mode: 'freeze', k: 1, target: [ignition] } },
-    { id: 'blind-neighbor', label: 'blind the hottest neighbor', help: hot ? `Sensor in ${hot} reads room temperature.` : 'No neighbour to blind.', corruption: { ...keep, mode: 'blind', k: 1, target: hot ? [hot] : [] } },
-    { id: 'flashover', label: 'flashover', help: 'Every sensor in any space past the flashover temperature dies.', corruption: { ...keep, mode: 'flashover', k: 1, target: [] } },
-    { id: 'everything', label: 'everything', help: 'Freeze, blind, saturate, flashover and comms loss, three at a time, anywhere.', corruption: { ...keep, mode: 'mixed', k: 3, target: [] } },
+    { id: 'blind-neighbor', label: 'blind the hottest neighbor', help: hot ? `Sensor in ${hot} reads room temperature.` : 'No neighbour: blinds any one sensor.', corruption: { ...keep, mode: 'blind', k: 1, ...(hot ? { target: [hot] } : {}) } },
+    { id: 'flashover', label: 'flashover', help: 'Every sensor in any space past the flashover temperature dies.', corruption: { ...keep, mode: 'flashover', k: 1 } },
+    { id: 'everything', label: 'everything', help: 'Freeze, blind, saturate, flashover and comms loss, three at a time, anywhere.', corruption: { ...keep, mode: 'mixed', k: 3 } },
   ];
 }
 

@@ -27,7 +27,9 @@ describe('corruption schema', () => {
         expect(f.step).toBeGreaterThan(0);
       }
       if (f.kind === 'enum') {
-        expect([...f.values]).toEqual([...MODES]);
+        // labels is Record<CorruptionMode, string>, which tsc keeps complete; values must match it.
+        expect([...f.values].sort()).toEqual(Object.keys(f.labels).sort());
+        expect([...MODES].sort()).toEqual(Object.keys(f.labels).sort());
         for (const m of f.values) expect(f.labels[m]).toBeTruthy();
       }
     }

@@ -65,6 +65,7 @@ export function SplitView() {
           <span className="chips">
             {spaceIds.map((id) => {
               const on = target.includes(id);
+              // Deselecting the last chip removes `target` (any sensor); the store handles the empty case.
               return <button key={id} type="button" aria-pressed={on} onClick={() => s.setCorruption({ target: on ? target.filter((x) => x !== id) : [...target, id] })}>{id}</button>;
             })}
           </span>
