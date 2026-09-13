@@ -19,20 +19,41 @@ import { buildViewerData, type ViewerData } from '../eval/viewerData';
 import { edgeMap } from '../shared/plan';
 import { isPlanName, loadPlan, PLAN_NAMES } from '../shared/structures';
 import type { CorruptionConfig, SpaceId, StructurePlan } from '../shared/types';
+import { parseDemoTrace, type DemoTrace } from './demoTrace';
 
 export type Corr = Omit<CorruptionConfig, 'seed'>;
 /** A partial where undefined is allowed and means "remove this key". */
 export type CorrPatch = { [K in keyof Corr]?: Corr[K] | undefined };
 export type Brains = 'ours' | 'both';
 
-export type Beat = 'clean' | 'freeze' | 'blind' | 'flashover' | 'building';
-export const BEATS: ReadonlyArray<{ key: Beat; label: string; hotkey: string }> = [
-  { key: 'clean', label: 'Clean', hotkey: '1' },
-  { key: 'freeze', label: "Freeze the fire's sensor", hotkey: '2' },
-  { key: 'blind', label: 'Blind the neighbor', hotkey: '3' },
-  { key: 'flashover', label: 'Flashover', hotkey: '4' },
-  { key: 'building', label: 'Different building', hotkey: '5' },
+export type View = 'split' | 'scene' | 'compare' | 'h2h';
+export const VIEWS: ReadonlyArray<{ key: View; label: string }> = [
+  { key: 'split', label: 'Split view' },
+  { key: 'scene', label: '3D scene' },
+  { key: 'compare', label: '3D compare' },
+  { key: 'h2h', label: 'Head to head' },
 ];
+export const isView = (v: unknown): v is View => VIEWS.some((x) => x.key === v);
+
+/**
+ * The demo script: five beats in pitch order on keys 1-5, so nobody types on stage.
+ * `blind` (key 6) is the CP3 beat, kept for the recorded videos and `?beat=blind`.
+ */
+export type Beat = 'clean' | 'freeze' | 'flashover' | 'compare' | 'building' | 'blind';
+export const BEATS: ReadonlyArray<{ key: Beat; label: string; hotkey: string }> = [
+  { key: 'clean', label: 'Clean run', hotkey: '1' },
+  { key: 'freeze', label: "Freeze the fire's sensor", hotkey: '2' },
+  { key: 'flashover', label: 'Flashover', hotkey: '3' },
+  { key: 'compare', label: 'Head to head', hotkey: '4' },
+  { key: 'building', label: 'Different building', hotkey: '5' },
+  { key: 'blind', label: 'Blind the neighbor', hotkey: '6' },
+];
+/**
+ * Which plan files the script opens and closes on. Data, not logic: the beats work on
+ * any plan, and fall back to the current plan (clean) or the next one (building) when a
+ * name is not in data/structures.
+ */
+export const SCRIPT_PLANS = { first: 'vessel-3x8', last: 'tower-5x4' } as const;
 const BEAT_ONSET = 5;
 const NEIGHBOR_PROBE_TICKS = 10; // "hottest neighbor" is read off a clean run at this tick
 
@@ -97,8 +118,20 @@ export type SimState = {
   /** One sentence under the header, set by the last demo beat. */
   caption: string;
   beat: Beat | null;
+  /** Which page is showing. State, not App-local, so a beat (and the `c` key) can switch it. */
+  view: View;
+  /**
+   * Backup for the stage: a recorded demo trace (results/demo-trace.json, `npm run
+   * export:trace`). While loaded, runBeat() replays the recorded run for that beat instead
+   * of simulating. Manual runs still simulate.
+   */
+  replay: DemoTrace | null;
   run: () => void;
   runBeat: (beat: Beat) => void;
+  setView: (view: View) => void;
+  /** Parse and hold a demo trace; returns the reason it was rejected, or null. */
+  loadReplay: (json: unknown) => string | null;
+  clearReplay: () => void;
   /** run(), then the same scenario again with kalman driving; fills `compare`. */
   runCompare: () => void;
   /**
@@ -194,21 +227,23 @@ export function coerceCorruption(raw: unknown, fallback: Corr): Corr {
   return out;
 }
 
-/** URL presets for filming: ?demo=1 hides the controls, ?plan=<name> picks the structure, ?beat=<key> runs a beat on load, ?t=<tick> scrubs there. */
-export function fromUrl(search?: string): { demo: boolean; beat: Beat | null; t: number | null; plan: string | null } {
+/** URL presets for filming: ?demo=1 hides the controls, ?view=<page>, ?plan=<name> picks the structure, ?beat=<key> runs a beat on load, ?t=<tick> scrubs there. */
+export function fromUrl(search?: string): { demo: boolean; beat: Beat | null; t: number | null; plan: string | null; view: View } {
   try {
     const q = new URLSearchParams(search ?? window.location.search);
     const beat = q.get('beat');
     const t = q.get('t');
     const plan = q.get('plan');
+    const view = q.get('view');
     return {
       demo: q.get('demo') === '1',
       beat: BEATS.some((b) => b.key === beat) ? (beat as Beat) : null,
       t: t !== null && Number.isFinite(Number(t)) ? Number(t) : null,
       plan: plan !== null && isPlanName(plan) ? plan : null,
+      view: isView(view) ? view : 'split',
     };
   } catch {
-    return { demo: false, beat: null, t: null, plan: null };
+    return { demo: false, beat: null, t: null, plan: null, view: 'split' };
   }
 }
 
@@ -241,6 +276,9 @@ export function nextPlanName(current: string): string {
   return nextIn(PLAN_NAMES, current);
 }
 
+/** A script plan name if the file exists, else the fallback. */
+const scriptPlan = (name: string, fallback: string): string => (isPlanName(name) ? name : fallback);
+
 /** Everything a beat sets, as data. Pure; exported for tests. */
 export function beatConfig(
   beat: Beat,
@@ -249,8 +287,20 @@ export function beatConfig(
   const { plan, planName, seed } = cur;
   const ignition = sanitizeIgnition(cur.ignition, plan);
   switch (beat) {
-    case 'clean':
-      return { planName, ignition, corruption: { mode: 'none' }, caption: 'Every sensor is honest. Both brains track the fire; the difference is how each earns its confidence.' };
+    case 'clean': {
+      // The script opens on its first plan; the ignition follows the plan when it changes.
+      const firstName = scriptPlan(SCRIPT_PLANS.first, planName);
+      const first = firstName === planName ? plan : loadPlan(firstName);
+      return {
+        planName: firstName, ignition: firstName === planName ? ignition : sanitizeIgnition(undefined, first), corruption: { mode: 'none' },
+        caption: 'Every sensor is honest. Both brains track the fire; the difference is how each earns its confidence.',
+      };
+    }
+    case 'compare':
+      return {
+        planName, ignition, corruption: cur.corruption,
+        caption: 'Same fire, same broken sensors, each brain now commanding the drones in its own copy of the world. The counter is how many spaces burn; the red one is the Kalman world.',
+      };
     case 'freeze':
       return {
         planName, ignition, corruption: { mode: 'freeze', k: 1, onset: BEAT_ONSET, target: [ignition] },
@@ -269,7 +319,9 @@ export function beatConfig(
         caption: `From tick ${BEAT_ONSET}, every sensor in a space over 500° dies. The hotter the fire, the less the brains can see. One of them says so.`,
       };
     case 'building': {
-      const nextName = nextPlanName(planName);
+      // The script closes on its last plan; from there (or without it) cycle to the next file.
+      const last = scriptPlan(SCRIPT_PLANS.last, planName);
+      const nextName = last === planName ? nextPlanName(planName) : last;
       const next = loadPlan(nextName);
       const nextIgnition = sanitizeIgnition(undefined, next);
       const base: Corr = { ...cur.corruption };
@@ -282,7 +334,7 @@ export function beatConfig(
         planName: nextName, ignition: nextIgnition, corruption,
         caption: same
           ? `Only one structure is loaded (${planName}); the same brains and failure mode run again on it. Nothing here is specific to this building.`
-          : `Same brains, same failure mode (${base.mode}), different structure: ${nextName}. Nothing retrained; the plan is a JSON file.`,
+          : `Same system. Different structure (${nextName}, failure mode ${base.mode}). Nothing retrained; the plan is a JSON file.`,
       };
     }
   }
@@ -377,6 +429,8 @@ export const useSim = create<SimState>((set, get) => {
     demo: fromUrl().demo,
     caption: '',
     beat: null,
+    view: fromUrl().view,
+    replay: null,
 
     run: () => {
       // A manual run is not a beat: the caption would describe a scenario no longer shown.
@@ -384,13 +438,55 @@ export const useSim = create<SimState>((set, get) => {
       execute();
     },
     runBeat: (beat) => {
-      const { planName, plan, ignition, corruption, seed } = get();
+      const { planName, plan, ignition, corruption, seed, view, replay } = get();
       const cfg = beatConfig(beat, { planName, plan, ignition, corruption, seed });
-      set({ planName: cfg.planName, plan: loadPlan(cfg.planName), ignition: cfg.ignition, corruption: cfg.corruption, caption: cfg.caption, beat });
+      // The head to head lives on its own page; every other beat reads best on the split view.
+      const nextView: View = beat === 'compare' ? 'h2h' : view === 'h2h' ? 'split' : view;
+      set({ planName: cfg.planName, plan: loadPlan(cfg.planName), ignition: cfg.ignition, corruption: cfg.corruption, caption: cfg.caption, beat, view: nextView });
+      const recorded = replay?.beats.find((b) => b.beat === beat);
+      if (recorded) {
+        // Stage backup: show the recorded run for this beat instead of simulating.
+        const rplan = loadPlan(recorded.planName);
+        const traces = recorded.traces;
+        const trace = traces[PRIMARY] ?? null;
+        const data = buildViewerData({ ...rplan, ignition: [recorded.ignition] }, traces, { seed: recorded.seed, corruption: recorded.corruption });
+        set({
+          plan: rplan, planName: recorded.planName, ignition: recorded.ignition, corruption: recorded.corruption, seed: recorded.seed, ticks: recorded.ticks, brains: 'both',
+          traces, data, trace, compare: recorded.compare ?? null, closedLoop: recorded.closedLoop, error: null, playing: false,
+          cursor: Math.max(0, Math.min(data.startAt, (trace?.length ?? 1) - 1)),
+        });
+        return;
+      }
+      if (beat === 'compare') {
+        if (get().brains !== 'both') set({ brains: 'both' });
+        executeCompare();
+        // Say what the curves show. With the usual onset both brains lock on before the
+        // sensor dies and both worlds contain; the caption must not promise a gap that is not there.
+        const c = get().compare;
+        if (c) {
+          const peak = (t: TickRecord[]) => Math.max(0, ...t.map((r) => r.truth.spaces.filter((x) => x.burning).length));
+          const ours = peak(c[PRIMARY] ?? []);
+          const others = Object.entries(c).filter(([k]) => k !== PRIMARY).map(([, t]) => peak(t));
+          const worst = Math.max(ours, ...others);
+          const tail = worst > ours
+            ? ` Peak burning: ours ${ours}, the other world ${worst}.`
+            : ` Both worlds contain it this time: the sensor died after both brains had locked on. Showdown (blind from tick 1) is where a wrong belief costs the world.`;
+          set({ caption: cfg.caption + tail });
+        }
+        return;
+      }
       // A beat is always open loop: its caption describes the fire spreading while the
       // brains watch, and a persisted dispatch toggle must not quietly change that.
       execute({ dispatch: false });
     },
+    setView: (view) => set({ view }),
+    loadReplay: (json) => {
+      const parsed = parseDemoTrace(json);
+      if (!parsed.ok) return parsed.why;
+      set({ replay: parsed.trace });
+      return null;
+    },
+    clearReplay: () => set({ replay: null }),
     runCompare: () => {
       if (get().brains !== 'both') set({ brains: 'both' });
       if (get().beat !== null || get().caption !== '') set(clearBeat());

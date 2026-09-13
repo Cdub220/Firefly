@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEMO_PLAN } from '../loop';
 import { loadPlan, PLAN_NAMES } from '../shared/structures';
-import { BEATS, BRAIN_FACTORIES, beatConfig, coerceCorruption, fromUrl, hottestNeighbor, nextIn, nextPlanName, sanitizeCorruption, sanitizeIgnition, useSim, validateRun } from './store';
+import { BEATS, BRAIN_FACTORIES, SCRIPT_PLANS, beatConfig, coerceCorruption, fromUrl, hottestNeighbor, nextIn, nextPlanName, sanitizeCorruption, sanitizeIgnition, useSim, validateRun } from './store';
+import { buildDemoTrace } from './demoTraceBuild';
 
 const demo = loadPlan('demo-6');
 const vessel = loadPlan('vessel-3x8');
@@ -437,9 +438,9 @@ describe('helpers', () => {
   });
 
   it('fromUrl reads the filming presets and ignores junk', () => {
-    expect(fromUrl('?demo=1&beat=flashover&t=30&plan=demo-6')).toEqual({ demo: true, beat: 'flashover', t: 30, plan: 'demo-6' });
-    expect(fromUrl('?demo=0&beat=nope&t=abc&plan=nope')).toEqual({ demo: false, beat: null, t: null, plan: null });
-    expect(fromUrl('')).toEqual({ demo: false, beat: null, t: null, plan: null });
+    expect(fromUrl('?demo=1&beat=flashover&t=30&plan=demo-6&view=scene')).toEqual({ demo: true, beat: 'flashover', t: 30, plan: 'demo-6', view: 'scene' });
+    expect(fromUrl('?demo=0&beat=nope&t=abc&plan=nope&view=nope')).toEqual({ demo: false, beat: null, t: null, plan: null, view: 'split' });
+    expect(fromUrl('')).toEqual({ demo: false, beat: null, t: null, plan: null, view: 'split' });
   });
 
   it('nextPlanName cycles through PLAN_NAMES', () => {
@@ -512,15 +513,29 @@ describe('demo beats', () => {
   beforeEach(fresh);
 
   it('every beat produces a trace with the expected corruption config and a caption', () => {
+    // The script in order from demo-6: 1 opens on the first script plan, 5 closes on the last.
+    const first = loadPlan(SCRIPT_PLANS.first);
+    const last = loadPlan(SCRIPT_PLANS.last);
     const expected: Record<string, (t: ReturnType<typeof useSim.getState>) => void> = {
-      clean: (s) => expect(s.corruption).toEqual({ mode: 'none' }),
-      freeze: (s) => expect(s.corruption).toEqual({ mode: 'freeze', k: 1, onset: 5, target: ['S3'] }),
-      blind: (s) => expect(s.corruption).toEqual({ mode: 'blind', k: 1, onset: 5, target: ['S2'] }),
+      clean: (s) => { expect(s.planName).toBe(SCRIPT_PLANS.first); expect(s.ignition).toBe(first.ignition[0]); expect(s.corruption).toEqual({ mode: 'none' }); expect(s.view).toBe('split'); },
+      freeze: (s) => expect(s.corruption).toEqual({ mode: 'freeze', k: 1, onset: 5, target: [first.ignition[0]] }),
       flashover: (s) => expect(s.corruption).toEqual({ mode: 'flashover', onset: 5 }),
-      building: (s) => {
-        expect(s.planName).toBe(nextPlanName('demo-6'));
-        expect(s.corruption.mode).toBe('flashover'); // the mode selected before the beat
+      compare: (s) => {
+        expect(s.corruption).toEqual({ mode: 'flashover', onset: 5 }); // same config as the beat before
+        expect(s.caption).toMatch(/Peak burning: ours \d+, the other world \d+\.$|Both worlds contain it this time/); // says what the curves show
+        expect(s.view).toBe('h2h');
+        expect(s.closedLoop).toBe(true);
+        expect(Object.keys(s.compare!).sort()).toEqual(['kalman', 'ours']);
+        expect(s.brains).toBe('both');
       },
+      building: (s) => {
+        expect(s.planName).toBe(SCRIPT_PLANS.last);
+        expect(s.ignition).toBe(last.ignition[0]);
+        expect(s.corruption.mode).toBe('flashover'); // the mode selected before the beat
+        expect(s.view).toBe('split'); // back from the head to head
+        expect(s.closedLoop).toBe(false);
+      },
+      blind: (s) => { expect(s.corruption.mode).toBe('blind'); expect(s.corruption.target).toHaveLength(1); expect(s.planName).toBe(SCRIPT_PLANS.last); },
     };
     for (const b of BEATS) {
       useSim.getState().runBeat(b.key);
@@ -540,16 +555,75 @@ describe('demo beats', () => {
         expect(Math.abs(r.temp - truth.temp)).toBeGreaterThan(30);
       }
     }
-  });
+  }, 30_000); // six beats on the two large plans, one of them two closed-loop runs
 
-  it('beatConfig is pure and keys the hotkeys 1-5 in order', () => {
-    expect(BEATS.map((b) => b.hotkey)).toEqual(['1', '2', '3', '4', '5']);
+  it('beatConfig is pure and keys the script 1-5 in pitch order, blind on 6', () => {
+    expect(BEATS.map((b) => b.hotkey)).toEqual(['1', '2', '3', '4', '5', '6']);
+    expect(BEATS.map((b) => b.key)).toEqual(['clean', 'freeze', 'flashover', 'compare', 'building', 'blind']);
     const cur = { planName: 'demo-6', plan: DEMO_PLAN, ignition: 'S3', corruption: { mode: 'blind' as const, k: 1, target: ['S2'] }, seed: 42 };
     const a = beatConfig('building', cur);
     const b = beatConfig('building', cur);
     expect(a).toEqual(b);
+    expect(a.planName).toBe(SCRIPT_PLANS.last);
     expect(a.corruption.mode).toBe('blind');
     expect(a.corruption.target).toEqual([hottestNeighbor(loadPlan(a.planName), a.ignition)]);
+    // From the last script plan, building cycles on so the button always changes the structure.
+    const onLast = { ...cur, planName: SCRIPT_PLANS.last, plan: loadPlan(SCRIPT_PLANS.last), ignition: loadPlan(SCRIPT_PLANS.last).ignition[0]! };
+    expect(beatConfig('building', onLast).planName).toBe(nextPlanName(SCRIPT_PLANS.last));
+    // Clean on the first script plan keeps the chosen ignition; on another plan it moves to the plan's own.
+    expect(beatConfig('clean', { ...cur, planName: SCRIPT_PLANS.first, plan: loadPlan(SCRIPT_PLANS.first), ignition: 'L2-B3' }).ignition).toBe('L2-B3');
+    expect(beatConfig('clean', cur).ignition).toBe(loadPlan(SCRIPT_PLANS.first).ignition[0]);
+    // Compare keeps the config verbatim.
+    expect(beatConfig('compare', cur).corruption).toBe(cur.corruption);
+  });
+
+  it('the view is state: the compare beat opens the head to head, the next beat returns to split, c toggles', () => {
+    expect(useSim.getState().view).toBe('split');
+    useSim.getState().setView('scene');
+    useSim.getState().runBeat('freeze');
+    expect(useSim.getState().view).toBe('scene'); // a beat leaves a 3D page alone
+    useSim.getState().runBeat('compare');
+    expect(useSim.getState().view).toBe('h2h');
+    useSim.getState().runBeat('flashover');
+    expect(useSim.getState().view).toBe('split');
+    expect(fromUrl('?view=h2h').view).toBe('h2h');
+    expect(fromUrl('?view=nope').view).toBe('split');
+  });
+
+  it('a loaded replay makes beats show the recording instead of simulating; manual runs still simulate', () => {
+    const recorded = buildDemoTrace({ seed: 7, ticks: 6, beats: ['freeze', 'compare'] });
+    // Mark the recording so the test can tell it from a live run.
+    recorded.beats[0]!.traces['ours']![0]!.belief.confidence = 0.123456;
+    expect(useSim.getState().loadReplay(JSON.parse(JSON.stringify(recorded)))).toBeNull();
+    expect(useSim.getState().replay?.beats.map((b) => b.beat)).toEqual(['freeze', 'compare']);
+    useSim.getState().runBeat('freeze');
+    let s = useSim.getState();
+    expect(s.error).toBeNull();
+    expect(s.seed).toBe(7);
+    expect(s.ticks).toBe(6);
+    expect(s.planName).toBe(recorded.beats[0]!.planName); // the recording's plan, not the store's
+    expect(s.trace![0]!.belief.confidence).toBe(0.123456);
+    expect(s.data?.ticks.length).toBe(6);
+    expect(s.closedLoop).toBe(false);
+    expect(s.caption.length).toBeGreaterThan(20);
+    useSim.getState().runBeat('compare');
+    s = useSim.getState();
+    expect(s.view).toBe('h2h');
+    expect(s.closedLoop).toBe(true);
+    expect(Object.keys(s.compare!).sort()).toEqual(['kalman', 'ours']);
+    // A beat that was not recorded simulates as usual.
+    useSim.getState().runBeat('clean');
+    expect(useSim.getState().trace).toHaveLength(6);
+    expect(useSim.getState().trace![0]!.belief.confidence).not.toBe(0.123456);
+    // A manual run simulates too.
+    useSim.setState({ ticks: 5 });
+    useSim.getState().run();
+    expect(useSim.getState().trace).toHaveLength(5);
+    // Garbage is refused with a reason and leaves the loaded replay alone.
+    expect(useSim.getState().loadReplay({ version: 1, beats: [] })).toMatch(/no beats/);
+    expect(useSim.getState().replay).not.toBeNull();
+    useSim.getState().clearReplay();
+    expect(useSim.getState().replay).toBeNull();
   });
 
   it('recording mode is state the view can toggle', () => {
