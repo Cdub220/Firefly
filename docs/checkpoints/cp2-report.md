@@ -3,6 +3,16 @@
 Sun Sept 13, 2026 · hour 24 · Dean Yao and Chase · Defense track
 Repo: https://github.com/Cdub220/Firefly · branch `dean-branch` at the commit that adds this file. Companion pieces: `cp2-cp3-video-script.md`, `estimator-math.pdf`, `thesis.md`.
 
+**TL;DR**
+
+- **Done.** A working estimator, a five-mode failure model, a Kalman baseline, a seven-metric eval harness with a 1,200-run sweep, three buildings as JSON, and a live page with a split view and a 3D scene. 237 tests.
+- **Result.** On the same corrupted readings, the Kalman baseline is confidently wrong on 64 to 91 percent of ticks. Ours: 0 percent, in every failure mode, placement, and seed. It covers the true fire 93 percent of the time with a temperature error of about 5 °C against Kalman's 45 to 123 °C.
+- **Why.** Kalman assumes every sensor is honest and averages. Ours assumes up to *k* are lying, checks each reading against the physics of the building, scores candidate fire patterns while discarding its worst misses, and reports every pattern that survives, not one winner.
+- **Needs work.** Confidence climbs too slowly, temperature estimates drift where sensors have died, burned-out rooms still read as burning, and the six-room plan is too small to stress the set logic. The bigger buildings are next.
+- **Next step.** Drones as sensors and the allocator brain. Drone readings already arrive alongside the fixed sensors but the estimator ignores them. The allocator will place each drone by containment value plus information value, so when the belief cannot separate two rooms, two scouts split to cover both and the first hot reading resolves it. Built after the method freeze at hour 36, because it consumes the belief rather than changing it.
+
+---
+
 **One sentence.** Firefly is the decision brain for a firefighting drone swarm inside a large enclosed structure, and the hard part is that the fire destroys the sensors that report it, so the brain has to decide which readings to believe before it decides where the fire is.
 
 ---
