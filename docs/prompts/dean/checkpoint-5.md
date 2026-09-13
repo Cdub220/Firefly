@@ -71,6 +71,8 @@ scenario picker shows them.
 
 ## Prompt 2 · Briefings, templated, no live API
 
+> Superseded if CP4 prompt 3 (the commander's brief) has run: `npm run brief` already renders the templated brief from the outcome record. In that case skip this prompt, or use it only for the per-tick commander line the split view shows.
+
 ```
 You are working in the Firefly repo as Dean. Before anything else read CLAUDE.md, docs/00-README.md, docs/04-who-does-what.md, and src/shared/types.ts. Respect the directory ownership and lint boundaries in docs/04. Make reasonable assumptions instead of asking questions. Run `npm test && npm run lint && npm run typecheck` before you finish and do not report done unless all three are green. Commit in logical chunks with clear messages. Do not push. Finish by listing (1) what you built, (2) assumptions you made, (3) anything that did not work or that you skipped, (4) any contract change you need from Chase.
 
