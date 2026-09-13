@@ -24,6 +24,8 @@ hedge-cp4  plan=vessel-3x8  mode=flashover  k=2  onset=5  seed=1  ticks=60  targ
   25  {L1-A3,L1-B2,L1-B3,L2-B3}           D2->L2-B2 observe  D3->L1-B4 suppress  D4->L1-B3 suppress                         [L1-B3]
 
 hedgeRate = 2% of ticks (ambiguous belief AND commands split across one ambiguous group)
+  hedged ticks: 36 (fire already out) (outside the window)
+  NO hedge inside the printed window while the fire burns on this configuration; see docs/decisions.md (Sun hour 24) for the configurations that do.
   (commands covering two or more ambiguous spaces across ALL groups: 7% of ticks)
 containmentDelta = -21 spaces burning at tick 60: with allocator 0, null allocator 21
 drone deaths with allocator: D1:scout, D5:retardant

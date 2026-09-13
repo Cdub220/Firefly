@@ -82,6 +82,44 @@ describe('runLoop', () => {
     expect(trace[0]!.truth.drones.map((d) => d.id)).toEqual(['X1', 'X2']);
     expect(trace[0]!.obs.readings.filter((r) => r.source === 'drone').map((r) => r.droneId)).toEqual(['X1', 'X2']);
   });
+  it('CP4 hedge: on the closest configuration that hedges while the fire burns, a two-way ambiguity exists and two drones split across it; the prompt\'s flashover configuration is reported, not forced', () => {
+    // The hedge script's roster and plan (vessel-3x8), k=2, onset 5, commands applied.
+    // Under flashover the frozen estimator never produces a hedge while the fire burns on
+    // seeds 1-5 (docs/decisions.md, Sun hour 24). Under blind it does, at tick 7, on every seed.
+    const plan = loadPlan(largestPlanName());
+    const home = plan.resupply[0]!;
+    const run = (mode: 'flashover' | 'blind'): TickRecord[] =>
+      runLoop({
+        plan, seed: HEDGE_DEFAULTS.seed, ticks: HEDGE_DEFAULTS.ticks, dispatch: true,
+        corruption: { mode, k: 2, onset: 5, target: [plan.ignition[0]!], ambient: plan.ambient },
+        drones: HEDGE_ROSTER.map((d) => ({ ...d, at: home })),
+      });
+    const burning = (r: TickRecord): boolean => r.truth.spaces.some((s) => s.burning);
+    const hedgedWhileBurning = (trace: TickRecord[]): TickRecord[] => trace.filter((r) => burning(r) && r.belief.ambiguous.length > 0 && isHedge(r.belief.ambiguous, r.commands));
+
+    const blind = run('blind');
+    // A two-way ambiguity: a group of two or more spaces the estimator cannot separate.
+    expect(blind.some((r) => r.belief.ambiguous.some((g) => g.length >= 2))).toBe(true);
+    const hedged = hedgedWhileBurning(blind);
+    expect(hedged.length).toBeGreaterThan(0);
+    for (const r of hedged) {
+      const group = r.belief.ambiguous.find((g) => new Set(r.commands.filter((c) => g.includes(c.goTo)).map((c) => c.goTo)).size >= 2)!;
+      expect(group.length).toBeGreaterThanOrEqual(2);
+      const inGroup = r.commands.filter((c) => group.includes(c.goTo));
+      expect(new Set(inGroup.map((c) => c.droneId)).size).toBeGreaterThanOrEqual(2);
+      expect(new Set(inGroup.map((c) => c.goTo)).size).toBeGreaterThanOrEqual(2);
+    }
+
+    // The prompt's own configuration: recorded as it is. If this ever starts hedging while
+    // burning, update docs/decisions.md and results/hedge-cp4.txt rather than this line.
+    expect(hedgedWhileBurning(run('flashover')).length).toBe(0);
+  });
+
+  it('a drone roster passes through to the world', () => {
+    const trace = runLoop({ plan: DEMO_PLAN, seed: 1, ticks: 2, drones: [{ id: 'X1', class: 'scout', at: 'S1' }, { id: 'X2', class: 'tether', at: 'S2' }] });
+    expect(trace[0]!.truth.drones.map((d) => d.id)).toEqual(['X1', 'X2']);
+    expect(trace[0]!.obs.readings.filter((r) => r.source === 'drone').map((r) => r.droneId)).toEqual(['X1', 'X2']);
+  });
   it('CP4 hedge: when a two-way ambiguity exists in the closed-loop flashover run, at least two drones have different goTo inside that group', () => {
     // The hedge script's configuration: flashover on the ignition space, k=2, largest plan,
     // 2 scouts + 2 tethers + 1 retardant, commands applied to the world.

@@ -3,7 +3,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { PLAN_NAMES, loadPlan } from '../shared/structures';
-import { HEDGE_DEFAULTS, HEDGE_ROSTER, hedgeReport, largestPlanName, parseHedgeArgs } from './hedge';
+import { HEDGE_DEFAULTS, HEDGE_ROSTER, hedgeOutputPath, hedgeReport, largestPlanName, parseHedgeArgs } from './hedge';
+import { computeMetrics } from './metrics';
 
 describe('hedge', () => {
   it('largestPlanName picks the plan with the most spaces', () => {
@@ -18,24 +19,44 @@ describe('hedge', () => {
     expect(parseHedgeArgs(['--plan', 'demo-6', '--seed', '3', '--ticks', '30', '--k', '1', '--onset', '2', '--mode', 'freeze'])).toEqual({ plan: 'demo-6', seed: 3, ticks: 30, k: 1, onset: 2, mode: 'freeze' });
     expect(() => parseHedgeArgs(['--plan', 'nope'])).toThrow(/unknown plan/);
     expect(() => parseHedgeArgs(['--seed', 'x'])).toThrow(/--seed/);
+    expect(() => parseHedgeArgs(['--mode', 'bogus'])).toThrow(/--mode/);
+    expect(() => parseHedgeArgs(['--ticks', '0'])).toThrow(/--ticks/);
+    expect(() => parseHedgeArgs(['--k', '0'])).toThrow(/--k/);
+    expect(parseHedgeArgs(['--onset', '0']).onset).toBe(0);
+    expect(hedgeOutputPath(HEDGE_DEFAULTS)).toBe('results/hedge-cp4.txt');
+    expect(hedgeOutputPath({ ...HEDGE_DEFAULTS, mode: 'blind' })).toBe('results/hedge-cp4-vessel-3x8-blind-1.txt');
+    expect(hedgeOutputPath({ ...HEDGE_DEFAULTS, plan: 'demo-6', seed: 3, k: 1, ticks: 80 })).toBe('results/hedge-cp4-demo-6-flashover-3-k1-80t.txt');
     expect(HEDGE_DEFAULTS.mode).toBe('flashover');
     expect(HEDGE_DEFAULTS.k).toBe(2);
     expect(HEDGE_ROSTER.map((d) => d.class)).toEqual(['scout', 'scout', 'tether', 'tether', 'retardant']);
   });
 
   it('the report lists onset..onset+20 with every drone command and the truth set, then the two numbers', () => {
-    const { text, hedgeRate, containmentDelta } = hedgeReport({ plan: 'demo-6', seed: 1, ticks: 30, mode: 'flashover', k: 2, onset: 5 });
+    const o = { plan: 'demo-6', seed: 1, ticks: 30, mode: 'flashover' as const, k: 2, onset: 5 };
+    const { text, hedgeRate, containmentDelta, run, hedgedTicks } = hedgeReport(o);
     const lines = text.split('\n');
     const rows = lines.filter((l) => /^\s*\d+\s{2}/.test(l));
     expect(rows.length).toBe(21);
     expect(rows[0]!.trim().startsWith('5 ')).toBe(true);
     expect(rows[20]!.trim().startsWith('25 ')).toBe(true);
     expect(rows.every((l) => /\[.*\]$/.test(l))).toBe(true);
+    // Every command is printed as "D1->S4 observe" with its task word; the roster is the world's.
+    expect(rows.some((l) => /D\d->\S+ (observe|suppress|coat|hold|refill)/.test(l))).toBe(true);
+    expect(lines[0]).toContain(`roster=${run.withAllocator[0]!.truth.drones.map((d) => `${d.id}:${d.class}`).join(',')}`);
+    expect(run.withAllocator[0]!.truth.drones.map((d) => d.class)).toEqual(HEDGE_ROSTER.map((d) => d.class));
+    // The corruption really targets the ignition space: some reading from it diverges after onset.
+    const ign = loadPlan('demo-6').ignition[0]!;
+    expect(run.withAllocator.some((r) => r.t >= 5 && r.obs.readings.filter((x) => x.spaceId === ign).length < run.withAllocator[0]!.obs.readings.filter((x) => x.spaceId === ign).length)).toBe(true);
+    // The numbers are the metrics' numbers, and the hedged-tick list matches the metric.
+    expect(hedgeRate).toBe(computeMetrics(run.withAllocator, { onset: 5 }).hedgeRate);
+    expect(hedgedTicks.filter((t) => t >= 5).length / run.withAllocator.filter((r) => r.t >= 5).length).toBeCloseTo(hedgeRate, 12);
     expect(text).toContain('hedgeRate = ');
+    expect(text).toContain('hedged ticks: ');
     expect(text).toContain('containmentDelta = ');
     expect(Number.isFinite(hedgeRate)).toBe(true);
     expect(Number.isInteger(containmentDelta)).toBe(true);
+    expect(containmentDelta).toBe(run.withAllocator[29]!.truth.spaces.filter((s) => s.burning).length - run.nullAllocator[29]!.truth.spaces.filter((s) => s.burning).length);
     // Deterministic.
-    expect(hedgeReport({ plan: 'demo-6', seed: 1, ticks: 30, mode: 'flashover', k: 2, onset: 5 }).text).toBe(text);
+    expect(hedgeReport(o).text).toBe(text);
   });
 });
