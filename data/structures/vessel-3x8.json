@@ -1,0 +1,505 @@
+{
+  "name": "vessel-3x8",
+  "ambient": 22,
+  "spaces": [
+    {
+      "id": "L1-A1",
+      "level": 1
+    },
+    {
+      "id": "L1-A2",
+      "level": 1,
+      "occupants": 1
+    },
+    {
+      "id": "L1-A3",
+      "level": 1
+    },
+    {
+      "id": "L1-A4",
+      "level": 1,
+      "occupants": 2
+    },
+    {
+      "id": "L1-B1",
+      "level": 1,
+      "occupants": 1
+    },
+    {
+      "id": "L1-B2",
+      "level": 1
+    },
+    {
+      "id": "L1-B3",
+      "level": 1,
+      "hazard": "fuel"
+    },
+    {
+      "id": "L1-B4",
+      "level": 1
+    },
+    {
+      "id": "L2-A1",
+      "level": 2,
+      "occupants": 2
+    },
+    {
+      "id": "L2-A2",
+      "level": 2
+    },
+    {
+      "id": "L2-A3",
+      "level": 2,
+      "occupants": 1
+    },
+    {
+      "id": "L2-A4",
+      "level": 2,
+      "hazard": "ordnance"
+    },
+    {
+      "id": "L2-B1",
+      "level": 2
+    },
+    {
+      "id": "L2-B2",
+      "level": 2,
+      "occupants": 3
+    },
+    {
+      "id": "L2-B3",
+      "level": 2
+    },
+    {
+      "id": "L2-B4",
+      "level": 2,
+      "occupants": 2
+    },
+    {
+      "id": "L3-A1",
+      "level": 3,
+      "occupants": 4
+    },
+    {
+      "id": "L3-A2",
+      "level": 3,
+      "occupants": 6
+    },
+    {
+      "id": "L3-A3",
+      "level": 3,
+      "occupants": 5
+    },
+    {
+      "id": "L3-A4",
+      "level": 3,
+      "occupants": 3
+    },
+    {
+      "id": "L3-B1",
+      "level": 3,
+      "occupants": 4
+    },
+    {
+      "id": "L3-B2",
+      "level": 3,
+      "occupants": 6
+    },
+    {
+      "id": "L3-B3",
+      "level": 3,
+      "occupants": 5
+    },
+    {
+      "id": "L3-B4",
+      "level": 3,
+      "occupants": 4
+    }
+  ],
+  "edges": [
+    {
+      "a": "L1-A1",
+      "b": "L1-A2",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L1-A1",
+      "b": "L1-B1",
+      "kind": "passage",
+      "rate": 0.2
+    },
+    {
+      "a": "L1-A1",
+      "b": "L2-A1",
+      "kind": "floor",
+      "rate": 0.08
+    },
+    {
+      "a": "L1-A2",
+      "b": "L1-A3",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L1-A2",
+      "b": "L1-B2",
+      "kind": "passage",
+      "rate": 0.2
+    },
+    {
+      "a": "L1-A2",
+      "b": "L2-A2",
+      "kind": "floor",
+      "rate": 0.08
+    },
+    {
+      "a": "L1-A3",
+      "b": "L1-A4",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L1-A3",
+      "b": "L1-B3",
+      "kind": "passage",
+      "rate": 0.2
+    },
+    {
+      "a": "L1-A3",
+      "b": "L2-A3",
+      "kind": "floor",
+      "rate": 0.08
+    },
+    {
+      "a": "L1-A4",
+      "b": "L1-B4",
+      "kind": "passage",
+      "rate": 0.2
+    },
+    {
+      "a": "L1-A4",
+      "b": "L2-A4",
+      "kind": "floor",
+      "rate": 0.08
+    },
+    {
+      "a": "L1-B1",
+      "b": "L1-B2",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L1-B1",
+      "b": "L2-B1",
+      "kind": "floor",
+      "rate": 0.08
+    },
+    {
+      "a": "L1-B2",
+      "b": "L1-B3",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L1-B2",
+      "b": "L2-B2",
+      "kind": "floor",
+      "rate": 0.08
+    },
+    {
+      "a": "L1-B3",
+      "b": "L1-B4",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L1-B3",
+      "b": "L2-B3",
+      "kind": "floor",
+      "rate": 0.08
+    },
+    {
+      "a": "L1-B4",
+      "b": "L2-B4",
+      "kind": "floor",
+      "rate": 0.08
+    },
+    {
+      "a": "L2-A1",
+      "b": "L2-A2",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L2-A1",
+      "b": "L2-B1",
+      "kind": "passage",
+      "rate": 0.2
+    },
+    {
+      "a": "L2-A1",
+      "b": "L3-A1",
+      "kind": "floor",
+      "rate": 0.08
+    },
+    {
+      "a": "L2-A2",
+      "b": "L2-A3",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L2-A2",
+      "b": "L2-B2",
+      "kind": "passage",
+      "rate": 0.2
+    },
+    {
+      "a": "L2-A2",
+      "b": "L3-A2",
+      "kind": "floor",
+      "rate": 0.08
+    },
+    {
+      "a": "L2-A3",
+      "b": "L2-A4",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L2-A3",
+      "b": "L2-B3",
+      "kind": "passage",
+      "rate": 0.2
+    },
+    {
+      "a": "L2-A3",
+      "b": "L3-A3",
+      "kind": "floor",
+      "rate": 0.08
+    },
+    {
+      "a": "L2-A4",
+      "b": "L2-B4",
+      "kind": "passage",
+      "rate": 0.2
+    },
+    {
+      "a": "L2-A4",
+      "b": "L3-A4",
+      "kind": "floor",
+      "rate": 0.08
+    },
+    {
+      "a": "L2-B1",
+      "b": "L2-B2",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L2-B1",
+      "b": "L3-B1",
+      "kind": "floor",
+      "rate": 0.08
+    },
+    {
+      "a": "L2-B2",
+      "b": "L2-B3",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L2-B2",
+      "b": "L3-B2",
+      "kind": "floor",
+      "rate": 0.08
+    },
+    {
+      "a": "L2-B3",
+      "b": "L2-B4",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L2-B3",
+      "b": "L3-B3",
+      "kind": "floor",
+      "rate": 0.08
+    },
+    {
+      "a": "L2-B4",
+      "b": "L3-B4",
+      "kind": "floor",
+      "rate": 0.08
+    },
+    {
+      "a": "L3-A1",
+      "b": "L3-A2",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L3-A1",
+      "b": "L3-B1",
+      "kind": "passage",
+      "rate": 0.2
+    },
+    {
+      "a": "L3-A2",
+      "b": "L3-A3",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L3-A2",
+      "b": "L3-B2",
+      "kind": "passage",
+      "rate": 0.2
+    },
+    {
+      "a": "L3-A3",
+      "b": "L3-A4",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L3-A3",
+      "b": "L3-B3",
+      "kind": "passage",
+      "rate": 0.2
+    },
+    {
+      "a": "L3-A4",
+      "b": "L3-B4",
+      "kind": "passage",
+      "rate": 0.2
+    },
+    {
+      "a": "L3-B1",
+      "b": "L3-B2",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L3-B2",
+      "b": "L3-B3",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L3-B3",
+      "b": "L3-B4",
+      "kind": "door",
+      "rate": 0.15
+    },
+    {
+      "a": "L1-A1",
+      "b": "L2-A1",
+      "kind": "shaft",
+      "rate": 0.3
+    },
+    {
+      "a": "L2-A1",
+      "b": "L3-A1",
+      "kind": "shaft",
+      "rate": 0.3
+    }
+  ],
+  "sensors": [
+    {
+      "id": "F-L1-A1",
+      "spaceId": "L1-A1"
+    },
+    {
+      "id": "F-L1-A2",
+      "spaceId": "L1-A2"
+    },
+    {
+      "id": "F-L1-A3",
+      "spaceId": "L1-A3"
+    },
+    {
+      "id": "F-L1-A4",
+      "spaceId": "L1-A4"
+    },
+    {
+      "id": "F-L1-B1",
+      "spaceId": "L1-B1"
+    },
+    {
+      "id": "F-L1-B2",
+      "spaceId": "L1-B2"
+    },
+    {
+      "id": "F-L1-B3",
+      "spaceId": "L1-B3"
+    },
+    {
+      "id": "F-L1-B4",
+      "spaceId": "L1-B4"
+    },
+    {
+      "id": "F-L2-A1",
+      "spaceId": "L2-A1"
+    },
+    {
+      "id": "F-L2-A2",
+      "spaceId": "L2-A2"
+    },
+    {
+      "id": "F-L2-A3",
+      "spaceId": "L2-A3"
+    },
+    {
+      "id": "F-L2-A4",
+      "spaceId": "L2-A4"
+    },
+    {
+      "id": "F-L2-B1",
+      "spaceId": "L2-B1"
+    },
+    {
+      "id": "F-L2-B4",
+      "spaceId": "L2-B4"
+    },
+    {
+      "id": "F-L3-A1",
+      "spaceId": "L3-A1"
+    },
+    {
+      "id": "F-L3-A2",
+      "spaceId": "L3-A2"
+    },
+    {
+      "id": "F-L3-A3",
+      "spaceId": "L3-A3"
+    },
+    {
+      "id": "F-L3-A4",
+      "spaceId": "L3-A4"
+    },
+    {
+      "id": "F-L3-B1",
+      "spaceId": "L3-B1"
+    },
+    {
+      "id": "F-L3-B2",
+      "spaceId": "L3-B2"
+    },
+    {
+      "id": "F-L3-B3",
+      "spaceId": "L3-B3"
+    },
+    {
+      "id": "F-L3-B4",
+      "spaceId": "L3-B4"
+    }
+  ],
+  "resupply": [
+    "L1-A1"
+  ],
+  "ignition": [
+    "L1-B3"
+  ]
+}

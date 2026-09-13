@@ -11,12 +11,14 @@
     "sim:freeze": "tsx src/loop.ts --ticks 60 --mode freeze --k 1 --target S3 --onset 5",
     "sim:blind": "tsx src/loop.ts --ticks 60 --mode blind --k 1 --target S3 --onset 5",
     "evidence": "tsx src/eval/evidence.ts",
+    "gen:plans": "tsx src/world/gen-plans.ts",
     "test": "vitest run",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "viewer": "tsx src/eval/export-viewer.ts"
   },
   "dependencies": {
+    "@react-three/drei": "^10.7.8",
     "@react-three/fiber": "^9.1.2",
     "react": "~19.2.0",
     "react-dom": "~19.2.0",
