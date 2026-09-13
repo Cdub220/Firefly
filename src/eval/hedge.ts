@@ -85,7 +85,7 @@ export function hedgeReport(o: HedgeOptions): HedgeReport {
 /** results/hedge-cp4.txt for the prompt's configuration; a config-stamped name otherwise, so the CP4 artifact is never clobbered. */
 export function hedgeOutputPath(o: HedgeOptions): string {
   const isDefault = (Object.keys(HEDGE_DEFAULTS) as (keyof HedgeOptions)[]).every((k) => o[k] === HEDGE_DEFAULTS[k]);
-  return isDefault ? 'results/hedge-cp4.txt' : `results/hedge-cp4-${o.plan}-${o.mode}-${o.seed}${o.k === HEDGE_DEFAULTS.k ? '' : `-k${o.k}`}${o.ticks === HEDGE_DEFAULTS.ticks ? '' : `-${o.ticks}t`}.txt`;
+  return isDefault ? 'results/hedge-cp4.txt' : `results/hedge-cp4-${o.plan}-${o.mode}-${o.seed}${o.k === HEDGE_DEFAULTS.k ? '' : `-k${o.k}`}${o.ticks === HEDGE_DEFAULTS.ticks ? '' : `-${o.ticks}t`}${o.onset === HEDGE_DEFAULTS.onset ? '' : `-onset${o.onset}`}.txt`;
 }
 
 export function parseHedgeArgs(argv: string[]): HedgeOptions {

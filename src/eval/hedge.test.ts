@@ -26,6 +26,7 @@ describe('hedge', () => {
     expect(hedgeOutputPath(HEDGE_DEFAULTS)).toBe('results/hedge-cp4.txt');
     expect(hedgeOutputPath({ ...HEDGE_DEFAULTS, mode: 'blind' })).toBe('results/hedge-cp4-vessel-3x8-blind-1.txt');
     expect(hedgeOutputPath({ ...HEDGE_DEFAULTS, plan: 'demo-6', seed: 3, k: 1, ticks: 80 })).toBe('results/hedge-cp4-demo-6-flashover-3-k1-80t.txt');
+    expect(hedgeOutputPath({ ...HEDGE_DEFAULTS, mode: 'blind', onset: 9 })).toBe('results/hedge-cp4-vessel-3x8-blind-1-onset9.txt');
     expect(HEDGE_DEFAULTS.mode).toBe('flashover');
     expect(HEDGE_DEFAULTS.k).toBe(2);
     expect(HEDGE_ROSTER.map((d) => d.class)).toEqual(['scout', 'scout', 'tether', 'tether', 'retardant']);
