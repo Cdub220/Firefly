@@ -10,7 +10,7 @@ import { ChaosPanel } from '../panels/ChaosPanel';
 import { Scene } from '../scene/Scene';
 import { ContainmentChart } from './ContainmentChart';
 import { Scorecard } from './Scorecard';
-import { onsetOf, wrongDispatchSpaces } from './metrics';
+import { missedSpaces, onsetOf, wrongDispatchSpaces } from './metrics';
 import '../split/split.css';
 import '../panels/panels.css';
 import '../scene/scene.css';
@@ -34,6 +34,10 @@ export function HeadToHead() {
   // maybe-group, and if it still trips, it shows.
   const wrongLeft = useMemo(() => (rec && left ? new Set(wrongDispatchSpaces(rec, left.belief, false)) : new Set<string>()), [rec, left]);
   const wrongRight = useMemo(() => (rec && right ? new Set(wrongDispatchSpaces(rec, right.belief, true)) : new Set<string>()), [rec, right]);
+  // The other failure: a fire the brain does not know about. Shown as a tag, not a flash;
+  // in the belief scene the space simply stays dark.
+  const missedLeft = useMemo(() => (rec && left ? missedSpaces(rec, left.belief) : []), [rec, left]);
+  const missedRight = useMemo(() => (rec && right ? missedSpaces(rec, right.belief) : []), [rec, right]);
   const runs = s.compare ?? (s.trace ? { [RIGHT]: s.trace } : {});
   const onset = s.trace ? (onsetOf(s.trace) > 0 ? onsetOf(s.trace) : null) : null;
   const group = 'h2h';
@@ -48,6 +52,7 @@ export function HeadToHead() {
       <main className="h2h-main">
         <div className="controls h2h-bar" role="group" aria-label="head to head">
           <button type="button" className="primary" onClick={s.runCompare} title="Run once with each brain driving the world, same seed and settings">Run head to head</button>
+          <button type="button" id="h2h-showdown" onClick={s.runShowdown} title="Blind the ignition sensor from the first tick, then run head to head. A later onset lets both brains lock on before the sensor dies, and both worlds contain.">Showdown: blind from t=1</button>
           <label htmlFor="h2h-level">show levels ≤
             <input id="h2h-level" type="range" min={levels[0] ?? 1} max={levels[levels.length - 1] ?? 1} value={maxLevel} onChange={(e) => setMaxLevel(Number(e.target.value))} style={{ flex: '0 0 120px', minWidth: 80 }} />
             <span className="tick">{maxLevel}</span>
@@ -64,7 +69,7 @@ export function HeadToHead() {
               <div className="h2h-canvas small"><Scene plan={s.plan} rec={rec} view="truth" maxLevel={maxLevel} drones={{ prev, playing: s.playing, speed: s.speed }} cameraGroup={group} /></div>
             </section>
             <div className="h2h-grid">
-              {[[LEFT, left, wrongLeft] as const, [RIGHT, right, wrongRight] as const].map(([name, r, wrong]) => (
+              {[[LEFT, left, wrongLeft, missedLeft] as const, [RIGHT, right, wrongRight, missedRight] as const].map(([name, r, wrong, missed]) => (
                 <section className={`h2h-col ${name}`} key={name}>
                   <header>
                     <h2>{LABEL[name] ?? name}</h2>
@@ -75,6 +80,7 @@ export function HeadToHead() {
                         </span>
                         <span className="sub burning-count" data-brain={name}>burning set: <strong>{r.belief.burningSet.length}</strong>{r.belief.ambiguous.length > 0 ? ` · maybe ${r.belief.ambiguous.flat().length}` : ''}</span>
                         {wrong.size > 0 && <span className="wrong-floor-tag" data-brain={name}>WRONG FLOOR · {[...wrong].join(', ')}</span>}
+                        {missed.length > 0 && <span className="missed-tag" data-brain={name} title="Burning in truth, and this brain neither names it nor lists it as a maybe">MISSED · {missed.join(', ')}</span>}
                       </>
                     ) : <span className="sub">not run</span>}
                   </header>

@@ -22,6 +22,7 @@
 .h2h-view .burning-count strong { color: var(--ink); }
 .h2h-view .wrong-floor-tag { font: 700 11px var(--mono); letter-spacing: 0.08em; color: #0e1116; background: var(--wrong); border-radius: 4px; padding: 2px 8px; animation: wrong-flash 0.6s ease-in-out infinite alternate; }
 @keyframes wrong-flash { from { opacity: 1; } to { opacity: 0.55; } }
+.h2h-view .missed-tag { font: 700 11px var(--mono); letter-spacing: 0.08em; color: var(--wrong); border: 1px solid var(--wrong); border-radius: 4px; padding: 1px 7px; }
 @media (prefers-reduced-motion: reduce) { .h2h-view .wrong-floor-tag { animation: none; } }
 .h2h-view .containment { display: block; width: 100%; height: auto; }
 .h2h-view .scorecard { border-collapse: collapse; width: 100%; font: 12px var(--mono); }

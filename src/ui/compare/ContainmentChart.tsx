@@ -19,7 +19,8 @@ type Props = {
 };
 
 export function ContainmentChart({ runs, cursor, onset, spaces, width = 640, height = 150 }: Props) {
-  const names = Object.keys(runs);
+  // Kalman first so the ours curve is drawn on top when the two coincide.
+  const names = Object.keys(runs).sort((a, b) => (a === 'kalman' ? -1 : b === 'kalman' ? 1 : 0));
   const series = names.map((n) => ({ name: n, y: containmentSeries(runs[n]!) }));
   const n = Math.max(1, ...series.map((s) => s.y.length));
   const pad = { l: 34, r: 12, t: 10, b: 22 };

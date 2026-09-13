@@ -61,3 +61,12 @@ export function wrongDispatchSpaces(rec: Pick<TickRecord, 'truth'>, belief: Pick
   const hedged = new Set(excludeAmbiguous ? belief.ambiguous.flat() : []);
   return belief.burningSet.filter((id) => !burning.has(id) && !hedged.has(id));
 }
+
+/**
+ * Spaces burning in truth that the brain neither names as burning nor lists as a maybe:
+ * the fire it does not know about. In plan order.
+ */
+export function missedSpaces(rec: Pick<TickRecord, 'truth'>, belief: Pick<Belief, 'burningSet' | 'ambiguous'>): SpaceId[] {
+  const known = new Set([...belief.burningSet, ...belief.ambiguous.flat()]);
+  return rec.truth.spaces.filter((s) => s.burning && !known.has(s.id)).map((s) => s.id);
+}

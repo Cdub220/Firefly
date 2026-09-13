@@ -49,6 +49,10 @@ export function ScenarioPanel() {
           </span>
         </label>
       </div>
+      <label htmlFor="sc-dispatch" className="row" title="Closed loop: the brain's commands move the drones and the drones change the fire. Off shows the open-loop runs the frozen estimator's numbers are reported on.">
+        <input id="sc-dispatch" type="checkbox" checked={s.dispatch} onChange={(e) => s.setDispatch(e.target.checked)} />
+        <span>drones act on commands</span>
+      </label>
       <button id="sc-run" type="button" className="primary wide" onClick={s.run}>Run</button>
 
       <h2>Playback</h2>
