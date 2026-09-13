@@ -13,41 +13,42 @@ describe('sweep', () => {
   const result = runSweep({ plans: ['demo-6'], modes: ['freeze'], ks: [1, 2, 3], targets: [...TARGET_KINDS], onset: 5, ...QUICK });
 
   it('--quick on demo-6 with one mode: expected row count and every metric finite', () => {
-    // 1 plan x 1 mode x 3 k x 4 targets x 2 seeds x 2 brains
-    expect(result.rows.length).toBe(1 * 1 * 3 * 4 * 2 * 2);
+    // 1 plan x 1 mode x 3 k x 4 targets x 2 seeds x 3 brains (ours, naive kalman, gated kalman)
+    expect(result.rows.length).toBe(1 * 1 * 3 * 4 * 2 * 3);
     for (const r of result.rows) {
       for (const key of ['estimationError', 'falseCertainty', 'ambiguityCoverage', 'computeMsPerTick', 'wrongDispatch', 'brierScore', 'falsePositiveRate', 'falseNegativeRate'] as const) {
         expect(Number.isFinite(r[key])).toBe(true);
       }
       expect(r.timeToRecovery === null || Number.isFinite(r.timeToRecovery)).toBe(true);
       expect(r.computeMsPerTick).toBeGreaterThan(0);
-      expect(['ours', 'kalman']).toContain(r.brain);
+      expect(['ours', 'kalman', 'kalman-gated']).toContain(r.brain);
       expect(r.targetSpaces === null ? r.target === 'random' : r.target !== 'random').toBe(true);
     }
     expect(result.meta.ticks).toBe(60);
     expect(result.meta.seeds).toEqual([1, 2]);
   });
 
-  it('every cell is scored for both brains on the same seeds, and ours is never false-certain here', () => {
+  it('every cell is scored for all three brains on the same seeds, and ours is never false-certain here', () => {
     const cells = new Set(result.rows.map((r) => [r.plan, r.mode, r.k, r.target, r.seed].join('|')));
     expect(cells.size).toBe(24);
     for (const cell of cells) {
       const both = result.rows.filter((r) => [r.plan, r.mode, r.k, r.target, r.seed].join('|') === cell).map((r) => r.brain).sort();
-      expect(both).toEqual(['kalman', 'ours']);
+      expect(both).toEqual(['kalman', 'kalman-gated', 'ours']);
     }
     for (const r of result.rows.filter((r) => r.brain === 'ours')) expect(r.falseCertainty).toBe(0);
   });
 
-  it('aggregate averages over seeds and keeps ours/kalman on adjacent rows in the summary', () => {
+  it('aggregate averages over seeds and keeps ours/kalman/gated on adjacent rows in the summary', () => {
     const aggs = aggregate(result.rows);
-    expect(aggs.length).toBe(3 * 4 * 2);
+    expect(aggs.length).toBe(3 * 4 * 3);
     for (const a of aggs) expect(a.seeds).toBe(2);
     const text = formatSummary(aggs);
     const lines = text.split('\n').filter((l) => l.startsWith('demo-6'));
-    expect(lines.length).toBe(24);
-    for (let i = 0; i < lines.length; i += 2) {
+    expect(lines.length).toBe(36);
+    for (let i = 0; i < lines.length; i += 3) {
       expect(lines[i]).toContain(' ours ');
       expect(lines[i + 1]).toContain(' kalman ');
+      expect(lines[i + 2]).toContain(' kalman-gated ');
     }
     const losses = whereOursLoses(aggs);
     expect(Array.isArray(losses)).toBe(true);

@@ -32,14 +32,16 @@ describe('graded belief on the freeze run', () => {
     expect(rec.belief.confidence).toBeLessThan(0.9);
   });
 
-  it('Kalman probability is 0 or its scalar confidence: no per-space doubt', () => {
+  it('Kalman probability is its own posterior Phi((x - 200) / sd): every space in [0, 1], hot spaces near 1, cold near 0', () => {
     const rec = traces['kalman']![49]!;
-    const values = new Set(Object.values(rec.belief.probability).map((p) => Math.round(p * 1000)));
-    expect(values.size).toBeLessThanOrEqual(2);
-    for (const p of Object.values(rec.belief.probability)) {
-      expect(p === 0 || Math.abs(p - rec.belief.confidence) < 1e-9).toBe(true);
-    }
     expect(Object.keys(rec.belief.probability).sort()).toEqual(DEMO_PLAN.spaces.map((s) => s.id).sort());
+    for (const [id, p] of Object.entries(rec.belief.probability)) {
+      expect(p).toBeGreaterThanOrEqual(0);
+      expect(p).toBeLessThanOrEqual(1);
+      const x = rec.belief.estimate[id]!;
+      if (x > 400) expect(p).toBeGreaterThan(0.99);
+      if (x < 100) expect(p).toBeLessThan(0.01);
+    }
   });
 
   it('Brier score: ours is better calibrated than Kalman on this run, and ours is never false-certain', () => {

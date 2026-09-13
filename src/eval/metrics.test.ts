@@ -79,6 +79,23 @@ describe('computeMetrics', () => {
     expect(m.ambiguityCoverage).toBeCloseTo(2 / 4, 10);
   });
 
+  it('falseCertaintyByP: per threshold, the fraction of ticks where a NOT-burning space got P >= threshold', () => {
+    const trace = [
+      rec({ t: 0, burning: ['A'], belief: { burningSet: ['A'], confidence: 0.5, probability: { A: 1, B: 0.85, C: 0 } } }), // B wrong at 0.85
+      rec({ t: 1, burning: ['A'], belief: { burningSet: ['A'], confidence: 0.5, probability: { A: 1, B: 0.6, C: 0.2 } } }), // B wrong at 0.6
+      rec({ t: 2, burning: ['A'], belief: { burningSet: ['A'], confidence: 0.5, probability: { A: 0.3, B: 0, C: 0 } } }), // A under-called: not "false certainty" in this metric
+      rec({ t: 3, burning: ['A'], belief: { burningSet: ['A', 'C'], confidence: 0.95, probability: { A: 1, B: 0, C: 0.96 } } }), // C wrong at 0.96
+    ];
+    const m = computeMetrics(trace, { onset: 0 });
+    expect(m.falseCertaintyByP['0.5']).toBeCloseTo(3 / 4, 6);
+    expect(m.falseCertaintyByP['0.7']).toBeCloseTo(2 / 4, 6);
+    expect(m.falseCertaintyByP['0.8']).toBeCloseTo(2 / 4, 6);
+    expect(m.falseCertaintyByP['0.9']).toBeCloseTo(1 / 4, 6);
+    expect(m.falseCertaintyByP['0.95']).toBeCloseTo(1 / 4, 6);
+    // Scalar false certainty is a different question: only tick 3 is confident AND has the wrong set.
+    expect(m.falseCertainty).toBeCloseTo(1 / 4, 6);
+  });
+
   it('a belief without probability is scored as p = 0 everywhere', () => {
     const r = rec({ t: 5, burning: ['A'], belief: { burningSet: ['A'], confidence: 1 } });
     delete (r.belief as Partial<Belief>).probability;

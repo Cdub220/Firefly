@@ -9,15 +9,15 @@
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { createBrain } from '../brain';
-import { createKalmanBrain } from '../brain/kalman';
+import { createGatedKalmanBrain, createKalmanBrain } from '../brain/kalman';
 import { DEMO_PLAN, runLoopMulti, type TickRecord } from '../loop';
-import { computeMetrics } from './metrics';
+import { computeMetrics, P_THRESHOLDS } from './metrics';
 import type { CorruptionConfig, CorruptionMode, SpaceId } from '../shared/types';
 
 const TICKS = 60;
 const ONSET = 5;
 const SEEDS = [1, 2, 3, 4, 5];
-const MODES: CorruptionMode[] = ['freeze', 'blind', 'flashover'];
+const MODES: CorruptionMode[] = ['none', 'freeze', 'blind', 'flashover']; // 'none' first: the baseline's clean-run number is the yardstick for the rest
 const VERBOSE = process.argv.includes('--verbose');
 
 // Target: the ignition space and its hottest neighbor (highest-rate edge).
@@ -37,6 +37,7 @@ type Row = {
   brierScore: number;
   falsePositiveRate: number;
   falseNegativeRate: number;
+  falseCertaintyByP: Record<string, number>;
 };
 
 const mean = (xs: number[]): number => xs.reduce((a, b) => a + b, 0) / xs.length;
@@ -49,19 +50,20 @@ function runMode(mode: CorruptionMode): Row[] {
     onset: ONSET,
     ambient: DEMO_PLAN.ambient,
   };
-  const perBrain = new Map<string, { fc: number[]; cov: number[]; err: number[]; brier: number[]; fpr: number[]; fnr: number[] }>();
+  const perBrain = new Map<string, { fc: number[]; cov: number[]; err: number[]; brier: number[]; fpr: number[]; fnr: number[]; fcByP: Record<string, number[]> }>();
   for (const seed of SEEDS) {
     const traces = runLoopMulti({
       plan: DEMO_PLAN,
       seed,
       ticks: TICKS,
       corruption,
-      brains: { ours: createBrain, kalman: createKalmanBrain },
+      brains: { ours: createBrain, kalman: createKalmanBrain, 'kalman-gated': createGatedKalmanBrain },
       primary: 'ours',
     });
     for (const [name, trace] of Object.entries(traces)) {
       const m = computeMetrics(trace, { onset: ONSET });
-      const acc = perBrain.get(name) ?? { fc: [], cov: [], err: [], brier: [], fpr: [], fnr: [] };
+      const acc = perBrain.get(name) ?? { fc: [], cov: [], err: [], brier: [], fpr: [], fnr: [], fcByP: Object.fromEntries(P_THRESHOLDS.map((th) => [String(th), [] as number[]])) };
+      for (const th of P_THRESHOLDS) acc.fcByP[String(th)]!.push(m.falseCertaintyByP[String(th)] ?? 0);
       acc.fc.push(m.falseCertainty);
       acc.cov.push(m.ambiguityCoverage);
       acc.err.push(m.estimationError);
@@ -81,6 +83,7 @@ function runMode(mode: CorruptionMode): Row[] {
     brierScore: mean(a.brier),
     falsePositiveRate: mean(a.fpr),
     falseNegativeRate: mean(a.fnr),
+    falseCertaintyByP: Object.fromEntries(P_THRESHOLDS.map((th) => [String(th), mean(a.fcByP[String(th)]!)])),
   }));
 }
 
@@ -109,13 +112,19 @@ console.log(
 const rows = MODES.flatMap(runMode);
 
 console.log(
-  `\n  ${'mode'.padEnd(11)}${'brain'.padEnd(9)}${'falseCert'.padStart(10)}${'coverage'.padStart(10)}${'meanErr C'.padStart(11)}${'brier'.padStart(8)}${'FPR'.padStart(7)}${'FNR'.padStart(7)}`,
+  `\n  ${'mode'.padEnd(11)}${'brain'.padEnd(13)}${'falseCert'.padStart(10)}${'coverage'.padStart(10)}${'meanErr C'.padStart(11)}${'brier'.padStart(8)}${'FPR'.padStart(7)}${'FNR'.padStart(7)}`,
 );
 for (const r of rows) {
   console.log(
-    `  ${r.mode.padEnd(11)}${r.brain.padEnd(9)}${pct(r.falseCertainty).padStart(10)}${pct(r.ambiguityCoverage).padStart(10)}${r.meanAbsErr.toFixed(1).padStart(11)}` +
+    `  ${r.mode.padEnd(11)}${r.brain.padEnd(13)}${pct(r.falseCertainty).padStart(10)}${pct(r.ambiguityCoverage).padStart(10)}${r.meanAbsErr.toFixed(1).padStart(11)}` +
       `${r.brierScore.toFixed(3).padStart(8)}${pct(r.falsePositiveRate).padStart(7)}${pct(r.falseNegativeRate).padStart(7)}`,
   );
+}
+
+console.log(`\n  false certainty on P(burning): fraction of ticks where a NOT-burning space got P >= threshold`);
+console.log(`  ${'mode'.padEnd(11)}${'brain'.padEnd(13)}` + P_THRESHOLDS.map((th) => `P>=${th}`.padStart(8)).join(''));
+for (const r of rows) {
+  console.log(`  ${r.mode.padEnd(11)}${r.brain.padEnd(13)}` + P_THRESHOLDS.map((th) => pct(r.falseCertaintyByP[String(th)] ?? 0).padStart(8)).join(''));
 }
 
 mkdirSync('results', { recursive: true });
@@ -128,8 +137,9 @@ console.log('\nwrote results/evidence-cp2.json');
 for (const mode of MODES) {
   const ours = rows.find((r) => r.mode === mode && r.brain === 'ours')!;
   const kal = rows.find((r) => r.mode === mode && r.brain === 'kalman')!;
+  const gated = rows.find((r) => r.mode === mode && r.brain === 'kalman-gated')!;
   console.log(
-    `${mode}: kalman false-certain ${pct(kal.falseCertainty)} of ticks, ours ${pct(ours.falseCertainty)}, coverage ${pct(ours.ambiguityCoverage)}; ` +
-      `Brier ours ${ours.brierScore.toFixed(2)} vs kalman ${kal.brierScore.toFixed(2)}.`,
+    `${mode}: false-certain kalman ${pct(kal.falseCertainty)}, gated ${pct(gated.falseCertainty)}, ours ${pct(ours.falseCertainty)} of ticks; coverage ours ${pct(ours.ambiguityCoverage)}; ` +
+      `Brier ours ${ours.brierScore.toFixed(2)} vs kalman ${kal.brierScore.toFixed(2)} vs gated ${gated.brierScore.toFixed(2)}.`,
   );
 }

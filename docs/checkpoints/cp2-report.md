@@ -49,6 +49,9 @@ Ours assumes up to *k* sensors may be lying and does not know which. It sets asi
 
 ### The numbers
 
+> **Correction, hour 18.** After an outside review we added a clean-run row, an innovation-gated Kalman, the filter's own posterior probabilities, and fixed the baseline's process model to match the world's. The Kalman's ~65 % "confidently wrong" turns out to be its **clean-run** number: with no corruption at all it names every space above 200 °C as burning, and 65 % of ticks (88 % on the vessel) have a hot space that is not burning. So that column measures **hot-versus-burning separation**, which ours does and a thermometer filter cannot. **Corruption resistance shows up in temperature error and coverage**: Kalman goes from 2 °C clean to 42 °C under freeze and 123 °C under blind, with 33 % coverage under blind; ours stays at 0.4 to 5 °C. Gating does not help the baseline (62–69 %). Full detail in `decisions.md`, hour 18, and the current table from `npm run evidence`.
+
+
 Six-room plan, 60 ticks, sensors break at tick 5, five seeds each.
 
 | Failure | Brain | Confidently wrong | Covers the true fire | Temp error | Brier |
