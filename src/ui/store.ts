@@ -1,18 +1,30 @@
 /**
- * src/ui — Zustand store. Runs both brains on one corrupted observation stream and holds
- * the shaped ViewerData plus playback state. Nothing here computes physics or belief.
+ * src/ui — Zustand store. Everything the UI runs is driven from this config: plan, seed,
+ * ticks, corruption, which brains. `run()` feeds every selected brain one identical
+ * corrupted observation stream (runLoopMulti) and holds the raw traces plus the shaped
+ * ViewerData the split view renders. Nothing here computes physics or belief.
+ *
+ * Playback lives in one place: usePlayback() in src/ui/usePlayback.ts, mounted once by App.
  */
 import { create } from 'zustand';
-import { DEMO_PLAN, runLoopMulti, type TickRecord } from '../loop';
+import { DEMO_PLAN, runLoopMulti, type BrainFactory, type TickRecord } from '../loop';
 import { createBrain } from '../brain';
 import { createKalmanBrain } from '../brain/kalman';
 import { buildViewerData, type ViewerData } from '../eval/viewerData';
-import { loadPlan } from '../shared/structures';
+import { isPlanName, loadPlan } from '../shared/structures';
 import type { CorruptionConfig, StructurePlan } from '../shared/types';
 
-type Corr = Omit<CorruptionConfig, 'seed'>;
+export type Corr = Omit<CorruptionConfig, 'seed'>;
+export type Brains = 'ours' | 'both';
 
-type SimState = {
+/** Brain factories by name. `primary` is always 'ours'; its commands drive the world. */
+export const BRAIN_FACTORIES: Record<Brains, Record<string, BrainFactory>> = {
+  ours: { ours: createBrain },
+  both: { ours: createBrain, kalman: createKalmanBrain },
+};
+export const PRIMARY = 'ours';
+
+export type SimState = {
   plan: StructurePlan;
   planName: string;
   /** Where the fire starts. The plan file's ignition space by default; the picker overrides it for demos. */
@@ -20,39 +32,56 @@ type SimState = {
   seed: number;
   ticks: number;
   corruption: Corr;
+  brains: Brains;
+  /** Raw per-brain traces from the last run. Every brain saw byte-identical observations. */
+  traces: Record<string, TickRecord[]>;
+  primary: string;
   /** Shaped for the split view. */
   data: ViewerData | null;
-  /** Raw primary-brain trace for the 3D scene: trace[cursor].truth and .obs are exact. */
+  /** traces[primary], kept as a field for the 3D scene: trace[cursor].truth and .obs are exact. */
   trace: TickRecord[] | null;
   error: string | null;
   cursor: number;
   playing: boolean;
   speed: number;
   run: () => void;
+  setPlan: (name: string) => void;
+  /** Alias of setPlan. */
   setPlanName: (name: string) => void;
   setSeed: (seed: number) => void;
   setIgnition: (id: string) => void;
   setTicks: (ticks: number) => void;
   setCorruption: (patch: Partial<Corr>) => void;
-  setCursor: (i: number) => void;
-  stepBy: (d: number) => void;
-  /** Advance one tick; stops playback at the end. */
-  tick: () => void;
+  setBrains: (brains: Brains) => void;
+  play: () => void;
+  pause: () => void;
   toggle: () => void;
+  /** Move the cursor by delta, clamped; playback stops at the last tick. */
+  step: (delta: number) => void;
+  /** Alias of step. */
+  stepBy: (delta: number) => void;
+  /** step(1). */
+  tick: () => void;
+  setCursor: (i: number) => void;
   setSpeed: (speed: number) => void;
 };
 
-const KEY = 'firefly.split.v1';
-type Saved = Partial<Pick<SimState, 'seed' | 'ticks' | 'corruption' | 'ignition'>>;
+/** Persisted subset. Versioned key: bump when the shape changes. */
+const KEY = 'firefly.sim.v2';
+type Saved = Partial<Pick<SimState, 'planName' | 'seed' | 'ticks' | 'corruption' | 'ignition' | 'brains'>>;
 function load(): Saved {
-  try { const raw = localStorage.getItem(KEY); return raw ? (JSON.parse(raw) as Saved) : {}; } catch { return {}; }
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return {};
+    const parsed: unknown = JSON.parse(raw);
+    return parsed !== null && typeof parsed === 'object' ? (parsed as Saved) : {};
+  } catch {
+    return {};
+  }
 }
 function save(s: Saved): void {
-  try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { /* ignore */ }
+  try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { /* storage unavailable: run anyway */ }
 }
-
-const saved = load();
-const DEFAULT_CORR: Corr = { mode: 'freeze', k: 1, onset: 5, target: [DEMO_PLAN.ignition[0] ?? 'S3'] };
 
 /**
  * A corruption target names spaces, and spaces belong to a plan. Drop targets the plan does
@@ -74,63 +103,87 @@ export function sanitizeIgnition(ignition: string | undefined, plan: StructurePl
   return plan.ignition[0] ?? plan.spaces[0]?.id ?? '';
 }
 
+const saved = load();
+const initialPlan: StructurePlan = saved.planName !== undefined && isPlanName(saved.planName) ? loadPlan(saved.planName) : DEMO_PLAN;
+const DEFAULT_CORR: Corr = { mode: 'freeze', k: 1, onset: 5, target: [...initialPlan.ignition] };
+const isBrains = (v: unknown): v is Brains => v === 'ours' || v === 'both';
+
 export const useSim = create<SimState>((set, get) => ({
-  plan: DEMO_PLAN,
-  planName: DEMO_PLAN.name,
-  ignition: sanitizeIgnition(saved.ignition, DEMO_PLAN),
-  seed: saved.seed ?? 42,
-  ticks: saved.ticks ?? 60,
-  corruption: sanitizeCorruption(saved.corruption ?? DEFAULT_CORR, DEMO_PLAN),
+  plan: initialPlan,
+  planName: initialPlan.name,
+  ignition: sanitizeIgnition(saved.ignition, initialPlan),
+  seed: typeof saved.seed === 'number' && Number.isFinite(saved.seed) ? Math.round(saved.seed) : 42,
+  ticks: typeof saved.ticks === 'number' && Number.isFinite(saved.ticks) && saved.ticks >= 1 ? Math.round(saved.ticks) : 60,
+  corruption: sanitizeCorruption(saved.corruption ?? DEFAULT_CORR, initialPlan),
+  brains: isBrains(saved.brains) ? saved.brains : 'both',
+  traces: {},
+  primary: PRIMARY,
   data: null,
   trace: null,
   error: null,
   cursor: 0,
   playing: false,
   speed: 4,
+
   run: () => {
-    const { plan: base, seed, ticks } = get();
+    const { plan: base, planName, seed, ticks, brains } = get();
     const corruption = sanitizeCorruption(get().corruption, base);
     const ignition = sanitizeIgnition(get().ignition, base);
     if (corruption !== get().corruption || ignition !== get().ignition) set({ corruption, ignition });
-    save({ seed, ticks, corruption, ignition });
+    save({ planName, seed, ticks, corruption, ignition, brains });
     // The plan file says where the fire starts; the picker overrides it for demos.
     const plan: StructurePlan = { ...base, ignition: [ignition] };
     try {
-      const traces = runLoopMulti({ plan, seed, ticks, corruption, brains: { ours: createBrain, kalman: createKalmanBrain }, primary: 'ours' });
+      const traces = runLoopMulti({ plan, seed, ticks, corruption, brains: BRAIN_FACTORIES[brains], primary: PRIMARY });
       const data = buildViewerData(plan, traces, { seed, corruption });
-      set({ data, trace: traces['ours'] ?? null, error: null, cursor: data.startAt, playing: false });
+      // Open two ticks before the failure begins (data.startAt) so the demo starts where it matters.
+      set({ traces, data, trace: traces[PRIMARY] ?? null, error: null, cursor: data.startAt, playing: false });
     } catch (e) {
       set({ error: e instanceof Error ? `${e.message}\n${e.stack ?? ''}` : String(e), playing: false });
     }
   },
-  setPlanName: (name) => {
+
+  setPlan: (name) => {
     if (name === get().planName) return;
     const plan = loadPlan(name);
     // A corruption target from the old plan is meaningless here; aim at the new ignition space.
     const corruption = sanitizeCorruption({ ...get().corruption, target: [...plan.ignition] }, plan);
     const ignition = sanitizeIgnition(undefined, plan);
-    set({ plan, planName: name, ignition, corruption, data: null, trace: null, cursor: 0, playing: false, error: null });
+    set({ plan, planName: name, ignition, corruption, traces: {}, data: null, trace: null, cursor: 0, playing: false, error: null });
   },
-  setSeed: (seed) => set({ seed }),
+  setPlanName: (name) => get().setPlan(name),
+  setSeed: (seed) => { if (Number.isFinite(seed)) set({ seed: Math.round(seed) }); },
   setIgnition: (ignition) => set({ ignition }),
-  setTicks: (ticks) => set({ ticks }),
+  setTicks: (ticks) => { if (Number.isFinite(ticks)) set({ ticks: Math.max(1, Math.round(ticks)) }); },
   setCorruption: (patch) => set({ corruption: { ...get().corruption, ...patch } }),
-  setCursor: (i) => {
-    if (!Number.isFinite(i)) return;
-    const n = get().data?.ticks.length ?? 0;
-    set({ cursor: Math.max(0, Math.min(n - 1, Math.round(i))) });
-  },
-  stepBy: (d) => {
-    const { cursor, data } = get(); const n = data?.ticks.length ?? 0;
-    const next = Math.max(0, Math.min(n - 1, cursor + d));
-    set({ cursor: next, playing: get().playing && next < n - 1 });
-  },
-  tick: () => get().stepBy(1),
-  toggle: () => {
-    const { playing, cursor, data } = get(); const n = data?.ticks.length ?? 0;
-    if (!data) return;
-    if (playing) return set({ playing: false });
+  setBrains: (brains) => set({ brains }),
+
+  play: () => {
+    const { cursor, trace } = get();
+    const n = trace?.length ?? 0;
+    if (n === 0) return;
     set({ playing: true, cursor: cursor >= n - 1 ? 0 : cursor });
   },
-  setSpeed: (speed) => set({ speed }),
+  pause: () => set({ playing: false }),
+  toggle: () => (get().playing ? get().pause() : get().play()),
+  step: (delta) => {
+    const { cursor, trace } = get();
+    const n = trace?.length ?? 0;
+    if (n === 0) return;
+    const next = Math.max(0, Math.min(n - 1, cursor + delta));
+    set({ cursor: next, playing: get().playing && next < n - 1 });
+  },
+  stepBy: (delta) => get().step(delta),
+  tick: () => get().step(1),
+  setCursor: (i) => {
+    if (!Number.isFinite(i)) return;
+    const n = get().trace?.length ?? 0;
+    set({ cursor: Math.max(0, Math.min(n - 1, Math.round(i))) });
+  },
+  setSpeed: (speed) => { if (Number.isFinite(speed) && speed > 0) set({ speed }); },
 }));
+
+/** The primary brain's record at the cursor, or undefined before a run. */
+export const useCurrent = (): TickRecord | undefined => useSim((s) => s.traces[s.primary]?.[s.cursor]);
+/** A named brain's record at the cursor, or undefined if that brain did not run. */
+export const useCurrentFor = (name: string): TickRecord | undefined => useSim((s) => s.traces[name]?.[s.cursor]);

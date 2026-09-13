@@ -9,6 +9,7 @@ import { PLAN_NAMES, isPlanName } from '../shared/structures';
 import { SplitView } from './split/SplitView';
 import { SceneView } from './scene/SceneView';
 import { useSim } from './store';
+import { usePlayback } from './usePlayback';
 import './split/split.css';
 import './app.css';
 
@@ -35,6 +36,7 @@ export function App() {
   const setPlanName = useSim((s) => s.setPlanName);
   const setCursor = useSim((s) => s.setCursor);
   const [pending, setPending] = useState<number | null>(url.t);
+  usePlayback();
   // The URL plan is applied once; after that the select owns it.
   const [pendingPlan, setPendingPlan] = useState<string | null>(url.plan);
 

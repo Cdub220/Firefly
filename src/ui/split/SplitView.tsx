@@ -2,7 +2,7 @@
  * Truth | our brain | Kalman, side by side, with a per-tick verdict strip and a chaos
  * mini-panel. All numbers come from the store's traces; nothing here computes belief.
  */
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useSim } from '../store';
 import type { CorruptionMode } from '../../shared/types';
 import { brainSvg, brainVerdictHtml, geometry, stripSvg, truthSvg, truthVerdictHtml } from './svg';
@@ -21,18 +21,7 @@ export function SplitView() {
   const g = useMemo(() => (data ? geometry(data) : null), [data]);
   const rec = data?.ticks[s.cursor];
 
-  // playback
-  const raf = useRef<number | null>(null);
-  useEffect(() => {
-    if (!s.playing || !data) return;
-    let last = performance.now();
-    const step = (now: number) => {
-      if (now - last >= 1000 / s.speed) { last = now; s.stepBy(1); }
-      raf.current = requestAnimationFrame(step);
-    };
-    raf.current = requestAnimationFrame(step);
-    return () => { if (raf.current != null) cancelAnimationFrame(raf.current); };
-  }, [s.playing, s.speed, data, s]);
+  // Playback runs in App via usePlayback(); this view only reads the cursor.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement | null)?.tagName === 'INPUT') return;

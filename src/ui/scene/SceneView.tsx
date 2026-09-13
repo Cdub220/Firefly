@@ -3,7 +3,7 @@
  * truth/belief tables in a collapsible side panel (the debug view). Reads trace[cursor]
  * from the store; computes nothing.
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSim } from '../store';
 import { Scene } from './Scene';
 import { truthFrame } from './frame';
@@ -18,19 +18,7 @@ export function SceneView() {
   useEffect(() => { setMaxLevel(levels[levels.length - 1] ?? 1); }, [levels]);
   const frame = useMemo(() => (rec ? truthFrame(rec, s.plan) : null), [rec, s.plan]);
 
-  // Playback at s.speed ticks per second.
-  const raf = useRef<number | null>(null);
-  useEffect(() => {
-    if (!s.playing || !s.trace) return;
-    let last = performance.now();
-    const step = (now: number) => {
-      if (now - last >= 1000 / s.speed) { last = now; s.tick(); }
-      raf.current = requestAnimationFrame(step);
-    };
-    raf.current = requestAnimationFrame(step);
-    return () => { if (raf.current != null) cancelAnimationFrame(raf.current); };
-  }, [s.playing, s.speed, s.trace, s]);
-
+  // Playback runs in App via usePlayback(); this view only reads the cursor.
   const burningNow = rec ? rec.truth.spaces.filter((x) => x.burning).map((x) => x.id) : [];
   const brainNames = s.data?.brainNames ?? [];
   const beliefs = s.data?.ticks[s.cursor]?.brains;
