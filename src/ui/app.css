@@ -6,3 +6,18 @@
 .fx-top button:hover { color: var(--ink); }
 .fx-top label { margin-left: auto; font-size: 11px; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em; display: inline-flex; align-items: center; gap: 6px; }
 .fx-top select { background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 4px 6px; font: 13px var(--sans); }
+.fx-top .toggle { margin-left: 8px; background: var(--panel-2); color: var(--ink-2); border: 1px solid var(--line); }
+.fx-top .toggle[aria-pressed=true] { color: var(--ink); border-color: var(--uncertain); }
+/* Stage backup: dim until a trace is loaded, then it says so. */
+.fx-top .replay { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; }
+.fx-top .replay button { font-size: 11px; color: var(--muted); border: 1px dashed var(--line); padding: 3px 8px; }
+.fx-top .replay button.on { color: #0e1116; background: var(--uncertain); border: 1px solid var(--uncertain); font-weight: 600; }
+.fx-top .replay-why { font: 11px var(--mono); color: var(--wrong); max-width: 40ch; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fx-top.demo button[role=tab] { font-size: 15px; }
+/* A beat's caption above the non-split views. */
+.fx.top-caption { min-height: 0; padding-block: 10px; padding-inline: 20px; margin: 0; border-bottom: 1px solid var(--line); }
+.fx.top-caption.demo { font-size: 19px; line-height: 1.4; }
+/* Error boundary: a message and a retry, not a white page. */
+.fx-crash { margin: 16px 20px; padding: 14px 16px; border: 1px solid var(--wrong); border-radius: 6px; background: var(--panel); color: var(--ink); font: 13px var(--sans); display: flex; flex-direction: column; gap: 8px; }
+.fx-crash pre { margin: 0; font: 12px var(--mono); color: var(--wrong); white-space: pre-wrap; }
+.fx-crash button { align-self: flex-start; background: var(--panel-2); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 5px 10px; font: 500 12px var(--sans); cursor: pointer; }

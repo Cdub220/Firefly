@@ -6,6 +6,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSim } from '../store';
 import { ScenarioPanel } from '../panels/ScenarioPanel';
 import { ChaosPanel } from '../panels/ChaosPanel';
+import { Beats } from '../panels/Beats';
+import { ErrorBoundary } from '../ErrorBoundary';
 import { Scene } from './Scene';
 import { droneRows } from '../droneLayout';
 import '../split/split.css';
@@ -25,10 +27,10 @@ export function SceneView() {
   const beliefs = s.data?.ticks[s.cursor]?.brains;
 
   return (
-    <div className="fx scene-view">
+    <div className={'fx scene-view' + (s.demo ? ' demo' : '')}>
       <div className="scene-grid">
         <aside className="scene-left">
-          <ScenarioPanel />
+          {s.demo ? <section className="panel-box" aria-label="demo script"><h2>Demo script</h2><Beats compact /></section> : <ScenarioPanel />}
           <ChaosPanel />
         </aside>
 
@@ -43,12 +45,14 @@ export function SceneView() {
           </div>
           {s.error && <pre className="err">{s.error}</pre>}
           <div className="scene-canvas">
-            {rec ? <Scene plan={s.plan} rec={rec} view="truth" maxLevel={maxLevel} drones={{ prev, playing: s.playing, speed: s.speed }} /> : <div className="scene-empty">Press Run.</div>}
+            <ErrorBoundary label="3D scene">
+              {rec ? <Scene plan={s.plan} rec={rec} view="truth" maxLevel={maxLevel} drones={{ prev, playing: s.playing, speed: s.speed }} /> : <div className="scene-empty">Press Run.</div>}
+            </ErrorBoundary>
           </div>
-          <p className="note">Truth only. Box color is temperature (slate → amber → red at 400 °C → white-hot at 600). Pulsing boxes are burning. Lines are heat paths: gray doors and passages, dim bulkheads, blue floors and shafts; a dim red line is a door that has shut. Spheres are fixed sensors as the brain sees them this tick: green reporting, amber lying by more than 30 °C, red silent. Drones ring above their space: cyan cylinder tether (dashed hose to resupply), green retardant, white scout, yellow relay, orange hatch; the bar beneath is resource; a gray X is where one died. Arrows are the brain's commands, coloured by task, faded on arrival.</p>
+          {!s.demo && <p className="note">Truth only. Box color is temperature (slate → amber → red at 400 °C → white-hot at 600). Pulsing boxes are burning. Lines are heat paths: gray doors and passages, dim bulkheads, blue floors and shafts; a dim red line is a door that has shut. Spheres are fixed sensors as the brain sees them this tick: green reporting, amber lying by more than 30 °C, red silent. Drones ring above their space: cyan cylinder tether (dashed hose to resupply), green retardant, white scout, yellow relay, orange hatch; the bar beneath is resource; a gray X is where one died. Arrows are the brain's commands, coloured by task, faded on arrival.</p>}
         </main>
 
-        <aside className="scene-right scene-side">
+        {!s.demo && <aside className="scene-right scene-side">
           <h3>Tables (debug view)</h3>
           {rec ? (
             <>
@@ -93,7 +97,7 @@ export function SceneView() {
               </table>
             </>
           ) : <p className="note">Run to fill the tables.</p>}
-        </aside>
+        </aside>}
       </div>
     </div>
   );

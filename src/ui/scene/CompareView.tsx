@@ -7,6 +7,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSim } from '../store';
 import { ScenarioPanel } from '../panels/ScenarioPanel';
 import { ChaosPanel } from '../panels/ChaosPanel';
+import { Beats } from '../panels/Beats';
+import { ErrorBoundary } from '../ErrorBoundary';
 import { Scene } from './Scene';
 import { hedgeInfo } from './hedge';
 import '../split/split.css';
@@ -35,9 +37,9 @@ export function CompareView() {
   const group = 'compare';
 
   return (
-    <div className="fx compare-view">
+    <div className={'fx compare-view' + (s.demo ? ' demo' : '')}>
       <aside className="compare-left">
-        <ScenarioPanel />
+        {s.demo ? <section className="panel-box" aria-label="demo script"><h2>Demo script</h2><Beats compact /></section> : <ScenarioPanel />}
         <ChaosPanel />
       </aside>
       <main className="compare-main">
@@ -61,6 +63,7 @@ export function CompareView() {
         {s.error && <pre className="err">{s.error}</pre>}
         {!rec && <div className="scene-empty compare-empty">Press Run.</div>}
         {rec && (
+          <ErrorBoundary label="3D compare scenes">
           <div className="compare-grid">
             <section className="compare-col">
               <header><h2>Ground truth</h2><span className="sub">what is actually burning</span></header>
@@ -83,8 +86,9 @@ export function CompareView() {
               <div className="compare-canvas"><Scene plan={s.plan} rec={rec} view="diff" brain={brain} belief={belief} maxLevel={maxLevel} cameraGroup={group} /></div>
             </details>
           </div>
+          </ErrorBoundary>
         )}
-        <p className="note">Belief view: box color is the brain's temperature estimate, pulsing boxes are its burning set, a tinted hull joins spaces it cannot tell apart, a struck red sphere is a sensor it distrusts, a hatched box has no reading at all. Orbit any view; all three move. Thick arrows are a hedge: different drones sent to different spaces inside one maybe-group.</p>
+        {!s.demo && <p className="note">Belief view: box color is the brain's temperature estimate, pulsing boxes are its burning set, a tinted hull joins spaces it cannot tell apart, a struck red sphere is a sensor it distrusts, a hatched box has no reading at all. Orbit any view; all three move. Thick arrows are a hedge: different drones sent to different spaces inside one maybe-group.</p>}
       </main>
     </div>
   );

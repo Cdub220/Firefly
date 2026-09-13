@@ -4,13 +4,16 @@
  * traces; nothing here computes belief.
  *
  * Recording mode (`?demo=1` or the toggle) keeps: beats row, playback, the three panels,
- * the strip, and the caption. Keys: 1-5 beats, space plays, arrows step.
+ * the briefing, the strip, and the caption. Keys are handled in App.
  */
 import { useEffect, useMemo, useRef } from 'react';
-import { BEATS, fromUrl, useSim } from '../store';
+import { fromUrl, useSim } from '../store';
 import type { CorruptionMode } from '../../shared/types';
+import { Beats } from '../panels/Beats';
+import { Briefing } from '../panels/Briefing';
 import { brainSvg, brainVerdictHtml, geometry, legendText, stripSvg, truthSvg, truthVerdictHtml } from './svg';
 import './split.css';
+import '../panels/panels.css';
 
 const MODES: CorruptionMode[] = ['none', 'freeze', 'blind', 'saturate', 'flashover', 'mixed'];
 const MODE_LABEL: Record<CorruptionMode, string> = { none: 'none (clean sensors)', freeze: 'freeze (stale value)', blind: 'blind (reads cold)', saturate: 'saturate (pins at max)', flashover: 'flashover (all die)', mixed: 'mixed (everything)' };
@@ -35,22 +38,7 @@ export function SplitView() {
     if (u.t !== null) s.setCursor(u.t - 1);
   }, [data, s]);
 
-  // Playback runs in App via usePlayback(); this view only reads the cursor.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement | null)?.tagName;
-      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
-      if (e.metaKey || e.ctrlKey || e.altKey) return; // Cmd/Ctrl combos belong to the browser
-      if (e.key === ' ') { e.preventDefault(); s.toggle(); }
-      if (e.key === 'ArrowRight') s.stepBy(1);
-      if (e.key === 'ArrowLeft') s.stepBy(-1);
-      const beat = BEATS.find((b) => b.hotkey === e.key);
-      if (beat) s.runBeat(beat.key);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [s]);
-
+  // Playback runs in App via usePlayback(), keys in App too; this view only reads the cursor.
   const spaceIds = s.plan.spaces.map((x) => x.id);
   const target = s.corruption.target ?? [];
   const legend = data ? legendText(data) : '';
@@ -60,17 +48,10 @@ export function SplitView() {
       <header>
         <h1>Firefly · truth vs two brains</h1>
         {!s.demo && <div className="cfg">plan={s.plan.name} seed={s.seed} ticks={s.ticks} corruption={JSON.stringify(s.corruption)}{s.closedLoop ? ' · closed loop: drones act on commands' : ''}</div>}
-        <button id="demo" type="button" className="toggle" aria-pressed={s.demo} onClick={() => s.setDemo(!s.demo)}>{s.demo ? 'Exit recording mode' : 'Recording mode'}</button>
       </header>
       {s.caption && <p className="caption" aria-live="polite">{s.caption}</p>}
 
-      <div className="beats" role="group" aria-label="demo beats">
-        {BEATS.map((b) => (
-          <button key={b.key} type="button" aria-pressed={s.beat === b.key} onClick={() => s.runBeat(b.key)}>
-            <kbd>{b.hotkey}</kbd> {b.label}
-          </button>
-        ))}
-      </div>
+      <Beats />
 
       {!s.demo && (
         <>
@@ -152,6 +133,7 @@ export function SplitView() {
                   </div>
                   <div dangerouslySetInnerHTML={{ __html: brainSvg(data, g, rec, name) }} />
                   <div className="verdict" dangerouslySetInnerHTML={{ __html: brainVerdictHtml(rec, name) }} />
+                  {name === s.primary && <Briefing brain={name} />}
                 </section>
               );
             })}

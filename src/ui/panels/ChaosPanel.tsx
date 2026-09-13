@@ -92,10 +92,15 @@ export function ChaosPanel() {
           <button key={p.id} type="button" title={p.help} onClick={() => { useSim.setState({ corruption: p.corruption }); s.run(); }}>{p.label}</button>
         ))}
       </div>
-      <div className="knobs">
-        {CORRUPTION_SCHEMA.map((f) => <Knob key={f.key} f={f} corr={s.corruption} spaceIds={spaceIds} set={set} />)}
-      </div>
-      <button type="button" className="primary wide" onClick={s.run}>Run with these settings</button>
+      {/* Recording mode keeps the presets and the readout; the knobs are for tuning, not for the stage. */}
+      {!s.demo && (
+        <>
+          <div className="knobs">
+            {CORRUPTION_SCHEMA.map((f) => <Knob key={f.key} f={f} corr={s.corruption} spaceIds={spaceIds} set={set} />)}
+          </div>
+          <button type="button" className="primary wide" onClick={s.run}>Run with these settings</button>
+        </>
+      )}
       <div className="readout" aria-live="polite">
         {rec ? (
           <>

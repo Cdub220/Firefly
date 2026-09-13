@@ -1,38 +1,61 @@
 /**
- * src/ui — owned by Chase. Two views over one store: Dean's split view (truth | ours |
- * kalman, the checkpoint demo) and the 3D scene (truth rendered on the structure).
- * A thin bar on top switches view and plan. URL params `view`, `plan`, `t` preselect
- * (used for screenshots): /?view=scene&plan=vessel-3x8&t=60
+ * src/ui — owned by Chase. Four views over one store: the split view (truth | ours |
+ * kalman, the checkpoint demo), the 3D scene, the 3D compare and the head to head. A thin
+ * bar on top switches view and plan and toggles recording mode. URL params `view`,
+ * `plan`, `t`, `demo`, `beat` preselect: /?view=scene&plan=vessel-3x8&t=60
+ *
+ * Keys (everywhere, outside inputs): space play/pause, arrows step, 1-6 demo beats,
+ * c toggles split <-> head to head, r toggles recording mode.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PLAN_NAMES, isPlanName } from '../shared/structures';
 import { SplitView } from './split/SplitView';
 import { SceneView } from './scene/SceneView';
 import { CompareView } from './scene/CompareView';
 import { HeadToHead } from './compare/HeadToHead';
-import { useSim } from './store';
+import { ErrorBoundary } from './ErrorBoundary';
+import { BEATS, VIEWS, fromUrl, useSim } from './store';
 import { usePlayback } from './usePlayback';
 import './split/split.css';
 import './app.css';
 
-type View = 'split' | 'scene' | 'compare' | 'h2h';
-
-function fromUrl(): { view: View; plan: string | null; t: number | null } {
-  try {
-    const q = new URLSearchParams(window.location.search);
-    const v = q.get('view');
-    const view: View = v === 'scene' ? 'scene' : v === 'compare' ? 'compare' : v === 'h2h' ? 'h2h' : 'split';
-    const plan = q.get('plan');
-    const t = q.get('t');
-    return { view, plan, t: t !== null && Number.isFinite(Number(t)) ? Number(t) : null };
-  } catch {
-    return { view: 'split', plan: null, t: null };
-  }
+/** The stage backup: pick results/demo-trace.json; beats then replay it. Local file read, no network. */
+function ReplayControl() {
+  const replay = useSim((s) => s.replay);
+  const loadReplay = useSim((s) => s.loadReplay);
+  const clearReplay = useSim((s) => s.clearReplay);
+  const [why, setWhy] = useState<string | null>(null);
+  const input = useRef<HTMLInputElement>(null);
+  const onFile = async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      const rejected = loadReplay(JSON.parse(await file.text()));
+      setWhy(rejected);
+    } catch (e) {
+      setWhy(e instanceof Error ? e.message : String(e));
+    }
+    if (input.current) input.current.value = '';
+  };
+  return (
+    <span className="replay">
+      <input ref={input} type="file" accept="application/json,.json" hidden onChange={(e) => { void onFile(e.target.files?.[0]); }} />
+      {replay ? (
+        <button type="button" className="on" title={`Recorded ${replay.exportedAt || 'trace'} · ${replay.beats.map((b) => b.beat).join(', ')}. Click to go back to the live sim.`} onClick={() => { clearReplay(); setWhy(null); }}>replay on · {replay.beats.length} beats</button>
+      ) : (
+        <button type="button" title="Load results/demo-trace.json (npm run export:trace); the beats then replay the recording instead of simulating" onClick={() => input.current?.click()}>load trace</button>
+      )}
+      {why && <span className="replay-why" role="alert">{why}</span>}
+    </span>
+  );
 }
 
 export function App() {
   const [url] = useState(fromUrl);
-  const [view, setView] = useState<View>(url.view);
+  const view = useSim((s) => s.view);
+  const setView = useSim((s) => s.setView);
+  const demo = useSim((s) => s.demo);
+  const setDemo = useSim((s) => s.setDemo);
+  const caption = useSim((s) => s.caption);
   const run = useSim((s) => s.run);
   const hasData = useSim((s) => s.data != null);
   const planName = useSim((s) => s.planName);
@@ -57,21 +80,44 @@ export function App() {
     if (hasData && pending !== null) { setCursor(pending - 1); setPending(null); }
   }, [hasData, pending, setCursor]);
 
+  // One keyboard handler for every view.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return; // Cmd/Ctrl combos belong to the browser
+      const s = useSim.getState();
+      if (e.key === ' ') { if (tag === 'BUTTON') return; e.preventDefault(); s.toggle(); return; }
+      if (e.key === 'ArrowRight') { s.step(1); return; }
+      if (e.key === 'ArrowLeft') { s.step(-1); return; }
+      if (e.key === 'c' || e.key === 'C') { s.setView(s.view === 'h2h' ? 'split' : 'h2h'); return; }
+      if (e.key === 'r' || e.key === 'R') { s.setDemo(!s.demo); return; }
+      const beat = BEATS.find((b) => b.hotkey === e.key);
+      if (beat) s.runBeat(beat.key);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   return (
     <>
-      <div className="fx fx-top" role="tablist" aria-label="view">
+      <div className={'fx fx-top' + (demo ? ' demo' : '')} role="tablist" aria-label="view">
         <span className="fx-brand">Firefly</span>
-        <button type="button" role="tab" aria-selected={view === 'split'} className={view === 'split' ? 'on' : ''} onClick={() => setView('split')}>Split view</button>
-        <button type="button" role="tab" aria-selected={view === 'scene'} className={view === 'scene' ? 'on' : ''} onClick={() => setView('scene')}>3D scene</button>
-        <button type="button" role="tab" aria-selected={view === 'compare'} className={view === 'compare' ? 'on' : ''} onClick={() => setView('compare')}>3D compare</button>
-        <button type="button" role="tab" aria-selected={view === 'h2h'} className={view === 'h2h' ? 'on' : ''} onClick={() => setView('h2h')}>Head to head</button>
+        {VIEWS.map((v) => (
+          <button key={v.key} type="button" role="tab" aria-selected={view === v.key} className={view === v.key ? 'on' : ''} onClick={() => setView(v.key)}>{v.label}</button>
+        ))}
         <label htmlFor="plan">structure
           <select id="plan" value={planName} onChange={(e) => setPlanName(e.target.value)}>
             {PLAN_NAMES.map((n) => <option key={n} value={n}>{n}</option>)}
           </select>
         </label>
+        <ReplayControl />
+        <button id="demo" type="button" className="toggle" aria-pressed={demo} title="Recording mode: bigger words, fewer of them (key r)" onClick={() => setDemo(!demo)}>{demo ? 'Exit recording mode' : 'Recording mode'}</button>
       </div>
-      {view === 'split' ? <SplitView /> : view === 'scene' ? <SceneView /> : view === 'compare' ? <CompareView /> : <HeadToHead />}
+      {view !== 'split' && caption && <p className={'fx caption top-caption' + (demo ? ' demo' : '')} aria-live="polite">{caption}</p>}
+      <ErrorBoundary key={view} label={VIEWS.find((v) => v.key === view)?.label ?? view}>
+        {view === 'split' ? <SplitView /> : view === 'scene' ? <SceneView /> : view === 'compare' ? <CompareView /> : <HeadToHead />}
+      </ErrorBoundary>
     </>
   );
 }

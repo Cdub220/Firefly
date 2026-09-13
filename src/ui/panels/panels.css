@@ -1,4 +1,20 @@
 /* Scenario and chaos panels. Share the .fx tokens from split.css. */
+/* The demo script inside a side panel: one button per row. */
+.panel-box .beats { display: flex; flex-direction: column; gap: 6px; margin: 0; }
+.panel-box .beats button { text-align: left; }
+/* Briefing: one line, revealed by a CSS-only typewriter (no JS timers). */
+.briefing { margin: 8px 0 0; font: 13px var(--mono); color: var(--ink); min-height: 1.4em; }
+.briefing .typewriter { display: inline-block; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: clip; vertical-align: bottom; border-right: 2px solid var(--uncertain); animation: typewriter calc(var(--chars, 40) * 28ms) steps(var(--chars, 40)) forwards, caret 0.7s step-end infinite; width: 0; }
+@keyframes typewriter { to { width: 100%; } }
+@keyframes caret { 50% { border-color: transparent; } }
+@media (prefers-reduced-motion: reduce) { .briefing .typewriter { animation: none; width: auto; border-right: none; } }
+/* Recording mode: bigger words in the side panels and the briefing. */
+.fx.demo .panel-box { font-size: 15px; }
+.fx.demo .panel-box h2 { font-size: 14px; }
+.fx.demo .panel-box button { font-size: 14px; padding: 8px 12px; }
+.fx.demo .panel-box .presets button { font-size: 14px; }
+.fx.demo .briefing { font-size: 16px; }
+.fx.demo .readout { font-size: 14px; }
 .panel-box { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
 .panel-box h2 { font: 600 12px var(--sans); color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em; margin: 4px 0 0; }
 .panel-box label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em; }

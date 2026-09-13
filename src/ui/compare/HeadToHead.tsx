@@ -7,6 +7,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSim } from '../store';
 import { ScenarioPanel } from '../panels/ScenarioPanel';
 import { ChaosPanel } from '../panels/ChaosPanel';
+import { Beats } from '../panels/Beats';
+import { Briefing } from '../panels/Briefing';
+import { ErrorBoundary } from '../ErrorBoundary';
 import { Scene } from '../scene/Scene';
 import { ContainmentChart } from './ContainmentChart';
 import { Scorecard } from './Scorecard';
@@ -44,9 +47,9 @@ export function HeadToHead() {
   const missing = !s.traces[LEFT];
 
   return (
-    <div className="fx h2h-view">
+    <div className={'fx h2h-view' + (s.demo ? ' demo' : '')}>
       <aside className="h2h-left">
-        <ScenarioPanel />
+        {s.demo ? <section className="panel-box" aria-label="demo script"><h2>Demo script</h2><Beats compact /></section> : <ScenarioPanel />}
         <ChaosPanel />
       </aside>
       <main className="h2h-main">
@@ -66,7 +69,7 @@ export function HeadToHead() {
           <>
             <section className="h2h-truth">
               <header><h2>Ground truth</h2><span className="sub">same fire, same broken sensors, for both brains</span></header>
-              <div className="h2h-canvas small"><Scene plan={s.plan} rec={rec} view="truth" maxLevel={maxLevel} drones={{ prev, playing: s.playing, speed: s.speed }} cameraGroup={group} /></div>
+              <div className="h2h-canvas small"><ErrorBoundary label="truth scene"><Scene plan={s.plan} rec={rec} view="truth" maxLevel={maxLevel} drones={{ prev, playing: s.playing, speed: s.speed }} cameraGroup={group} /></ErrorBoundary></div>
             </section>
             <div className="h2h-grid">
               {[[LEFT, left, wrongLeft, missedLeft] as const, [RIGHT, right, wrongRight, missedRight] as const].map(([name, r, wrong, missed]) => (
@@ -85,8 +88,11 @@ export function HeadToHead() {
                     ) : <span className="sub">not run</span>}
                   </header>
                   <div className="h2h-canvas">
-                    {r ? <Scene plan={s.plan} rec={rec} view="belief" brain={name} belief={r.belief} maxLevel={maxLevel} cameraGroup={group} wrongFloor={wrong} /> : <div className="scene-empty">no trace for {name}</div>}
+                    <ErrorBoundary label={`${LABEL[name] ?? name} scene`}>
+                      {r ? <Scene plan={s.plan} rec={rec} view="belief" brain={name} belief={r.belief} maxLevel={maxLevel} cameraGroup={group} wrongFloor={wrong} /> : <div className="scene-empty">no trace for {name}</div>}
+                    </ErrorBoundary>
                   </div>
+                  <Briefing brain={name} />
                 </section>
               ))}
             </div>
