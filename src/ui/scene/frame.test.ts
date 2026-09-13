@@ -103,11 +103,32 @@ describe('beliefFrame and diffFrame', () => {
     expect(Object.values(f.burning)).toEqual([]); // diff view never pulses
   });
 
+  it('keeps every non-empty group, in both belief and diff frames', () => {
+    const b = belief({ ambiguous: [['S1', 'S2'], [], ['S5', 'S6'], ['S4']] });
+    expect(beliefFrame(rec, DEMO_PLAN, b).groups).toEqual([['S1', 'S2'], ['S5', 'S6'], ['S4']]);
+    expect(diffFrame(rec, DEMO_PLAN, b).groups).toEqual([['S1', 'S2'], ['S5', 'S6'], ['S4']]);
+    expect(DIFF_COLORS.uncertain).toBe(DIFF_COLORS.warn); // honest uncertainty is amber, like a warning
+  });
+
+  it('a space heard only through a drone is sensed, not hatched', () => {
+    // S6 has no drones parked in it (they sit on S1). Drop its fixed reading, then add a drone reading there.
+    const readings = rec.obs.readings.filter((r) => !(r.source === 'fixed' && r.spaceId === 'S6'));
+    const without = { ...rec, obs: { ...rec.obs, readings } };
+    expect(unsensedSpaces(without, DEMO_PLAN)).toEqual(['S6']);
+    const droneInS6 = { sensorId: 'D9:temp', source: 'drone' as const, droneId: 'D9', spaceId: 'S6', temp: 25, t: rec.obs.t };
+    const withDrone = { ...rec, obs: { ...rec.obs, readings: [...readings, droneInS6] } };
+    expect(unsensedSpaces(withDrone, DEMO_PLAN)).toEqual([]);
+  });
+
   it('frameFor dispatches and falls back to truth without a belief', () => {
     expect(frameFor('truth', rec, DEMO_PLAN, undefined)).toEqual(truthFrame(rec, DEMO_PLAN));
     expect(frameFor('belief', rec, DEMO_PLAN, undefined)).toEqual(truthFrame(rec, DEMO_PLAN));
-    const b = belief({});
-    expect(frameFor('belief', rec, DEMO_PLAN, b).groups).toEqual([]);
-    expect(frameFor('diff', rec, DEMO_PLAN, b).colors).toBeDefined();
+    const b = belief({ suspectSensors: ['F1'] });
+    const bf = frameFor('belief', rec, DEMO_PLAN, b);
+    const df = frameFor('diff', rec, DEMO_PLAN, b);
+    expect(bf.suspect).toEqual(['F1']);
+    expect(bf.colors).toBeUndefined();
+    expect(df.colors).toBeDefined();
+    expect(df.suspect).toBeUndefined();
   });
 });

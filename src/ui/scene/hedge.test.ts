@@ -15,6 +15,14 @@ describe('hedgeInfo', () => {
     expect(h.groups).toEqual([['S2', 'S4']]);
   });
 
+  it('one drone commanded twice is not a hedge: only its last command counts', () => {
+    const amb = [['S2', 'S4']];
+    expect(hedgeInfo({ ambiguous: amb }, [{ droneId: 'D1', goTo: 'S2', task: 'observe' }, { droneId: 'D1', goTo: 'S4', task: 'observe' }]).hedging).toBe(false);
+    const h = hedgeInfo({ ambiguous: amb }, [{ droneId: 'D1', goTo: 'S2', task: 'observe' }, { droneId: 'D1', goTo: 'S4', task: 'observe' }, { droneId: 'D2', goTo: 'S2', task: 'observe' }]);
+    expect(h.hedging).toBe(true); // D1 ends at S4, D2 at S2
+    expect(h.drones.sort()).toEqual(['D1', 'D2']);
+  });
+
   it('ignores singleton groups and commands outside groups; no ambiguity means no hedge', () => {
     expect(hedgeInfo({ ambiguous: [['S2'], ['S4']] }, [{ droneId: 'D1', goTo: 'S2', task: 'observe' }, { droneId: 'D2', goTo: 'S4', task: 'observe' }]).hedging).toBe(false);
     expect(hedgeInfo({ ambiguous: [] }, [{ droneId: 'D1', goTo: 'S2', task: 'observe' }, { droneId: 'D2', goTo: 'S4', task: 'observe' }]).hedging).toBe(false);

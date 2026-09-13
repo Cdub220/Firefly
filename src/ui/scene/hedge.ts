@@ -15,9 +15,13 @@ export type HedgeInfo = {
 export function hedgeInfo(belief: Pick<Belief, 'ambiguous'>, commands: readonly Command[]): HedgeInfo {
   const drones = new Set<DroneId>();
   const groups: SpaceId[][] = [];
+  // One effective command per drone (the last), matching what the scene draws.
+  const last = new Map<DroneId, Command>();
+  for (const c of commands) last.set(c.droneId, c);
+  const effective = [...last.values()];
   for (const g of belief.ambiguous) {
     if (g.length < 2) continue;
-    const inGroup = commands.filter((c) => g.includes(c.goTo));
+    const inGroup = effective.filter((c) => g.includes(c.goTo));
     const targets = new Set(inGroup.map((c) => c.goTo));
     if (targets.size < 2) continue;
     groups.push([...g]);

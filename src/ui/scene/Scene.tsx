@@ -86,6 +86,7 @@ function SyncedControls({ group, id, target }: { group: string | undefined; id: 
   const ref = useRef<OrbitControlsImpl>(null);
   const camera = useThree((s) => s.camera);
   const seen = useRef(0);
+  const following = useRef(false);
   useFrame(() => {
     if (!group || !ref.current) return;
     const g = cameraGroup(group);
@@ -93,10 +94,13 @@ function SyncedControls({ group, id, target }: { group: string | undefined; id: 
     seen.current = g.version;
     camera.position.set(...g.pose.position);
     ref.current.target.set(...g.pose.target);
+    // update() fires onChange; a follower must not republish the pose it just copied.
+    following.current = true;
     ref.current.update();
+    following.current = false;
   });
   const onChange = () => {
-    if (!group || !ref.current) return;
+    if (!group || !ref.current || following.current) return;
     const g = cameraGroup(group);
     seen.current = g.version + 1;
     publishPose(group, id, { position: [camera.position.x, camera.position.y, camera.position.z], target: [ref.current.target.x, ref.current.target.y, ref.current.target.z] });
