@@ -1,6 +1,6 @@
 /**
  * Truth | our brain | Kalman, side by side, with a per-tick verdict strip, a chaos
- * mini-panel, a plan picker and one-click demo beats. All numbers come from the store's
+ * mini-panel and one-click demo beats (the plan picker is in App's top bar). All numbers come from the store's
  * traces; nothing here computes belief.
  *
  * Recording mode (`?demo=1` or the toggle) keeps: beats row, playback, the three panels,
@@ -8,7 +8,6 @@
  */
 import { useEffect, useMemo, useRef } from 'react';
 import { BEATS, fromUrl, useSim } from '../store';
-import { PLAN_NAMES } from '../../shared/structures';
 import type { CorruptionMode } from '../../shared/types';
 import { brainSvg, brainVerdictHtml, geometry, legendText, stripSvg, truthSvg, truthVerdictHtml } from './svg';
 import './split.css';
@@ -36,18 +35,7 @@ export function SplitView() {
     if (u.t !== null) s.setCursor(u.t - 1);
   }, [data, s]);
 
-  // playback
-  const raf = useRef<number | null>(null);
-  useEffect(() => {
-    if (!s.playing || !data) return;
-    let last = performance.now();
-    const step = (now: number) => {
-      if (now - last >= 1000 / s.speed) { last = now; s.stepBy(1); }
-      raf.current = requestAnimationFrame(step);
-    };
-    raf.current = requestAnimationFrame(step);
-    return () => { if (raf.current != null) cancelAnimationFrame(raf.current); };
-  }, [s.playing, s.speed, data, s]);
+  // Playback runs in App via usePlayback(); this view only reads the cursor.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement | null)?.tagName;
@@ -93,11 +81,6 @@ export function SplitView() {
           </p>
 
           <div className="controls" role="group" aria-label="scenario">
-            <label htmlFor="plan">structure
-              <select id="plan" value={s.planName} onChange={(e) => s.setPlanName(e.target.value)}>
-                {PLAN_NAMES.map((n) => <option key={n} value={n}>{n}</option>)}
-              </select>
-            </label>
             <label>fire starts in
               <span className="chips">
                 {spaceIds.map((id) => (

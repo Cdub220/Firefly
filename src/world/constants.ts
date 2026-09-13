@@ -20,8 +20,9 @@
  *
  * Two places the world is not exactly that linear model, for anyone matching it:
  *  - The MAX_OUTGOING_RATE clamp scales only the over-limit space's own outgoing sum;
- *    receivers still take the full rate. It only triggers when a space's degree-weighted
- *    rates exceed 0.9 (none of the current plans come close).
+ *    receivers still take the full rate. It triggers when a space's rates sum past 0.9:
+ *    never on demo-6, but on every mid-column shaft space of vessel-3x8 (1.11) and
+ *    tower-5x4 (1.08), where the emitter is scaled to ~0.83x.
  *  - Ordnance cook-off is decided on the temperature after transfer and cooling within
  *    the tick, not the start-of-tick temperature.
  */

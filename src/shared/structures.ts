@@ -2,16 +2,16 @@
  * Every plan file this repo ships, loadable by name. Imports are static because Vite
  * needs them to be; adding a plan means adding a line here (and, if generated, a spec in
  * src/world/gen.ts).
- *
- * TODO(Chase): your version of this file on main registers vessel-3x8 and tower-5x4 as
- * well. This copy exists on dean-branch only so the split view, the exporter and their
- * tests build without those files; at merge take yours (same exports, same shape).
  */
 import type { StructurePlan } from './types';
 import demo6 from '../../data/structures/demo-6.json';
+import vessel3x8 from '../../data/structures/vessel-3x8.json';
+import tower5x4 from '../../data/structures/tower-5x4.json';
 
 const PLANS = {
   'demo-6': demo6 as StructurePlan,
+  'vessel-3x8': vessel3x8 as StructurePlan,
+  'tower-5x4': tower5x4 as StructurePlan,
 } as const;
 
 export type PlanName = keyof typeof PLANS;

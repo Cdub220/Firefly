@@ -13,6 +13,7 @@ import { createCorruptor, DEFAULT_CORRUPTION } from './corruption';
 import { createBrain } from './brain';
 import { createKalmanBrain } from './brain/kalman';
 import demoPlan from '../data/structures/demo-6.json';
+import { loadPlan, PLAN_NAMES } from './shared/structures';
 import type {
   Belief, Brain, BrainConfig, Command, CorruptionConfig, CorruptionMode, Observation,
   SpaceId, StructurePlan, WorldState,
@@ -164,19 +165,21 @@ export function formatTickMulti(recs: Record<string, TickRecord>): string {
 }
 
 type CliArgs = {
+  plan: StructurePlan;
   ticks: number;
   seed: number;
   corruption: Omit<CorruptionConfig, 'seed'>;
 };
 
 function parseArgs(argv: string[]): CliArgs {
+  // Last occurrence wins, so `npm run sim -- --ticks 10` overrides the script's default.
   const getNum = (flag: string): number | undefined => {
-    const i = argv.indexOf(flag);
+    const i = argv.lastIndexOf(flag);
     const v = i >= 0 ? Number(argv[i + 1]) : NaN;
     return Number.isFinite(v) ? v : undefined;
   };
   const getStr = (flag: string): string | undefined => {
-    const i = argv.indexOf(flag);
+    const i = argv.lastIndexOf(flag);
     return i >= 0 ? argv[i + 1] : undefined;
   };
   const modes: CorruptionMode[] = ['none', 'freeze', 'blind', 'saturate', 'flashover', 'mixed'];
@@ -191,7 +194,11 @@ function parseArgs(argv: string[]): CliArgs {
   if (onset !== undefined) corruption.onset = onset;
   const target = getStr('--target');
   if (target !== undefined) corruption.target = target.split(',').filter(Boolean) as SpaceId[];
-  return { ticks: getNum('--ticks') ?? 50, seed: getNum('--seed') ?? 42, corruption };
+  const planName = getStr('--plan') ?? 'demo-6';
+  if (!PLAN_NAMES.includes(planName as (typeof PLAN_NAMES)[number])) {
+    throw new Error(`--plan ${planName}: expected one of ${PLAN_NAMES.join(', ')}`);
+  }
+  return { plan: loadPlan(planName), ticks: getNum('--ticks') ?? 50, seed: getNum('--seed') ?? 42, corruption };
 }
 
 // CLI entry guard. `process` does not exist in the browser, and src/ui imports this module,
@@ -201,15 +208,15 @@ const isMain =
   process.argv?.[1] !== undefined &&
   import.meta.url === new URL(`file://${process.argv[1]}`).href;
 if (isMain) {
-  const { ticks, seed, corruption } = parseArgs(process.argv.slice(2));
+  const { plan, ticks, seed, corruption } = parseArgs(process.argv.slice(2));
   console.log(
-    `firefly sim  plan=${DEMO_PLAN.name}  seed=${seed}  ticks=${ticks}  corruption=${JSON.stringify(corruption)}`,
+    `firefly sim  plan=${plan.name}  seed=${seed}  ticks=${ticks}  corruption=${JSON.stringify(corruption)}`,
   );
   const traces = runLoopMulti({
-    plan: DEMO_PLAN,
+    plan,
     seed,
     ticks,
-    corruption: { ...corruption, ambient: DEMO_PLAN.ambient },
+    corruption: { ...corruption, ambient: plan.ambient },
     brains: { ours: createBrain, kalman: createKalmanBrain },
     primary: 'ours',
   });
