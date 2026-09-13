@@ -73,6 +73,8 @@ export type SimState = {
    * the head-to-head is always closed loop.
    */
   dispatch: boolean;
+  /** Whether the run on screen actually applied commands. Beats ignore the toggle; the head to head forces it on. */
+  closedLoop: boolean;
   /** Raw per-brain traces from the last run. Every brain saw byte-identical observations. */
   traces: Record<string, TickRecord[]>;
   primary: string;
@@ -321,7 +323,7 @@ export const useSim = create<SimState>((set, get) => {
       // Open two ticks before the failure begins (data.startAt) so the demo starts where it
       // matters, but never past the end of a short run.
       const cursor = Math.max(0, Math.min(data.startAt, (trace?.length ?? 1) - 1));
-      set({ traces, data, trace, error: null, cursor, playing: false, compare: null });
+      set({ traces, data, trace, error: null, cursor, playing: false, compare: null, closedLoop: dispatch });
       return traces;
     } catch (e) {
       set({ error: e instanceof Error ? `${e.message}\n${e.stack ?? ''}` : String(e), data: null, trace: null, playing: false, compare: null });
@@ -362,6 +364,7 @@ export const useSim = create<SimState>((set, get) => {
     corruption: sanitizeCorruption(saved.corruption === undefined ? DEFAULT_CORR : coerceCorruption(saved.corruption, DEFAULT_CORR), initialPlan),
     brains: isBrains(saved.brains) ? saved.brains : 'both',
     dispatch: saved.dispatch === true,
+    closedLoop: false,
     traces: {},
     primary: PRIMARY,
     data: null,

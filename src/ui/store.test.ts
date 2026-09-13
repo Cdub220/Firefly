@@ -257,6 +257,7 @@ describe('store', () => {
     useSim.getState().runBeat('freeze');
     const s = useSim.getState();
     expect(s.dispatch).toBe(true); // the toggle itself is left alone
+    expect(s.closedLoop).toBe(false); // what actually ran, for the labels
     expect(s.trace!.every((r) => r.commands.length === 0)).toBe(true);
     expect(Math.max(...s.trace!.map((r) => r.truth.spaces.filter((x) => x.burning).length))).toBeGreaterThan(1);
   });
@@ -265,6 +266,13 @@ describe('store', () => {
     useSim.setState({ dispatch: false });
     useSim.getState().run();
     expect(useSim.getState().trace!.every((r) => r.commands.length === 0)).toBe(true);
+    expect(useSim.getState().closedLoop).toBe(false);
+    useSim.getState().setDispatch(true);
+    useSim.getState().run();
+    expect(useSim.getState().closedLoop).toBe(true);
+    useSim.getState().setDispatch(false);
+    useSim.getState().runCompare();
+    expect(useSim.getState().closedLoop).toBe(true); // head to head is always closed loop
     useSim.getState().setDispatch(true);
     useSim.getState().run();
     const closed = useSim.getState().trace!;
