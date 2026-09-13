@@ -7,6 +7,4 @@ pip3 install python-pptx
 python3 docs/pitch/make_deck.py docs/pitch/Firefly-Pitch.pptx
 ```
 
-Slide order: title · the problem · who pays · Bonhomme Richard · the hard problem · why the textbook tool fails · four pieces · any structure · where it goes · **who buys** (B2B) · one sentence · sources (backup).
-
-The 60-second checkpoint cut is slides 1, 4, 5, 6, 7, 11. The full pitch is about 2 minutes 20 seconds at 150 words a minute.
+Slide order: intro · the problem · what we're making · the market. Four slides, two speakers; the alternating script is in the notes.
