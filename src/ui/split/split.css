@@ -49,3 +49,27 @@
 .fx .legend .ok { --sw: var(--ok); } .fx .legend .unc { --sw: var(--uncertain); } .fx .legend .wr { --sw: var(--wrong); }
 .fx .err { margin: 0 0 12px; padding: 8px 12px; border: 1px solid var(--wrong); border-radius: 6px; color: var(--wrong); font-family: var(--mono); font-size: 12px; white-space: pre-wrap; }
 @media (prefers-reduced-motion: reduce) { .fx * { transition: none !important; } }
+
+/* Split view v2: plan bands, vertical edges, demo beats, caption, recording mode. */
+.fx .band { font: 700 11px var(--sans); fill: var(--ink-2); letter-spacing: 0.1em; }
+.fx .band-line { stroke: var(--line); stroke-width: 1; }
+.fx .edge.floor { stroke-width: 2; }
+.fx .edge.shaft { stroke: #8fa3bf; stroke-width: 4; }
+.fx .legendline { margin: 8px 0 0; font-size: 11px; color: var(--muted); }
+.fx header .toggle { margin-left: auto; background: var(--panel-2); color: var(--ink-2); border: 1px solid var(--line); border-radius: 4px; padding: 4px 10px; font: 500 12px var(--sans); cursor: pointer; }
+.fx header .toggle[aria-pressed=true] { color: var(--ink); border-color: var(--uncertain); }
+.fx .caption { margin: 0 0 12px; font-size: 15px; color: var(--ink); max-width: 100ch; }
+.fx .beats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.fx .beats button { background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 8px 14px; font: 500 13px var(--sans); cursor: pointer; }
+.fx .beats button:hover { border-color: var(--ink-2); }
+.fx .beats button[aria-pressed=true] { border-color: var(--uncertain); background: var(--panel-2); }
+.fx .beats kbd { display: inline-block; min-width: 1.6em; padding: 1px 5px; margin-right: 6px; border: 1px solid var(--line); border-radius: 3px; background: var(--ground); color: var(--ink-2); font: 600 11px var(--mono); text-align: center; }
+.fx .beats :focus-visible, .fx header .toggle:focus-visible { outline: 2px solid var(--uncertain); outline-offset: 2px; }
+/* Recording mode: bigger words, fewer of them. */
+.fx.demo { padding-block: 14px; }
+.fx.demo h1 { font-size: 22px; }
+.fx.demo .caption { font-size: 19px; line-height: 1.4; margin-bottom: 14px; }
+.fx.demo .panel h2 { font-size: 16px; }
+.fx.demo .panel h2 .sub { font-size: 13px; }
+.fx.demo .beats button { font-size: 14px; padding: 9px 16px; }
+.fx.demo .verdict { font-size: 13px; }
