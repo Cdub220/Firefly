@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -35,6 +36,17 @@ describe('generated plans', () => {
   it('loadPlan throws on an unknown name', () => {
     expect(() => loadPlan('nope')).toThrow(/unknown plan/);
   });
+
+  it('the sim CLI accepts --plan and a later --ticks overrides the earlier one', () => {
+    const run = (...args: string[]) =>
+      execFileSync('npx', ['tsx', 'src/loop.ts', '--ticks', '50', ...args], { cwd: process.cwd(), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    const out = run('--plan', 'tower-5x4', '--ticks', '2');
+    expect(out).toContain('plan=tower-5x4');
+    expect(out).toContain('ticks=2');
+    expect(out).toContain('truth=[L2-B2]');
+    expect(out.split('\n').filter((l) => l.startsWith('t='))).toHaveLength(2);
+    expect(() => run('--plan', 'nope', '--ticks', '1')).toThrow(/expected one of demo-6, vessel-3x8, tower-5x4/);
+  }, 30_000);
 
   it('the committed JSON files are exactly what the generator produces', () => {
     for (const [name, spec] of Object.entries(PLAN_SPECS)) {
@@ -90,6 +102,20 @@ describe('makeGridPlan', () => {
     expect(() => makeGridPlan({ ...base, shaftAt: [0, 5] })).toThrow(/shaftAt/);
     expect(() => makeGridPlan({ ...base, ignition: ['L9-Z9'] })).toThrow(/unknown space/);
     expect(() => makeGridPlan({ ...base, sensorless: ['S1'] })).toThrow(/unknown space/);
+  });
+
+  it('two same-level edges on one pair give one neighbor and one open door, not two', () => {
+    const doubled: StructurePlan = {
+      name: 'doubled', ambient: 22,
+      spaces: [{ id: 'A', level: 1 }, { id: 'B', level: 1 }],
+      edges: [{ a: 'A', b: 'B', kind: 'door', rate: 0.1 }, { a: 'B', b: 'A', kind: 'passage', rate: 0.1 }],
+      sensors: [], resupply: ['A'], ignition: [],
+    };
+    const [a, b] = instantiateSpaces(doubled);
+    expect(a!.neighbors).toEqual(['B']);
+    expect(a!.doorsOpen).toEqual(['B']);
+    expect(b!.neighbors).toEqual(['A']);
+    expect(b!.doorsOpen).toEqual(['A']);
   });
 
   it('a shaft edge between levels sets above/below and never appears as a same-level neighbor', () => {
