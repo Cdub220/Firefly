@@ -5,6 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { createBrain } from './index';
+import { candidates } from './hypotheses';
 import { forward, IGNITE } from './physics';
 import type { Observation, Reading, SpaceId, StructurePlan } from '../shared/types';
 
@@ -142,6 +143,15 @@ describe('Belief.probability', () => {
     }
     expect(out.belief.burningSet).toContain('A');
     expect(out.belief.probability['A']).toBe(1);
+    // The mechanism itself: a forced space is in EVERY candidate, including the ones
+    // that would otherwise be "no fire", "C alone", or "shrink away from A".
+    const sets = candidates(line3, new Set(['A']), ['C'], new Set(['A']));
+    expect(sets.length).toBeGreaterThan(1);
+    for (const set of sets) expect(set.has('A')).toBe(true);
+    const keys = sets.map((set) => [...set].sort().join(','));
+    expect(keys).toContain('A,C'); // "C alone" became "A and C"
+    expect(keys).not.toContain(''); // "no fire" is no longer expressible
+    expect(new Set(keys).size).toBe(keys.length); // still deduped after the union
   });
 
   it('(5) every probability is in [0, 1], every space has one, and the values are not a distribution', () => {
