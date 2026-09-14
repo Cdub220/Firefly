@@ -406,6 +406,22 @@ export const useSim = create<SimState>((set, get) => {
   };
   /** Any manual change means the last beat's caption no longer describes what is shown. */
   const clearBeat = (): { beat: null; caption: '' } => ({ beat: null, caption: '' });
+  /**
+   * Finish the head-to-head beat's caption from what the curves actually show. With the
+   * usual onset both brains lock on before the sensor dies and both worlds contain; the
+   * caption must not promise a gap that is not there.
+   */
+  const completeCompareCaption = (): void => {
+    const c = get().compare;
+    if (!c) return;
+    const peak = (t: TickRecord[]) => Math.max(0, ...t.map((r) => r.truth.spaces.filter((x) => x.burning).length));
+    const ours = peak(c[PRIMARY] ?? []);
+    const worst = Math.max(ours, ...Object.entries(c).filter(([k]) => k !== PRIMARY).map(([, t]) => peak(t)));
+    const tail = worst > ours
+      ? ` Peak burning: ours ${ours}, the other world ${worst}.`
+      : ' Both worlds contain it this time: the sensor died after both brains had locked on. Showdown (blind from tick 1) is where a wrong belief costs the world.';
+    set({ caption: get().caption + tail });
+  };
 
   return {
     plan: initialPlan,
@@ -445,7 +461,8 @@ export const useSim = create<SimState>((set, get) => {
       set({ planName: cfg.planName, plan: loadPlan(cfg.planName), ignition: cfg.ignition, corruption: cfg.corruption, caption: cfg.caption, beat, view: nextView });
       const recorded = replay?.beats.find((b) => b.beat === beat);
       if (recorded) {
-        // Stage backup: show the recorded run for this beat instead of simulating.
+        // Stage backup: show the recorded run for this beat instead of simulating. The
+        // parser has already checked the plan and ignition exist in this build.
         const rplan = loadPlan(recorded.planName);
         const traces = recorded.traces;
         const trace = traces[PRIMARY] ?? null;
@@ -454,25 +471,15 @@ export const useSim = create<SimState>((set, get) => {
           plan: rplan, planName: recorded.planName, ignition: recorded.ignition, corruption: recorded.corruption, seed: recorded.seed, ticks: recorded.ticks, brains: 'both',
           traces, data, trace, compare: recorded.compare ?? null, closedLoop: recorded.closedLoop, error: null, playing: false,
           cursor: Math.max(0, Math.min(data.startAt, (trace?.length ?? 1) - 1)),
+          caption: recorded.caption || cfg.caption,
         });
+        if (beat === 'compare') completeCompareCaption();
         return;
       }
       if (beat === 'compare') {
         if (get().brains !== 'both') set({ brains: 'both' });
         executeCompare();
-        // Say what the curves show. With the usual onset both brains lock on before the
-        // sensor dies and both worlds contain; the caption must not promise a gap that is not there.
-        const c = get().compare;
-        if (c) {
-          const peak = (t: TickRecord[]) => Math.max(0, ...t.map((r) => r.truth.spaces.filter((x) => x.burning).length));
-          const ours = peak(c[PRIMARY] ?? []);
-          const others = Object.entries(c).filter(([k]) => k !== PRIMARY).map(([, t]) => peak(t));
-          const worst = Math.max(ours, ...others);
-          const tail = worst > ours
-            ? ` Peak burning: ours ${ours}, the other world ${worst}.`
-            : ` Both worlds contain it this time: the sensor died after both brains had locked on. Showdown (blind from tick 1) is where a wrong belief costs the world.`;
-          set({ caption: cfg.caption + tail });
-        }
+        completeCompareCaption();
         return;
       }
       // A beat is always open loop: its caption describes the fire spreading while the

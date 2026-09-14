@@ -6,9 +6,14 @@ import { useMemo } from 'react';
 import { briefingAt, briefingEvents } from '../briefing';
 import { useSim } from '../store';
 
-export function Briefing({ brain }: { brain?: string }) {
+/**
+ * `brain` picks the trace from the main run; `trace` overrides it (the head to head
+ * hands the Kalman column its own driven world, where its dispatches were real).
+ */
+export function Briefing({ brain, trace: override }: { brain?: string; trace?: readonly import('../../loop').TickRecord[] | null | undefined }) {
   const plan = useSim((s) => s.plan);
-  const trace = useSim((s) => (brain ? s.traces[brain] : s.trace) ?? null);
+  const own = useSim((s) => (brain ? s.traces[brain] : s.trace) ?? null);
+  const trace = override === undefined ? own : override;
   const cursor = useSim((s) => s.cursor);
   const events = useMemo(() => (trace ? briefingEvents(trace, plan) : []), [trace, plan]);
   const text = briefingAt(trace?.[cursor], events);

@@ -72,6 +72,9 @@ describe('parseDemoTrace rejects what it cannot replay, without throwing', () =>
   it('per-beat errors name the beat', () => {
     const b = beat();
     expect(why({ version: 1, beats: [{ ...b, planName: 3 }] })).toMatch(/clean.*planName/);
+    // A recording from a build with other plan files, or a space this plan lacks, is refused up front (never a throw mid-click).
+    expect(why({ version: 1, beats: [{ ...b, planName: 'nope' }] })).toMatch(/plan "nope" is not in this build/);
+    expect(why({ version: 1, beats: [{ ...b, ignition: 'ZZZ' }] })).toMatch(/ignition "ZZZ" is not a space of/);
     expect(why({ version: 1, beats: [{ ...b, ticks: 'x' }] })).toMatch(/clean.*seed and ticks/);
     expect(why({ version: 1, beats: [{ ...b, corruption: {} }] })).toMatch(/clean.*corruption.mode/);
     expect(why({ version: 1, beats: [{ ...b, traces: {} }] })).toMatch(/no brains/);
@@ -84,9 +87,20 @@ describe('parseDemoTrace rejects what it cannot replay, without throwing', () =>
     expect(why({ version: 1, beats: [{ ...b, compare: { ours: [] } }] })).toMatch(/compare.*empty/);
   });
 
-  it('accepts the good file and reads closedLoop strictly', () => {
+  it('accepts the good file, reads closedLoop strictly, and tolerates a missing caption', () => {
     expect(why(good)).toBe('OK');
-    const p = parseDemoTrace({ ...good, beats: [{ ...beat(), closedLoop: 'yes' }] });
+    const p = parseDemoTrace({ ...good, beats: [{ ...beat(), closedLoop: 'yes', caption: undefined }] });
     expect(p.ok && p.trace.beats[0]!.closedLoop).toBe(false);
+    expect(p.ok && p.trace.beats[0]!.caption).toBe('');
+  });
+
+  it('records each beat caption and no timestamp unless asked, so the export is byte-stable', () => {
+    const t = buildDemoTrace({ ticks: 2, beats: ['clean', 'building'] });
+    expect(t.exportedAt).toBe('');
+    expect(t.beats[0]!.caption).toMatch(/Every sensor is honest/);
+    expect(t.beats[1]!.caption).toMatch(/Different structure/);
+    // Same inputs, same bytes (stepMs aside, which the exporter zeroes).
+    const strip = (x: unknown) => JSON.stringify(x, (k, v: unknown) => (k === 'stepMs' ? 0 : v));
+    expect(strip(buildDemoTrace({ ticks: 2, beats: ['clean'] }))).toBe(strip(buildDemoTrace({ ticks: 2, beats: ['clean'] })));
   });
 });

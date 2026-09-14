@@ -12,7 +12,7 @@ export function Beats({ compact = false }: { compact?: boolean }) {
   return (
     <div className={'beats' + (compact ? ' compact' : '')} role="group" aria-label="demo script">
       {BEATS.map((b) => (
-        <button key={b.key} type="button" aria-pressed={beat === b.key} onClick={() => runBeat(b.key)} title={replay?.beats.some((r) => r.beat === b.key) ? 'replays the recorded run' : undefined}>
+        <button key={b.key} type="button" aria-pressed={beat === b.key} onClick={(e) => { e.currentTarget.blur(); runBeat(b.key); }} title={replay?.beats.some((r) => r.beat === b.key) ? 'replays the recorded run' : undefined}>
           <kbd>{b.hotkey}</kbd> {b.label}
         </button>
       ))}

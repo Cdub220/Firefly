@@ -35,11 +35,12 @@ export function buildDemoTrace(opts: Partial<BuildOptions> = {}): DemoTrace {
       for (const primary of Object.keys(H2H_FACTORIES)) {
         if (primary !== PRIMARY) compare[primary] = runLoopMulti({ ...common, brains: H2H_FACTORIES, primary, dispatch: true })[primary]!;
       }
-      records.push({ beat, planName, ignition, seed: o.seed, ticks: o.ticks, corruption, closedLoop: true, traces, compare });
+      records.push({ beat, planName, ignition, seed: o.seed, ticks: o.ticks, corruption, caption: cfg.caption, closedLoop: true, traces, compare });
     } else {
       const traces = runLoopMulti({ ...common, brains: BRAIN_FACTORIES.both, primary: PRIMARY, dispatch: false });
-      records.push({ beat, planName, ignition, seed: o.seed, ticks: o.ticks, corruption, closedLoop: false, traces });
+      records.push({ beat, planName, ignition, seed: o.seed, ticks: o.ticks, corruption, caption: cfg.caption, closedLoop: false, traces });
     }
   }
-  return { version: DEMO_TRACE_VERSION, exportedAt: (o.now ?? (() => new Date().toISOString()))(), beats: records };
+  // No timestamp by default: the file is then byte-identical run to run (see export-trace.ts --stamp).
+  return { version: DEMO_TRACE_VERSION, exportedAt: (o.now ?? (() => ''))(), beats: records };
 }

@@ -14,12 +14,17 @@ import { SceneView } from './scene/SceneView';
 import { CompareView } from './scene/CompareView';
 import { HeadToHead } from './compare/HeadToHead';
 import { ErrorBoundary } from './ErrorBoundary';
-import { BEATS, VIEWS, fromUrl, useSim } from './store';
+import { VIEWS, fromUrl, useSim } from './store';
+import { keyAction } from './hotkeys';
 import { usePlayback } from './usePlayback';
 import './split/split.css';
 import './app.css';
 
-/** The stage backup: pick results/demo-trace.json; beats then replay it. Local file read, no network. */
+/**
+ * The stage backup: pick results/demo-trace.json; beats then replay it. Local file read,
+ * no network. Shown in recording mode (where the stage runs), and in any mode while a
+ * replay is loaded so nobody forgets it is on.
+ */
 function ReplayControl() {
   const replay = useSim((s) => s.replay);
   const loadReplay = useSim((s) => s.loadReplay);
@@ -56,6 +61,7 @@ export function App() {
   const demo = useSim((s) => s.demo);
   const setDemo = useSim((s) => s.setDemo);
   const caption = useSim((s) => s.caption);
+  const replayOn = useSim((s) => s.replay !== null);
   const run = useSim((s) => s.run);
   const hasData = useSim((s) => s.data != null);
   const planName = useSim((s) => s.planName);
@@ -80,20 +86,22 @@ export function App() {
     if (hasData && pending !== null) { setCursor(pending - 1); setPending(null); }
   }, [hasData, pending, setCursor]);
 
-  // One keyboard handler for every view.
+  // One keyboard handler for every view; the map itself is pure (hotkeys.ts).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement | null)?.tagName;
-      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
-      if (e.metaKey || e.ctrlKey || e.altKey) return; // Cmd/Ctrl combos belong to the browser
+      const el = e.target as HTMLElement | null;
+      const action = keyAction({ key: e.key, tag: el?.tagName, id: el?.id, modifier: e.metaKey || e.ctrlKey || e.altKey });
+      if (!action) return;
+      // Space on a just-clicked beat button would re-activate it; the map says it is ours.
+      e.preventDefault();
       const s = useSim.getState();
-      if (e.key === ' ') { if (tag === 'BUTTON') return; e.preventDefault(); s.toggle(); return; }
-      if (e.key === 'ArrowRight') { s.step(1); return; }
-      if (e.key === 'ArrowLeft') { s.step(-1); return; }
-      if (e.key === 'c' || e.key === 'C') { s.setView(s.view === 'h2h' ? 'split' : 'h2h'); return; }
-      if (e.key === 'r' || e.key === 'R') { s.setDemo(!s.demo); return; }
-      const beat = BEATS.find((b) => b.hotkey === e.key);
-      if (beat) s.runBeat(beat.key);
+      switch (action.kind) {
+        case 'toggle': s.toggle(); break;
+        case 'step': s.step(action.delta); break;
+        case 'compare-toggle': s.setView(s.view === 'h2h' ? 'split' : 'h2h'); break;
+        case 'demo-toggle': s.setDemo(!s.demo); break;
+        case 'beat': s.runBeat(action.beat); break;
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -111,7 +119,7 @@ export function App() {
             {PLAN_NAMES.map((n) => <option key={n} value={n}>{n}</option>)}
           </select>
         </label>
-        <ReplayControl />
+        {(demo || replayOn) && <ReplayControl />}
         <button id="demo" type="button" className="toggle" aria-pressed={demo} title="Recording mode: bigger words, fewer of them (key r)" onClick={() => setDemo(!demo)}>{demo ? 'Exit recording mode' : 'Recording mode'}</button>
       </div>
       {view !== 'split' && caption && <p className={'fx caption top-caption' + (demo ? ' demo' : '')} aria-live="polite">{caption}</p>}

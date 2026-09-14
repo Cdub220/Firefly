@@ -605,12 +605,16 @@ describe('demo beats', () => {
     expect(s.trace![0]!.belief.confidence).toBe(0.123456);
     expect(s.data?.ticks.length).toBe(6);
     expect(s.closedLoop).toBe(false);
-    expect(s.caption.length).toBeGreaterThan(20);
+    // The caption is the recorded one (it names the recorded ignition, not the store's).
+    expect(s.caption).toBe(recorded.beats[0]!.caption);
+    expect(s.caption).toContain(recorded.beats[0]!.ignition);
     useSim.getState().runBeat('compare');
     s = useSim.getState();
     expect(s.view).toBe('h2h');
     expect(s.closedLoop).toBe(true);
     expect(Object.keys(s.compare!).sort()).toEqual(['kalman', 'ours']);
+    // The replayed head to head still says what its curves show.
+    expect(s.caption).toMatch(/Peak burning: ours \d+, the other world \d+\.$|Both worlds contain it this time/);
     // A beat that was not recorded simulates as usual.
     useSim.getState().runBeat('clean');
     expect(useSim.getState().trace).toHaveLength(6);

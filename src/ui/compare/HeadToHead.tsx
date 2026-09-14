@@ -92,7 +92,8 @@ export function HeadToHead() {
                       {r ? <Scene plan={s.plan} rec={rec} view="belief" brain={name} belief={r.belief} maxLevel={maxLevel} cameraGroup={group} wrongFloor={wrong} /> : <div className="scene-empty">no trace for {name}</div>}
                     </ErrorBoundary>
                   </div>
-                  <Briefing brain={name} />
+                  {/* The left column's dispatches are only real in its own driven world (compare); without one it stays quiet. */}
+                  <Briefing brain={name} trace={name === RIGHT ? undefined : (s.compare?.[name] ?? null)} />
                 </section>
               ))}
             </div>

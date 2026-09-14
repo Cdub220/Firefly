@@ -8,6 +8,7 @@ import { useSim } from '../store';
 import { ScenarioPanel } from '../panels/ScenarioPanel';
 import { ChaosPanel } from '../panels/ChaosPanel';
 import { Beats } from '../panels/Beats';
+import { Briefing } from '../panels/Briefing';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { Scene } from './Scene';
 import { hedgeInfo } from './hedge';
@@ -80,6 +81,7 @@ export function CompareView() {
                 {belief && belief.suspectSensors.length > 0 && <span className="sub">distrusts {belief.suspectSensors.join(', ')}</span>}
               </header>
               <div className="compare-canvas"><Scene plan={s.plan} rec={rec} view="belief" brain={brain} belief={belief} maxLevel={maxLevel} drones={drones} cameraGroup={group} /></div>
+              <Briefing brain={brain} />
             </section>
             <details className="compare-col compare-diff" open>
               <summary><h2>Difference</h2><span className="sub">green under 20 °C, amber under 80, red beyond; outline = burning verdict disagrees, amber if inside a maybe-group</span></summary>
