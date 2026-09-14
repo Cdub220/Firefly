@@ -36,7 +36,7 @@ export function commanderBelief(plan: StructurePlan, stage: KnowledgeStage, hot 
     estimate[s.id] = inSet.has(s.id) ? hot : plan.ambient;
     probability[s.id] = inSet.has(s.id) ? stage.confidence : 0;
   }
-  return { estimate, burningSet, ambiguous: [], suspectSensors: [], confidence: burningSet.length ? stage.confidence : stage.confidence, probability };
+  return { estimate, burningSet, ambiguous: [], suspectSensors: [], confidence: stage.confidence, probability };
 }
 
 /** A brain factory from a knowledge schedule (minutes) and the tick length. */

@@ -80,11 +80,11 @@ export function CaseFile() {
               </div>
             </section>
             <section className="casefile-table">
-              <header><h2>When was each floor known?</h2><span className="sub">minutes from detection · "sim caught" is the calibrated world's truth · "record" is when the command post was told · brains: first minute the belief named a space on the floor</span></header>
+              <header><h2>When was each floor known?</h2><span className="sub">minutes from detection · every floor of the plan · "sim caught" is the calibrated world's truth (never = it did not burn) · "record" is when the command post was told · brains: first minute the belief named a space on the floor, bold when within a tick of the truth; a number against "never" is a false alarm</span></header>
               <table className="scorecard">
                 <thead><tr><th>floor</th><th>sim caught</th><th>record</th>{BRAINS.map((b) => <th key={b.key} style={{ color: b.color }}>{b.label}</th>)}</tr></thead>
                 <tbody>
-                  {floors.filter((f) => truthFirst[f] !== undefined || knownAt[f] !== undefined).map((f) => (
+                  {floors.map((f) => (
                     <tr key={f} className={nowFloors.includes(f) ? 'burn' : ''}>
                       <th scope="row">{f}{f === 22 ? ' (origin)' : ''}</th><td>{fmt(truthFirst[f])}</td><td>{fmt(knownAt[f])}</td>
                       {BRAINS.map((b) => { const v = named[b.key]?.[f]; const seen = v !== undefined && v <= minute; return <td key={b.key} className={seen && truthFirst[f] !== undefined && v <= truthFirst[f]! + tickMinutes ? 'win' : ''}>{seen ? v : v === undefined ? 'never' : '…'}</td>; })}

@@ -13,7 +13,7 @@ import { createCorruptor, DEFAULT_CORRUPTION } from './corruption';
 import { createBrain } from './brain';
 import { createKalmanBrain } from './brain/kalman';
 import demoPlan from '../data/structures/demo-6.json';
-import { loadPlan, PLAN_NAMES } from './shared/structures';
+import { ALL_PLAN_NAMES, loadPlan } from './shared/structures';
 import type {
   Belief, Brain, BrainConfig, Command, CorruptionConfig, CorruptionMode, Observation,
   SpaceId, StructurePlan, WorldConfig, WorldState,
@@ -208,8 +208,9 @@ function parseArgs(argv: string[]): CliArgs {
   const target = getStr('--target');
   if (target !== undefined) corruption.target = target.split(',').filter(Boolean) as SpaceId[];
   const planName = getStr('--plan') ?? 'demo-6';
-  if (!PLAN_NAMES.includes(planName as (typeof PLAN_NAMES)[number])) {
-    throw new Error(`--plan ${planName}: expected one of ${PLAN_NAMES.join(', ')}`);
+  // Any plan the picker accepts, incident replays included (ALL_PLAN_NAMES); the evaluation family is PLAN_NAMES.
+  if (!ALL_PLAN_NAMES.includes(planName as (typeof ALL_PLAN_NAMES)[number])) {
+    throw new Error(`--plan ${planName}: expected one of ${ALL_PLAN_NAMES.join(', ')}`);
   }
   return { plan: loadPlan(planName), ticks: getNum('--ticks') ?? 50, seed: getNum('--seed') ?? 42, corruption };
 }

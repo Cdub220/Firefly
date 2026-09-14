@@ -13,7 +13,7 @@ Not "would Firefly have beaten the Philadelphia Fire Department" — a compartme
 
 `data/incidents/one-meridian-plaza/`: USFA Technical Report 049 read into `sources.md` (page references) and `timeline.json` (26 events in minutes from detection, the commander's knowledge schedule, the outcome). `plan.spec.json` → `plan.json`: floors 20–31, nine zones per floor (four perimeter office zones on the north side, the core along the south wall: two stairs with standpipes, the electrical-room lobby, the elevator lobbies, the east stair), sensors exactly where the 1981 code put them — at the exits, the corner return-air intakes and the elevator lobbies, and **none in the vacant office of origin**. `plan.instrumented.json` adds one sensor per zone.
 
-**Calibration** (`src/incident/calibration.ts`, pinned by test): one tick = 4 minutes; edge rates chosen by grid search so that an uncontrolled run meets the report's early milestones — floor 22 fully involved by 45 min (sim 44), 23 by 100 (sim 100), 24 by 150 (sim 148), 25 and 26 before the report's 352/420 (sim 196/244), 30 reached before 15:01 (sim 432), 31 and 20 never. The uncontrolled fire burns out at minute 596; the real, fought fire was under control at 1118, so after the first hours the model is faster than history, as an unfought fire should be.
+**Calibration** (`src/incident/calibration.ts`, pinned by test): one tick = 4 minutes; edge rates chosen by grid search so that an uncontrolled run meets the report's early milestones — floor 22 fully involved by 45 min (sim 44), 23 by 120 (sim 100), 24 by 170 (sim 148), 25 and 26 before the report's 352/420 (sim 196/244), 30 reached before 15:01 (sim 432), 31 and 20 never burn. The uncontrolled fire burns out at minute 596; the real, fought fire was under control at 1118, so after the first hours the model is faster than history, as an unfought fire should be. Seed 42 throughout; other seeds move the floor times by a tick or two (seeds 1 and 3 put 23 at 104 and 24 at 152), which the windows now allow.
 
 ## Row A · when was each floor known?
 
@@ -21,14 +21,20 @@ Minutes from detection. "sim caught" is the calibrated world's truth; "record" i
 
 | floor | sim caught | record | ours (as built) | Kalman (as built) | commander (record) | ours (instrumented) | Kalman (instrumented) |
 |---|---|---|---|---|---|---|---|
+| 31 (sprinklered, never burned) | never | never | **468** | **388** | never | 472 | 456 |
+| 30 | 432 | 800 | 424 | 360 | 800 | 440 | 420 |
+| 29 | 388 | 800 | 368 | 316 | 800 | 396 | 372 |
+| 28 | 340 | 800 | 344 | 272 | 800 | 348 | 324 |
+| 27 | 292 | 800 | 296 | 232 | 800 | 300 | 276 |
+| 26 | 244 | 352 | 248 | 196 | 352 | 252 | 228 |
+| 25 | 196 | 352 | 200 | 160 | 352 | 204 | 184 |
+| 24 | 148 | 80 | 152 | 128 | 80 | 156 | 136 |
+| 23 | 100 | 80 | 104 | 72 | 80 | 108 | 76 |
 | 22 (origin) | 4 | **8** | 4 | 4 | 8 | 4 | 4 |
-| 23 | 100 | 80 | 108 | 76 | 80 | 108 | 76 |
-| 24 | 148 | 80 | 156 | 136 | 80 | 156 | 136 |
-| 25 | 196 | 352 | 204 | 184 | 352 | 204 | 184 |
-| 26 | 244 | 352 | 252 | 228 | 352 | 252 | 228 |
-| 27–29 | 292–388 | 800 | 300–396 | 276–372 | 800 | 300–396 | 276–372 |
-| 30 | 432 | 800 | 440 | 420 | 800 | 440 | 420 |
-| 21 (down the open stair) | 72 | never told | 84 | 72 | never | 84 | 72 |
+| 21 (down the open stair) | 72 | never told | 76 | 64 | never | 84 | 72 |
+| 20 (staging floor, never burned) | never | never | **116** | **100** | never | 124 | 104 |
+
+Bold numbers against "never" are false alarms: both estimators name the non-combustible staging floor and the sprinklered 31st as burning when they are merely hot (L20-B2 reaches ~290 °C with fuel below the ignition minimum), which is what an estimator that only sees temperatures must say. Table generated from `results.json` (as-built = `awareness[0..2]`, instrumented = `awareness[3..5]`).
 
 | brain (as built) | false certainty | wrong dispatch | coverage | estimation error |
 |---|---|---|---|---|
@@ -36,7 +42,7 @@ Minutes from detection. "sim caught" is the calibrated world's truth; "record" i
 | Kalman | 4% | 98% | 53% | diverges (10⁷ °C) |
 | 1991 commander | 71% | 92% | 49% | 218 °C |
 
-What it says. Every estimator with sensors names the fire floor at minute 4, before the first engine arrived (8) — the building knew before anyone called. Ours names each new floor about one tick (4 min) after it catches; the Kalman names it before it catches (76 vs 100 for floor 23), which is the same over-reach that gives it 98 % wrong dispatch: it calls floors burning that are only hot. The commander's record lags the sim's floors by 150–500 minutes on 25–30, and reports 24 as burning at 80 when the calibrated world has it at 148: exterior observation sees flames lapping, not floor involvement. Ours never reaches confidence 0.9 on this fire — with the origin zone unsensed and sensors dying floor by floor, it keeps a wide MAYBE set (coverage 64 %) and says so; the Kalman is at 0.9 from minute 4 and diverges numerically on a 108-space plan (a baseline defect, reported to Dean, not fixed). The as-built and instrumented columns are identical: the missing origin-zone sensor costs nothing here because the neighbouring zones heat within a tick.
+What it says. Every estimator with sensors names the fire floor at minute 4, before the first engine arrived (8) — the building knew before anyone called. On floors 23–28 ours names each new floor one tick (4 min) after it catches; on 29 and 30 it names them 8–20 minutes *before* they catch, and it also names 20 and 31, which never burn: with every sensor above the fire dead, it is reading a hot floor as a burning one. The Kalman names every floor 30–70 minutes before it catches (72 vs 100 for floor 23), the over-reach behind its 98 % wrong dispatch. The commander's record lags the sim's floors by 150–500 minutes on 25–30, and reports 24 as burning at 80 when the calibrated world has it at 148: exterior observation sees flames lapping, not floor involvement. Ours never reaches confidence 0.9 on this fire — with the origin zone unsensed and sensors dying floor by floor, it keeps a wide MAYBE set (coverage 64 %) and says so; the Kalman is at 0.9 from minute 4 and diverges numerically on a 108-space plan (a baseline defect, reported to Dean, not fixed). Instrumenting the building (a sensor in every zone) changes little: the same floors are named 4–8 minutes later for ours and 4–60 later for the Kalman, and ours' wrong-dispatch rate rises from 57 % to 92 % — more sensors above the fire means more hot readings to over-interpret once they start dying.
 
 ## Row B · if that belief had driven the drones
 
@@ -50,7 +56,7 @@ Closed loop, seed 42, the default six-drone roster from the staging floor (L20-B
 | 1991 commander's knowledge | 9624 | 21–30 | 648 | 4 |
 | record (1991) | – | 22–29 destroyed | 1118 (under control) | – |
 
-**The negative result, stated by us first.** Under our belief the drones did no better than nobody. The probe (`scratchpad/omp/probe-closed.ts`, reproduced in `docs/decisions.md`) shows why: on this building the belief's burning set flips between the origin zone, its neighbour and the core lobby every tick (no sensor in the origin, then flashover killing the neighbours' sensors), and the allocator follows each flip, so the two tethers are re-targeted every tick and never hold a space; the retardant and hatch drones die on the fire floor by tick 10. The Kalman's belief is over-confident and wrong about extent, but it is *stable*: its tethers land on the two burning zones at tick 5 and stay, and the fire never leaves floor 22. Same allocator, same drones — the difference is target stability, not accuracy. The lesson for the allocator (Dean's, post-freeze): hysteresis on tether targets under low confidence, so an honest MAYBE does not become a dithering hose. Left as found; this page would be worthless if we tuned it away after seeing the answer.
+**The negative result, stated by us first.** Under our belief the drones did no better than nobody. A tick-by-tick probe of the closed-loop run (its findings are recorded in `docs/decisions.md`, Mon hour 46; reproduce with `runLoop({ plan: loadPlan('highrise-12x9'), seed: 42, ticks: 40, brain: createBrain, corruption: { mode: 'flashover', onset: 1 }, dispatch: true })` and print `belief.burningSet` and `commands` per tick) shows why: on this building the belief's burning set flips between the origin zone, its neighbour and the core lobby every tick (no sensor in the origin, then flashover killing the neighbours' sensors), and the allocator follows each flip, so the two tethers are re-targeted every tick and never hold a space; the retardant and hatch drones die on the fire floor by tick 10. The Kalman's belief is over-confident and wrong about extent, but it is *stable*: its tethers land on the two burning zones at tick 5 and stay, and the fire never leaves floor 22. Same allocator, same drones — the difference is target stability, not accuracy. The lesson for the allocator (Dean's, post-freeze): hysteresis on tether targets under low confidence, so an honest MAYBE does not become a dithering hose. Left as found; this page would be worthless if we tuned it away after seeing the answer.
 
 ## Limits
 

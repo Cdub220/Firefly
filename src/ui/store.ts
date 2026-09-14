@@ -128,6 +128,8 @@ export type SimState = {
   beat: Beat | null;
   /** Which page is showing. State, not App-local, so a beat (and the `c` key) can switch it. */
   view: View;
+  /** The demo's tick count while the case file beat has replaced it with the incident's; restored by the next beat. */
+  ticksBeforeCasefile: number | null;
   /**
    * Backup for the stage: a recorded demo trace (results/demo-trace.json, `npm run
    * export:trace`). While loaded, runBeat() replays the recorded run for that beat instead
@@ -464,6 +466,7 @@ export const useSim = create<SimState>((set, get) => {
     caption: '',
     beat: null,
     view: fromUrl().view,
+    ticksBeforeCasefile: null,
     replay: null,
 
     run: () => {
@@ -502,10 +505,12 @@ export const useSim = create<SimState>((set, get) => {
       }
       if (beat === 'casefile') {
         // The whole incident, open loop, with the commander baseline alongside the two brains.
-        set({ ticks: CASEFILE_TICKS, brains: 'both' });
+        // Its run length is the incident's, not the demo's: remember the demo's to give it back.
+        set({ ticks: CASEFILE_TICKS, brains: 'both', ticksBeforeCasefile: get().ticksBeforeCasefile ?? get().ticks });
         execute({ factories: INCIDENT_FACTORIES, dispatch: false });
         return;
       }
+      if (get().ticksBeforeCasefile !== null) set({ ticks: get().ticksBeforeCasefile!, ticksBeforeCasefile: null });
       // A beat is always open loop: its caption describes the fire spreading while the
       // brains watch, and a persisted dispatch toggle must not quietly change that.
       execute({ dispatch: false });

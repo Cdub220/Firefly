@@ -573,10 +573,20 @@ describe('demo beats', () => {
     // The commander knows floor 22 at minute 8 (tick 2), nothing at tick 1.
     expect(s.traces['commander']![0]!.belief.burningSet).toEqual([]);
     expect(s.traces['commander']![1]!.belief.burningSet).toContain('L22-A3');
-    // Leaving the case file with another beat returns to the split view.
+    // Leaving the case file with another beat returns to the split view AND to the demo's run length.
+    expect(s.ticksBeforeCasefile).toBe(30);
     useSim.getState().runBeat('clean');
     expect(useSim.getState().view).toBe('split');
-  }, 60_000);
+    expect(useSim.getState().ticks).toBe(30);
+    expect(useSim.getState().ticksBeforeCasefile).toBeNull();
+    expect(useSim.getState().trace).toHaveLength(30);
+    // Pressing 7 twice does not overwrite the remembered length with 280.
+    useSim.getState().runBeat('casefile');
+    useSim.getState().runBeat('casefile');
+    expect(useSim.getState().ticksBeforeCasefile).toBe(30);
+    useSim.getState().runBeat('freeze');
+    expect(useSim.getState().ticks).toBe(30);
+  }, 120_000);
 
   it('beatConfig is pure and keys the script 1-5 in pitch order, blind on 6, the case file on 7', () => {
     expect(BEATS.map((b) => b.hotkey)).toEqual(['1', '2', '3', '4', '5', '6', '7']);
