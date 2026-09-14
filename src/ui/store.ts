@@ -20,18 +20,21 @@ import { edgeMap } from '../shared/plan';
 import { isPlanName, loadPlan, PLAN_NAMES } from '../shared/structures';
 import type { CorruptionConfig, SpaceId, StructurePlan } from '../shared/types';
 import { parseDemoTrace, type DemoTrace } from './demoTrace';
+import { createCommander } from '../incident/commander';
+import incidentTimeline from '../../data/incidents/one-meridian-plaza/timeline.json';
 
 export type Corr = Omit<CorruptionConfig, 'seed'>;
 /** A partial where undefined is allowed and means "remove this key". */
 export type CorrPatch = { [K in keyof Corr]?: Corr[K] | undefined };
 export type Brains = 'ours' | 'both';
 
-export type View = 'split' | 'scene' | 'compare' | 'h2h';
+export type View = 'split' | 'scene' | 'compare' | 'h2h' | 'casefile';
 export const VIEWS: ReadonlyArray<{ key: View; label: string }> = [
   { key: 'split', label: 'Split view' },
   { key: 'scene', label: '3D scene' },
   { key: 'compare', label: '3D compare' },
   { key: 'h2h', label: 'Head to head' },
+  { key: 'casefile', label: 'Case file' },
 ];
 export const isView = (v: unknown): v is View => VIEWS.some((x) => x.key === v);
 
@@ -39,7 +42,7 @@ export const isView = (v: unknown): v is View => VIEWS.some((x) => x.key === v);
  * The demo script: five beats in pitch order on keys 1-5, so nobody types on stage.
  * `blind` (key 6) is the CP3 beat, kept for the recorded videos and `?beat=blind`.
  */
-export type Beat = 'clean' | 'freeze' | 'flashover' | 'compare' | 'building' | 'blind';
+export type Beat = 'clean' | 'freeze' | 'flashover' | 'compare' | 'building' | 'blind' | 'casefile';
 export const BEATS: ReadonlyArray<{ key: Beat; label: string; hotkey: string }> = [
   { key: 'clean', label: 'Clean run', hotkey: '1' },
   { key: 'freeze', label: "Freeze the fire's sensor", hotkey: '2' },
@@ -47,7 +50,12 @@ export const BEATS: ReadonlyArray<{ key: Beat; label: string; hotkey: string }> 
   { key: 'compare', label: 'Head to head', hotkey: '4' },
   { key: 'building', label: 'Different building', hotkey: '5' },
   { key: 'blind', label: 'Blind the neighbor', hotkey: '6' },
+  { key: 'casefile', label: 'Case file: a real fire', hotkey: '7' },
 ];
+/** The incident replay (docs/10-incident-replay-plan.md): the plan, the run length and the brains it is shown with. */
+export const CASEFILE = { plan: 'highrise-12x9', minutes: incidentTimeline.outcome.durationMinutes, tickMinutes: incidentTimeline.tickMinutes, name: incidentTimeline.name } as const;
+export const CASEFILE_TICKS = Math.ceil(CASEFILE.minutes / CASEFILE.tickMinutes);
+export const INCIDENT_FACTORIES: Record<string, BrainFactory> = { ours: createBrain, kalman: createKalmanBrain, commander: createCommander(incidentTimeline.commanderKnowledge, CASEFILE.tickMinutes) };
 /**
  * Which plan files the script opens and closes on. Data, not logic: the beats work on
  * any plan, and fall back to the current plan (clean) or the next one (building) when a
@@ -301,6 +309,16 @@ export function beatConfig(
         planName, ignition, corruption: cur.corruption,
         caption: 'Same fire, same broken sensors, each brain now commanding the drones in its own copy of the world. The counter is how many spaces burn; the red one is the Kalman world.',
       };
+    case 'casefile': {
+      // A documented real fire on its own calibrated plan, with the building's own sensors,
+      // which die as the fire reaches them; the 1991 commander's knowledge runs alongside.
+      const caseName = scriptPlan(CASEFILE.plan, planName);
+      const casePlan = caseName === planName ? plan : loadPlan(caseName);
+      return {
+        planName: caseName, ignition: sanitizeIgnition(undefined, casePlan), corruption: { mode: 'flashover', onset: 1 },
+        caption: `${CASEFILE.name}: the building as built, its sensors dying as the fire reaches them, ${CASEFILE.tickMinutes} minutes a tick. Three beliefs on the same fire: ours, the Kalman baseline, and what the incident commander was actually told, minute by minute, from the report.`,
+      };
+    }
     case 'freeze':
       return {
         planName, ignition, corruption: { mode: 'freeze', k: 1, onset: BEAT_ONSET, target: [ignition] },
@@ -456,8 +474,8 @@ export const useSim = create<SimState>((set, get) => {
     runBeat: (beat) => {
       const { planName, plan, ignition, corruption, seed, view, replay } = get();
       const cfg = beatConfig(beat, { planName, plan, ignition, corruption, seed });
-      // The head to head lives on its own page; every other beat reads best on the split view.
-      const nextView: View = beat === 'compare' ? 'h2h' : view === 'h2h' ? 'split' : view;
+      // The head to head and the case file live on their own pages; every other beat reads best on the split view.
+      const nextView: View = beat === 'compare' ? 'h2h' : beat === 'casefile' ? 'casefile' : view === 'h2h' || view === 'casefile' ? 'split' : view;
       set({ planName: cfg.planName, plan: loadPlan(cfg.planName), ignition: cfg.ignition, corruption: cfg.corruption, caption: cfg.caption, beat, view: nextView });
       const recorded = replay?.beats.find((b) => b.beat === beat);
       if (recorded) {
@@ -480,6 +498,12 @@ export const useSim = create<SimState>((set, get) => {
         if (get().brains !== 'both') set({ brains: 'both' });
         executeCompare();
         completeCompareCaption();
+        return;
+      }
+      if (beat === 'casefile') {
+        // The whole incident, open loop, with the commander baseline alongside the two brains.
+        set({ ticks: CASEFILE_TICKS, brains: 'both' });
+        execute({ factories: INCIDENT_FACTORIES, dispatch: false });
         return;
       }
       // A beat is always open loop: its caption describes the fire spreading while the

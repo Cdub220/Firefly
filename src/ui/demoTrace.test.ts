@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEMO_TRACE_VERSION, parseDemoTrace } from './demoTrace';
-import { buildDemoTrace } from './demoTraceBuild';
+import { buildDemoTrace, DEFAULT_RECORDED_BEATS } from './demoTraceBuild';
 import { BEATS, SCRIPT_PLANS } from './store';
 
 describe('buildDemoTrace', () => {
@@ -10,7 +10,8 @@ describe('buildDemoTrace', () => {
   it('records every script beat in order with the config each one ran', () => {
     expect(trace.version).toBe(DEMO_TRACE_VERSION);
     expect(trace.exportedAt).toBe('2026-09-13T00:00:00.000Z');
-    expect(trace.beats.map((b) => b.beat)).toEqual(BEATS.map((b) => b.key));
+    expect(trace.beats.map((b) => b.beat)).toEqual(DEFAULT_RECORDED_BEATS);
+    expect(DEFAULT_RECORDED_BEATS).toEqual(BEATS.map((b) => b.key).filter((k) => k !== 'casefile'));
     const by = Object.fromEntries(trace.beats.map((b) => [b.beat, b]));
     expect(by['clean']!.planName).toBe(SCRIPT_PLANS.first);
     expect(by['clean']!.corruption).toEqual({ mode: 'none' });

@@ -1,0 +1,21 @@
+/* Case file view. Shares the .fx tokens from split.css and the scorecard styles' intent from h2h.css. */
+.casefile { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 12px; align-items: start; padding-block: 12px; }
+.casefile .casefile-left { display: flex; flex-direction: column; gap: 12px; }
+.casefile .casefile-main { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.casefile section.casefile-strip, .casefile section.casefile-table { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; }
+.casefile header { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.casefile header h2 { font: 600 13px var(--sans); color: var(--ink); margin: 0; }
+.casefile .sub { font-size: 11px; color: var(--ink-2); }
+.casefile .casefile-now { display: flex; gap: 16px; flex-wrap: wrap; font: 12px var(--mono); margin-top: 4px; }
+.casefile .scorecard { border-collapse: collapse; width: 100%; font: 12px var(--mono); }
+.casefile .scorecard th, .casefile .scorecard td { padding: 3px 8px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.casefile .scorecard th:first-child { text-align: left; font-weight: 400; color: var(--ink-2); font-family: var(--sans); }
+.casefile .scorecard thead th { color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em; font-size: 10px; }
+.casefile .scorecard td.win { font-weight: 700; color: var(--ink); }
+.casefile .scorecard tr.burn th:first-child { color: var(--wrong); font-weight: 600; }
+.casefile .casefile-limits { margin: 8px 0 0; }
+.casefile .scene-empty { padding: 40px; text-align: center; color: var(--ink-2); }
+.casefile.demo .sub { font-size: 13px; }
+.casefile.demo .scorecard { font-size: 14px; }
+.casefile.demo .casefile-now { font-size: 14px; }
+@media (max-width: 1100px) { .casefile { grid-template-columns: 1fr; } }

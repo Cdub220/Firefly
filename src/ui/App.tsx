@@ -13,6 +13,7 @@ import { SplitView } from './split/SplitView';
 import { SceneView } from './scene/SceneView';
 import { CompareView } from './scene/CompareView';
 import { HeadToHead } from './compare/HeadToHead';
+import { CaseFile } from './incident/CaseFile';
 import { ErrorBoundary } from './ErrorBoundary';
 import { VIEWS, fromUrl, useSim } from './store';
 import { keyAction } from './hotkeys';
@@ -124,7 +125,7 @@ export function App() {
       </div>
       {view !== 'split' && caption && <p className={'fx caption top-caption' + (demo ? ' demo' : '')} aria-live="polite">{caption}</p>}
       <ErrorBoundary key={view} label={VIEWS.find((v) => v.key === view)?.label ?? view}>
-        {view === 'split' ? <SplitView /> : view === 'scene' ? <SceneView /> : view === 'compare' ? <CompareView /> : <HeadToHead />}
+        {view === 'split' ? <SplitView /> : view === 'scene' ? <SceneView /> : view === 'compare' ? <CompareView /> : view === 'casefile' ? <CaseFile /> : <HeadToHead />}
       </ErrorBoundary>
     </>
   );

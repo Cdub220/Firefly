@@ -12,10 +12,12 @@ import { DEMO_TRACE_VERSION, type DemoBeatRecord, type DemoTrace } from './demoT
 export type BuildOptions = { seed: number; ticks: number; startPlan: string; beats?: readonly Beat[]; now?: () => string };
 
 export const BUILD_DEFAULTS: BuildOptions = { seed: 42, ticks: 60, startPlan: PLAN_NAMES[0] ?? 'demo-6' };
+/** The case file (108 spaces, 280 ticks, three brains) would triple the file; it is not recorded by default. */
+export const DEFAULT_RECORDED_BEATS: readonly Beat[] = BEATS.map((b) => b.key).filter((k) => k !== 'casefile');
 
 export function buildDemoTrace(opts: Partial<BuildOptions> = {}): DemoTrace {
   const o = { ...BUILD_DEFAULTS, ...opts };
-  const beats = o.beats ?? BEATS.map((b) => b.key);
+  const beats = o.beats ?? DEFAULT_RECORDED_BEATS;
   let planName = o.startPlan;
   let plan: StructurePlan = loadPlan(planName);
   let ignition = sanitizeIgnition(undefined, plan);

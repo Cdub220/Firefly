@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEMO_PLAN } from '../loop';
 import { loadPlan, PLAN_NAMES } from '../shared/structures';
-import { BEATS, BRAIN_FACTORIES, SCRIPT_PLANS, beatConfig, coerceCorruption, fromUrl, hottestNeighbor, nextIn, nextPlanName, sanitizeCorruption, sanitizeIgnition, useSim, validateRun } from './store';
+import { BEATS, BRAIN_FACTORIES, CASEFILE, CASEFILE_TICKS, SCRIPT_PLANS, beatConfig, coerceCorruption, fromUrl, hottestNeighbor, nextIn, nextPlanName, sanitizeCorruption, sanitizeIgnition, useSim, validateRun } from './store';
 import { buildDemoTrace } from './demoTraceBuild';
 
 const demo = loadPlan('demo-6');
@@ -538,6 +538,7 @@ describe('demo beats', () => {
       blind: (s) => { expect(s.corruption.mode).toBe('blind'); expect(s.corruption.target).toHaveLength(1); expect(s.planName).toBe(SCRIPT_PLANS.last); },
     };
     for (const b of BEATS) {
+      if (b.key === 'casefile') continue; // its own test below: 280 ticks on 108 spaces
       useSim.getState().runBeat(b.key);
       const s = useSim.getState();
       expect(s.error).toBeNull();
@@ -557,9 +558,29 @@ describe('demo beats', () => {
     }
   }, 30_000); // six beats on the two large plans, one of them two closed-loop runs
 
-  it('beatConfig is pure and keys the script 1-5 in pitch order, blind on 6', () => {
-    expect(BEATS.map((b) => b.hotkey)).toEqual(['1', '2', '3', '4', '5', '6']);
-    expect(BEATS.map((b) => b.key)).toEqual(['clean', 'freeze', 'flashover', 'compare', 'building', 'blind']);
+  it('the case file beat replays the incident: its plan, flashover from the first tick, the commander alongside, on its own page', () => {
+    useSim.getState().runBeat('casefile');
+    const s = useSim.getState();
+    expect(s.error).toBeNull();
+    expect(s.planName).toBe(CASEFILE.plan);
+    expect(s.view).toBe('casefile');
+    expect(s.ticks).toBe(CASEFILE_TICKS);
+    expect(s.corruption).toEqual({ mode: 'flashover', onset: 1 });
+    expect(Object.keys(s.traces).sort()).toEqual(['commander', 'kalman', 'ours']);
+    expect(s.trace).toHaveLength(CASEFILE_TICKS);
+    expect(s.closedLoop).toBe(false);
+    expect(s.caption).toContain(CASEFILE.name);
+    // The commander knows floor 22 at minute 8 (tick 2), nothing at tick 1.
+    expect(s.traces['commander']![0]!.belief.burningSet).toEqual([]);
+    expect(s.traces['commander']![1]!.belief.burningSet).toContain('L22-A3');
+    // Leaving the case file with another beat returns to the split view.
+    useSim.getState().runBeat('clean');
+    expect(useSim.getState().view).toBe('split');
+  }, 60_000);
+
+  it('beatConfig is pure and keys the script 1-5 in pitch order, blind on 6, the case file on 7', () => {
+    expect(BEATS.map((b) => b.hotkey)).toEqual(['1', '2', '3', '4', '5', '6', '7']);
+    expect(BEATS.map((b) => b.key)).toEqual(['clean', 'freeze', 'flashover', 'compare', 'building', 'blind', 'casefile']);
     const cur = { planName: 'demo-6', plan: DEMO_PLAN, ignition: 'S3', corruption: { mode: 'blind' as const, k: 1, target: ['S2'] }, seed: 42 };
     const a = beatConfig('building', cur);
     const b = beatConfig('building', cur);
