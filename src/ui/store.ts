@@ -14,7 +14,7 @@
 import { create } from 'zustand';
 import { runLoop, runLoopMulti, type BrainFactory, type TickRecord } from '../loop';
 import { createBrain } from '../brain';
-import { createKalmanBrain } from '../brain/kalman';
+import { createKalmanBrain, createKalmanDispatching } from '../brain/kalman';
 import { buildViewerData, type ViewerData } from '../eval/viewerData';
 import { edgeMap } from '../shared/plan';
 import { isPlanName, loadPlan, PLAN_NAMES } from '../shared/structures';
@@ -51,6 +51,11 @@ export const BRAIN_FACTORIES: Record<Brains, Record<string, BrainFactory>> = {
   ours: { ours: createBrain },
   both: { ours: createBrain, kalman: createKalmanBrain },
 };
+/**
+ * Head-to-head factories: each brain gets Dean's allocator so a fair fight is
+ * "same drones, two beliefs", not "one brain commands, the other watches".
+ */
+export const H2H_FACTORIES: Record<string, BrainFactory> = { ours: createBrain, kalman: createKalmanDispatching };
 export const PRIMARY = 'ours';
 
 export type SimState = {
@@ -62,6 +67,14 @@ export type SimState = {
   ticks: number;
   corruption: Corr;
   brains: Brains;
+  /**
+   * Closed loop: the primary brain's commands move the drones. Off by default so the
+   * split view shows the open-loop family the frozen estimator's numbers are reported on;
+   * the head-to-head is always closed loop.
+   */
+  dispatch: boolean;
+  /** Whether the run on screen actually applied commands. Beats ignore the toggle; the head to head forces it on. */
+  closedLoop: boolean;
   /** Raw per-brain traces from the last run. Every brain saw byte-identical observations. */
   traces: Record<string, TickRecord[]>;
   primary: string;
@@ -69,6 +82,12 @@ export type SimState = {
   data: ViewerData | null;
   /** traces[primary], kept as a field for the 3D scene: trace[cursor].truth and .obs are exact. */
   trace: TickRecord[] | null;
+  /**
+   * Head-to-head: the same scenario run twice, once with each brain driving the world,
+   * keyed by the driving brain. Only that brain's commands reach the world, so the two
+   * truth curves can differ. null until runCompare().
+   */
+  compare: Record<string, TickRecord[]> | null;
   error: string | null;
   cursor: number;
   playing: boolean;
@@ -80,6 +99,14 @@ export type SimState = {
   beat: Beat | null;
   run: () => void;
   runBeat: (beat: Beat) => void;
+  /** run(), then the same scenario again with kalman driving; fills `compare`. */
+  runCompare: () => void;
+  /**
+   * The head-to-head demo scenario: the ignition sensor goes blind on the first tick, then
+   * runCompare(). With a later onset both brains have already locked on and both worlds
+   * contain; blind from t=1 is where a wrong belief actually costs the world.
+   */
+  runShowdown: () => void;
   setPlan: (name: string) => void;
   /** Alias of setPlan. */
   setPlanName: (name: string) => void;
@@ -93,6 +120,7 @@ export type SimState = {
    */
   setCorruption: (patch: CorrPatch) => void;
   setBrains: (brains: Brains) => void;
+  setDispatch: (on: boolean) => void;
   setDemo: (on: boolean) => void;
   play: () => void;
   pause: () => void;
@@ -109,7 +137,7 @@ export type SimState = {
 
 /** Persisted subset. Versioned key: bump when the shape changes. */
 const KEY = 'firefly.sim.v2';
-type Saved = Partial<Pick<SimState, 'planName' | 'seed' | 'ticks' | 'corruption' | 'ignition' | 'brains'>>;
+type Saved = Partial<Pick<SimState, 'planName' | 'seed' | 'ticks' | 'corruption' | 'ignition' | 'brains' | 'dispatch'>>;
 function load(): Saved {
   try {
     const raw = localStorage.getItem(KEY);
@@ -268,31 +296,60 @@ const DEFAULT_CORR: Corr = { mode: 'freeze', k: 1, onset: BEAT_ONSET, target: [.
 const isBrains = (v: unknown): v is Brains => v === 'ours' || v === 'both';
 
 export const useSim = create<SimState>((set, get) => {
-  /** Run the current scenario. Shared by run() and runBeat(). */
-  const execute = (): void => {
+  /**
+   * Run the current scenario. Shared by run(), runBeat() and runCompare(). With
+   * `factories` and `dispatch` given, those override the store's brains and loop mode
+   * (the head-to-head). Returns the traces, or null on a validation or runtime error.
+   */
+  const execute = (opts?: { factories?: Record<string, BrainFactory>; dispatch: boolean }): Record<string, TickRecord[]> | null => {
     const { plan: base, planName, seed, ticks, brains } = get();
     const corruption = sanitizeCorruption(get().corruption, base);
     const ignition = sanitizeIgnition(get().ignition, base);
     if (corruption !== get().corruption || ignition !== get().ignition) set({ corruption, ignition });
-    save({ planName, seed, ticks, corruption, ignition, brains });
+    const dispatch = opts?.dispatch ?? get().dispatch;
+    save({ planName, seed, ticks, corruption, ignition, brains, dispatch: get().dispatch });
     const why = validateRun(base, ignition, ticks);
     if (why) {
-      set({ error: `Cannot run: ${why}`, data: null, trace: null, playing: false });
-      return;
+      set({ error: `Cannot run: ${why}`, data: null, trace: null, playing: false, compare: null, closedLoop: false });
+      return null;
     }
     // The plan file says where the fire starts; the picker overrides it for demos.
     const plan: StructurePlan = { ...base, ignition: [ignition] };
     try {
-      const traces = runLoopMulti({ plan, seed, ticks, corruption, brains: BRAIN_FACTORIES[brains], primary: PRIMARY });
+      const traces = runLoopMulti({ plan, seed, ticks, corruption, brains: opts?.factories ?? BRAIN_FACTORIES[brains], primary: PRIMARY, dispatch });
       const data = buildViewerData(plan, traces, { seed, corruption });
       if (data.ticks.length === 0) throw new Error('the run produced no ticks');
       const trace = traces[PRIMARY] ?? null;
       // Open two ticks before the failure begins (data.startAt) so the demo starts where it
       // matters, but never past the end of a short run.
       const cursor = Math.max(0, Math.min(data.startAt, (trace?.length ?? 1) - 1));
-      set({ traces, data, trace, error: null, cursor, playing: false });
+      set({ traces, data, trace, error: null, cursor, playing: false, compare: null, closedLoop: dispatch });
+      return traces;
     } catch (e) {
-      set({ error: e instanceof Error ? `${e.message}\n${e.stack ?? ''}` : String(e), data: null, trace: null, playing: false });
+      set({ error: e instanceof Error ? `${e.message}\n${e.stack ?? ''}` : String(e), data: null, trace: null, playing: false, compare: null, closedLoop: false });
+      return null;
+    }
+  };
+  /**
+   * Head to head: the scenario closed-loop with ours driving (that run becomes the main
+   * traces), then again with kalman driving. Same seed and config; only `primary` differs.
+   * Both brains carry the allocator, so the containment curves compare beliefs, not the
+   * presence of a commander.
+   */
+  const executeCompare = (): void => {
+    const ours = execute({ factories: H2H_FACTORIES, dispatch: true });
+    if (!ours) return;
+    const { plan: base, seed, ticks, ignition, corruption } = get();
+    const plan: StructurePlan = { ...base, ignition: [ignition] };
+    try {
+      const compare: Record<string, TickRecord[]> = { [PRIMARY]: ours[PRIMARY]! };
+      for (const primary of Object.keys(H2H_FACTORIES)) {
+        if (primary === PRIMARY) continue;
+        compare[primary] = runLoopMulti({ plan, seed, ticks, corruption, brains: H2H_FACTORIES, primary, dispatch: true })[primary]!;
+      }
+      set({ compare });
+    } catch (e) {
+      set({ error: e instanceof Error ? `${e.message}\n${e.stack ?? ''}` : String(e), compare: null });
     }
   };
   /** Any manual change means the last beat's caption no longer describes what is shown. */
@@ -306,10 +363,13 @@ export const useSim = create<SimState>((set, get) => {
     ticks: typeof saved.ticks === 'number' && Number.isFinite(saved.ticks) && saved.ticks >= 1 ? Math.round(saved.ticks) : 60,
     corruption: sanitizeCorruption(saved.corruption === undefined ? DEFAULT_CORR : coerceCorruption(saved.corruption, DEFAULT_CORR), initialPlan),
     brains: isBrains(saved.brains) ? saved.brains : 'both',
+    dispatch: saved.dispatch === true,
+    closedLoop: false,
     traces: {},
     primary: PRIMARY,
     data: null,
     trace: null,
+    compare: null,
     error: null,
     cursor: 0,
     playing: false,
@@ -327,7 +387,18 @@ export const useSim = create<SimState>((set, get) => {
       const { planName, plan, ignition, corruption, seed } = get();
       const cfg = beatConfig(beat, { planName, plan, ignition, corruption, seed });
       set({ planName: cfg.planName, plan: loadPlan(cfg.planName), ignition: cfg.ignition, corruption: cfg.corruption, caption: cfg.caption, beat });
-      execute();
+      // A beat is always open loop: its caption describes the fire spreading while the
+      // brains watch, and a persisted dispatch toggle must not quietly change that.
+      execute({ dispatch: false });
+    },
+    runCompare: () => {
+      if (get().brains !== 'both') set({ brains: 'both' });
+      if (get().beat !== null || get().caption !== '') set(clearBeat());
+      executeCompare();
+    },
+    runShowdown: () => {
+      set({ corruption: { mode: 'blind', k: 1, onset: 1, target: [get().ignition] } });
+      get().runCompare();
     },
 
     setPlan: (name) => {
@@ -336,7 +407,7 @@ export const useSim = create<SimState>((set, get) => {
       // A corruption target from the old plan is meaningless here; aim at the new ignition space.
       const corruption = sanitizeCorruption({ ...get().corruption, target: [...plan.ignition] }, plan);
       const ignition = sanitizeIgnition(undefined, plan);
-      set({ plan, planName: name, ignition, corruption, traces: {}, data: null, trace: null, cursor: 0, playing: false, error: null, ...clearBeat() });
+      set({ plan, planName: name, ignition, corruption, traces: {}, data: null, trace: null, compare: null, closedLoop: false, cursor: 0, playing: false, error: null, ...clearBeat() });
     },
     setPlanName: (name) => get().setPlan(name),
     setSeed: (seed) => { if (Number.isFinite(seed)) set({ seed: Math.round(seed), ...clearBeat() }); },
@@ -344,6 +415,7 @@ export const useSim = create<SimState>((set, get) => {
     setTicks: (ticks) => { if (Number.isFinite(ticks)) set({ ticks: Math.max(1, Math.round(ticks)), ...clearBeat() }); },
     setCorruption: (patch) => set({ corruption: applyCorruptionPatch(get().corruption, patch), ...clearBeat() }),
     setBrains: (brains) => set({ brains, ...clearBeat() }),
+    setDispatch: (on) => set({ dispatch: on, ...clearBeat() }),
     setDemo: (on) => set({ demo: on }),
 
     play: () => {

@@ -10,9 +10,9 @@ const vessel = loadPlan('vessel-3x8');
 function reset(): void {
   useSim.getState().setPlan('demo-6');
   useSim.setState({
-    seed: 42, ticks: 30, brains: 'both', ignition: 'S3',
+    seed: 42, ticks: 30, brains: 'both', dispatch: false, ignition: 'S3',
     corruption: { mode: 'freeze', k: 1, onset: 5, target: ['S3'] },
-    traces: {}, data: null, trace: null, cursor: 0, playing: false, speed: 4, error: null,
+    traces: {}, data: null, trace: null, cursor: 0, playing: false, speed: 4, error: null, compare: null,
   });
 }
 
@@ -206,6 +206,90 @@ describe('store', () => {
     expect(useSim.getState().trace).toHaveLength(20);
   });
 
+  it('runCompare runs the same scenario closed-loop with each brain driving and fills compare', () => {
+    useSim.getState().setBrains('ours');
+    useSim.getState().runCompare();
+    const s = useSim.getState();
+    expect(s.brains).toBe('both');
+    expect(Object.keys(s.traces).sort()).toEqual(['kalman', 'ours']);
+    expect(Object.keys(s.compare!).sort()).toEqual(['kalman', 'ours']);
+    expect(s.compare!['ours']).toHaveLength(30);
+    expect(s.compare!['kalman']).toHaveLength(30);
+    // The ours-driven world IS the main run (same seed, same primary): identical truth.
+    expect(JSON.stringify(s.compare!['ours']!.map((r) => r.truth))).toBe(JSON.stringify(s.traces['ours']!.map((r) => r.truth)));
+    // Closed loop: both drivers actually command drones, and the two worlds diverge.
+    const cmds = (t: typeof s.traces.ours) => t!.reduce((n, r) => n + r.commands.length, 0);
+    expect(cmds(s.compare!['ours'])).toBeGreaterThan(0);
+    expect(cmds(s.compare!['kalman'])).toBeGreaterThan(0);
+    expect(JSON.stringify(s.compare!['kalman']!.map((r) => r.truth.drones))).not.toBe(JSON.stringify(s.compare!['ours']!.map((r) => r.truth.drones)));
+    // The kalman-driven run carries kalman's own belief.
+    expect(s.compare!['kalman']![5]!.belief.confidence).toBeGreaterThan(0.9);
+    // A plain run clears it; a plan change clears it; a failed run clears it.
+    useSim.getState().run();
+    expect(useSim.getState().compare).toBeNull();
+    useSim.getState().runCompare();
+    useSim.getState().setPlan('vessel-3x8');
+    expect(useSim.getState().compare).toBeNull();
+    useSim.getState().setPlan('demo-6');
+    useSim.getState().runCompare();
+    useSim.setState({ ticks: 0 });
+    useSim.getState().runCompare();
+    expect(useSim.getState().compare).toBeNull();
+    expect(useSim.getState().error).toMatch(/ticks/);
+  });
+
+  it('runShowdown blinds the ignition sensor from t=1 and the two closed-loop worlds diverge', () => {
+    useSim.setState({ ignition: 'S3', ticks: 60 });
+    useSim.getState().runShowdown();
+    const s = useSim.getState();
+    expect(s.error).toBeNull();
+    expect(s.corruption).toEqual({ mode: 'blind', k: 1, onset: 1, target: ['S3'] });
+    const peak = (t: typeof s.trace | undefined) => Math.max(...t!.map((r) => r.truth.spaces.filter((x) => x.burning).length));
+    expect(peak(s.compare!['ours'])).toBe(1);
+    expect(peak(s.compare!['kalman'])).toBeGreaterThan(1);
+    // The main traces are the ours-driven closed-loop run.
+    expect(s.trace).toBe(s.traces['ours']);
+    expect(peak(s.trace)).toBe(1);
+  });
+
+  it('a beat is open loop even when the dispatch toggle is on: its caption describes a spreading fire', () => {
+    useSim.getState().setDispatch(true);
+    useSim.getState().runBeat('freeze');
+    const s = useSim.getState();
+    expect(s.dispatch).toBe(true); // the toggle itself is left alone
+    expect(s.closedLoop).toBe(false); // what actually ran, for the labels
+    expect(s.trace!.every((r) => r.commands.length === 0)).toBe(true);
+    expect(Math.max(...s.trace!.map((r) => r.truth.spaces.filter((x) => x.burning).length))).toBeGreaterThan(1);
+  });
+
+  it('dispatch is off by default (open loop, no commands recorded) and on when asked', () => {
+    useSim.setState({ dispatch: false });
+    useSim.getState().run();
+    expect(useSim.getState().trace!.every((r) => r.commands.length === 0)).toBe(true);
+    expect(useSim.getState().closedLoop).toBe(false);
+    useSim.getState().setDispatch(true);
+    useSim.getState().run();
+    expect(useSim.getState().closedLoop).toBe(true);
+    useSim.getState().setDispatch(false);
+    useSim.getState().runCompare();
+    expect(useSim.getState().closedLoop).toBe(true); // head to head is always closed loop
+    // No run on screen, no label: a failed run and a plan change both clear it.
+    useSim.setState({ ticks: 0 });
+    useSim.getState().run();
+    expect(useSim.getState().closedLoop).toBe(false);
+    useSim.setState({ ticks: 30 });
+    useSim.getState().runCompare();
+    useSim.getState().setPlan('vessel-3x8');
+    expect(useSim.getState().closedLoop).toBe(false);
+    useSim.getState().setPlan('demo-6');
+    useSim.getState().setDispatch(true);
+    useSim.getState().run();
+    const closed = useSim.getState().trace!;
+    expect(closed.some((r) => r.commands.length > 0)).toBe(true);
+    // Drones move under command; open loop leaves them parked.
+    expect(closed.some((r) => r.truth.drones.some((d) => d.alive && d.at !== 'S1'))).toBe(true);
+  });
+
   it('ticks below 1 is an error string, not an empty trace', () => {
     useSim.setState({ ticks: 0 });
     useSim.getState().run();
@@ -255,17 +339,19 @@ describe('persistence', () => {
     return mod.useSim;
   }
 
-  it('run() saves planName/seed/ticks/corruption/ignition/brains and a fresh import restores them', async () => {
+  it('run() saves planName/seed/ticks/corruption/ignition/brains/dispatch and a fresh import restores them', async () => {
     const a = await freshStore();
+    expect(a.getState().dispatch).toBe(false); // open loop by default
     a.getState().setPlan('tower-5x4');
     a.getState().setSeed(7);
     a.getState().setTicks(12);
     a.getState().setBrains('ours');
+    a.getState().setDispatch(true);
     a.getState().setCorruption({ mode: 'blind', k: 2 });
     a.getState().setIgnition('L3-A2');
     a.getState().run();
     expect(JSON.parse(mem.get('firefly.sim.v2')!)).toEqual({
-      planName: 'tower-5x4', seed: 7, ticks: 12, ignition: 'L3-A2', brains: 'ours',
+      planName: 'tower-5x4', seed: 7, ticks: 12, ignition: 'L3-A2', brains: 'ours', dispatch: true,
       corruption: { mode: 'blind', k: 2, onset: 5, target: ['L2-B2'] },
     });
     vi.resetModules();
@@ -275,17 +361,19 @@ describe('persistence', () => {
     expect(s.seed).toBe(7);
     expect(s.ticks).toBe(12);
     expect(s.brains).toBe('ours');
+    expect(s.dispatch).toBe(true);
     expect(s.ignition).toBe('L3-A2');
     expect(s.corruption).toEqual({ mode: 'blind', k: 2, onset: 5, target: ['L2-B2'] });
   });
 
   it('survives garbage in storage: unknown plan, bad numbers, wrong shapes, unparsable JSON', async () => {
-    mem.set('firefly.sim.v2', JSON.stringify({ planName: 'nope', seed: 'x', ticks: -3, corruption: { mode: 'bogus', target: 'S3', k: 'abc' }, ignition: 'ZZZ', brains: 'kalman-only' }));
+    mem.set('firefly.sim.v2', JSON.stringify({ planName: 'nope', seed: 'x', ticks: -3, corruption: { mode: 'bogus', target: 'S3', k: 'abc' }, ignition: 'ZZZ', brains: 'kalman-only', dispatch: 'yes' }));
     let s = (await freshStore()).getState();
     expect(s.planName).toBe('demo-6');
     expect(s.seed).toBe(42);
     expect(s.ticks).toBe(60);
     expect(s.brains).toBe('both');
+    expect(s.dispatch).toBe(false);
     expect(s.ignition).toBe('S3');
     // A non-array target is dropped, which means "any sensor", not a crash.
     expect(s.corruption).toEqual({ mode: 'freeze' });
@@ -324,7 +412,7 @@ describe('persistence', () => {
 // ---- Dean: demo beats, recording mode, URL presets, run validation ----
 
 const fresh = () => {
-  useSim.setState({ planName: 'demo-6', plan: demo, ignition: 'S3', brains: 'both', traces: {}, seed: 42, ticks: 30, corruption: { mode: 'freeze', k: 1, onset: 5, target: ['S3'] }, data: null, trace: null, error: null, cursor: 0, playing: false, caption: '', beat: null, demo: false });
+  useSim.setState({ planName: 'demo-6', plan: demo, ignition: 'S3', brains: 'both', dispatch: false, traces: {}, seed: 42, ticks: 30, corruption: { mode: 'freeze', k: 1, onset: 5, target: ['S3'] }, data: null, trace: null, error: null, cursor: 0, playing: false, caption: '', beat: null, demo: false, compare: null });
 };
 
 describe('helpers', () => {

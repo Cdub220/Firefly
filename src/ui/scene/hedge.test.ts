@@ -28,6 +28,26 @@ describe('hedgeInfo', () => {
     expect(hedgeInfo({ ambiguous: [] }, [{ droneId: 'D1', goTo: 'S2', task: 'observe' }, { droneId: 'D2', goTo: 'S4', task: 'observe' }]).hedging).toBe(false);
   });
 
+  it('agrees with the eval harness definition (metrics.isHedge) on one-command-per-drone ticks, which is all the allocator emits', async () => {
+    const { isHedge } = await import('../../eval/metrics');
+    const cases: Array<[string[][], Array<{ droneId: string; goTo: string; task: string }>]> = [
+      [[['S2', 'S4']], [{ droneId: 'D1', goTo: 'S2', task: 'observe' }, { droneId: 'D2', goTo: 'S4', task: 'observe' }]],
+      [[['S2', 'S4']], [{ droneId: 'D1', goTo: 'S2', task: 'observe' }, { droneId: 'D2', goTo: 'S2', task: 'observe' }]],
+      [[['S2'], ['S4']], [{ droneId: 'D1', goTo: 'S2', task: 'observe' }, { droneId: 'D2', goTo: 'S4', task: 'observe' }]],
+      [[['S1', 'S2', 'S3']], [{ droneId: 'D1', goTo: 'S3', task: 'suppress' }, { droneId: 'D2', goTo: 'S1', task: 'coat' }, { droneId: 'D3', goTo: 'S9', task: 'hold' }]],
+      [[], [{ droneId: 'D1', goTo: 'S2', task: 'observe' }]],
+      [[['S5', 'S6']], []],
+    ];
+    for (const [ambiguous, commands] of cases) {
+      expect(hedgeInfo({ ambiguous }, commands).hedging, JSON.stringify([ambiguous, commands])).toBe(isHedge(ambiguous, commands));
+    }
+    // The one known difference: two commands for ONE drone into one group. The badge keeps
+    // the drone's last command (one drone cannot be in two places), the harness counts both.
+    const dup = [{ droneId: 'D1', goTo: 'S2', task: 'observe' }, { droneId: 'D1', goTo: 'S4', task: 'observe' }];
+    expect(hedgeInfo({ ambiguous: [['S2', 'S4']] }, dup).hedging).toBe(false);
+    expect(isHedge([['S2', 'S4']], dup)).toBe(true);
+  });
+
   it('reports every hedged group and does not mutate its inputs', () => {
     const amb = [['S2', 'S4'], ['S5', 'S6']];
     const cmds = [

@@ -59,7 +59,7 @@ export function SplitView() {
     <div className={'fx' + (s.demo ? ' demo' : '')}>
       <header>
         <h1>Firefly · truth vs two brains</h1>
-        {!s.demo && <div className="cfg">plan={s.plan.name} seed={s.seed} ticks={s.ticks} corruption={JSON.stringify(s.corruption)}</div>}
+        {!s.demo && <div className="cfg">plan={s.plan.name} seed={s.seed} ticks={s.ticks} corruption={JSON.stringify(s.corruption)}{s.closedLoop ? ' · closed loop: drones act on commands' : ''}</div>}
         <button id="demo" type="button" className="toggle" aria-pressed={s.demo} onClick={() => s.setDemo(!s.demo)}>{s.demo ? 'Exit recording mode' : 'Recording mode'}</button>
       </header>
       {s.caption && <p className="caption" aria-live="polite">{s.caption}</p>}

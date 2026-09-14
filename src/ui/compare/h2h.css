@@ -1,0 +1,34 @@
+/* Head to head: Kalman left, ours right, truth above, chart and scorecard below. Shares the .fx tokens. */
+.h2h-view { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 12px; align-items: start; padding-block: 12px; }
+.h2h-view .h2h-left { display: flex; flex-direction: column; gap: 12px; max-height: calc(100vh - 80px); overflow: auto; }
+.h2h-view .h2h-main { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.h2h-view .h2h-bar { margin-bottom: 0; }
+.h2h-view section { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px 8px; min-width: 0; }
+.h2h-view section header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; margin-bottom: 6px; }
+.h2h-view section h2 { font: 600 13px var(--sans); margin: 0; color: var(--ink); }
+.h2h-view .sub { font: 11px var(--sans); color: var(--muted); }
+.h2h-view .h2h-canvas { height: calc(50vh - 120px); min-height: 260px; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: #0e1116; }
+.h2h-view .h2h-canvas.small { height: 200px; min-height: 160px; }
+.h2h-view .h2h-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.h2h-view .h2h-col.kalman h2 { color: var(--wrong); }
+.h2h-view .h2h-col.ours h2 { color: var(--ok); }
+.h2h-view .h2h-bottom { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 10px; }
+.h2h-view .h2h-empty { height: 60vh; display: grid; place-items: center; color: var(--muted); }
+.h2h-view .conf { display: inline-flex; align-items: center; gap: 6px; font: 11px var(--mono); color: var(--ink-2); }
+.h2h-view .conf .bar { display: inline-block; width: 90px; height: 6px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
+.h2h-view .conf .bar i { display: block; height: 100%; background: var(--ok); }
+.h2h-view .conf.hi .bar i { background: var(--wrong); }
+.h2h-view .conf.lo .bar i { background: var(--uncertain); }
+.h2h-view .burning-count strong { color: var(--ink); }
+.h2h-view .wrong-floor-tag { font: 700 11px var(--mono); letter-spacing: 0.08em; color: #0e1116; background: var(--wrong); border-radius: 4px; padding: 2px 8px; animation: wrong-flash 0.6s ease-in-out infinite alternate; }
+@keyframes wrong-flash { from { opacity: 1; } to { opacity: 0.55; } }
+.h2h-view .missed-tag { font: 700 11px var(--mono); letter-spacing: 0.08em; color: var(--wrong); border: 1px solid var(--wrong); border-radius: 4px; padding: 1px 7px; }
+@media (prefers-reduced-motion: reduce) { .h2h-view .wrong-floor-tag { animation: none; } }
+.h2h-view .containment { display: block; width: 100%; height: auto; }
+.h2h-view .scorecard { border-collapse: collapse; width: 100%; font: 12px var(--mono); }
+.h2h-view .scorecard th, .h2h-view .scorecard td { padding: 3px 8px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.h2h-view .scorecard th:first-child { text-align: left; font-weight: 400; color: var(--ink-2); font-family: var(--sans); }
+.h2h-view .scorecard thead th { color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em; font-size: 10px; }
+.h2h-view .scorecard td.win { font-weight: 700; color: var(--ink); }
+.h2h-view .scorecard td:not(.win) { color: var(--muted); }
+@media (max-width: 1100px) { .h2h-view { grid-template-columns: 1fr; } .h2h-view .h2h-left { max-height: none; } .h2h-view .h2h-grid, .h2h-view .h2h-bottom { grid-template-columns: 1fr; } }

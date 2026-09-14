@@ -42,13 +42,16 @@ type SpaceBoxProps = {
   hidden: boolean;
   hatched: boolean;
   outline: 'wrong' | 'uncertain' | undefined;
+  /** Named as burning by a brain while not burning in truth: flash red and tag it. */
+  wrongFloor: boolean;
 };
 
-function SpaceBox({ id, pos, color, burning, occupants, hidden, hatched, outline }: SpaceBoxProps) {
+function SpaceBox({ id, pos, color, burning, occupants, hidden, hatched, outline, wrongFloor }: SpaceBoxProps) {
   const mat = useRef<MeshStandardMaterial>(null);
+  const flash = useRef<MeshStandardMaterial>(null);
   useFrame(({ clock }) => {
-    if (!mat.current) return;
-    mat.current.emissiveIntensity = burning ? 0.35 + 0.35 * Math.sin(clock.elapsedTime * 4) : 0;
+    if (mat.current) mat.current.emissiveIntensity = burning ? 0.35 + 0.35 * Math.sin(clock.elapsedTime * 4) : 0;
+    if (flash.current) flash.current.opacity = 0.35 + 0.35 * Math.sin(clock.elapsedTime * 8);
   });
   if (hidden) return null;
   return (
@@ -56,6 +59,16 @@ function SpaceBox({ id, pos, color, burning, occupants, hidden, hatched, outline
       <mesh name={`space:${id}`} geometry={BOX_GEO}>
         <meshStandardMaterial ref={mat} color={hatched ? '#2a3240' : color} emissive={burning ? '#ff6a00' : '#000000'} roughness={0.6} metalness={0.1} transparent={hatched} opacity={hatched ? 0.55 : 1} />
       </mesh>
+      {wrongFloor && (
+        <>
+          <mesh name={`wrong:${id}`} geometry={OUTLINE_GEO}>
+            <meshStandardMaterial ref={flash} color="#ef4444" emissive="#ef4444" emissiveIntensity={0.8} transparent opacity={0.5} depthWrite={false} />
+          </mesh>
+          <Html center position={[0, BOX.h / 2 + 0.9, 0]} style={{ pointerEvents: 'none' }}>
+            <div className="scene-wrong-floor">WRONG FLOOR</div>
+          </Html>
+        </>
+      )}
       {hatched && (
         <mesh name={`hatch:${id}`} geometry={BOX_GEO}>
           <meshBasicMaterial color="#6f7b8c" wireframe transparent opacity={0.6} />
@@ -124,9 +137,11 @@ export type SceneProps = {
   drones?: { prev: TickRecord | undefined; playing: boolean; speed: number; thick?: ReadonlySet<DroneId> | undefined } | undefined;
   /** Share the camera with every other Scene given the same group name. */
   cameraGroup?: string;
+  /** Spaces to flash red with a WRONG FLOOR tag (a brain's dispatch to a space that is not burning). */
+  wrongFloor?: ReadonlySet<SpaceId> | undefined;
 };
 
-export function Scene({ plan, rec, view = 'truth', brain = 'ours', belief, maxLevel, drones, cameraGroup: group }: SceneProps) {
+export function Scene({ plan, rec, view = 'truth', brain = 'ours', belief, maxLevel, drones, cameraGroup: group, wrongFloor }: SceneProps) {
   const layout = layoutFor(plan);
   const bounds = useMemo(() => layoutBounds(layout), [layout]);
   const levelOf = useMemo(() => new Map(plan.spaces.map((s) => [s.id, s.level])), [plan]);
@@ -163,6 +178,7 @@ export function Scene({ plan, rec, view = 'truth', brain = 'ours', belief, maxLe
             hidden={!shown(s.id)}
             hatched={unsensed.has(s.id)}
             outline={frame.outline?.[s.id]}
+            wrongFloor={wrongFloor?.has(s.id) ?? false}
           />
         );
       })}
