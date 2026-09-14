@@ -33,8 +33,8 @@ export function HeadToHead() {
   const left = s.traces[LEFT]?.[s.cursor];
   const right = s.traces[RIGHT]?.[s.cursor];
   const levels = useMemo(() => levelsOf(s.plan), [s.plan]);
-  const [maxLevel, setMaxLevel] = useState<number>(() => defaultMaxLevel(s.plan, s.ignition));
-  useEffect(() => { setMaxLevel(defaultMaxLevel(s.plan, s.ignition)); }, [s.plan, s.ignition]);
+  const [maxLevel, setMaxLevel] = useState<number>(() => defaultMaxLevel(s.plan));
+  useEffect(() => { setMaxLevel(defaultMaxLevel(s.plan)); }, [s.plan]);
 
   // Wrong dispatch: Kalman never hedges, so every miss counts. Ours is spared inside a
   // maybe-group, and if it still trips, it shows.

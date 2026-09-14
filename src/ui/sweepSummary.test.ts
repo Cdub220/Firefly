@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import summaryJson from './sweepSummary.json';
 import { summarizeSweep, sweepRowsFor, type SweepRow, type SweepSummary } from './sweepSummary';
@@ -55,5 +57,10 @@ describe('the committed sweep summary', () => {
   });
   it('says what the sweep says: ours never has the higher false certainty on any plan', () => {
     for (const name of s.plans) expect(s.cells[name]!['ours']!.falseCertainty, name).toBeLessThanOrEqual(s.cells[name]!['kalman']!.falseCertainty);
+  });
+  it('is not stale: folding results/sweep-latest.json again gives the committed JSON exactly', () => {
+    const file = JSON.parse(readFileSync(join(__dirname, '..', '..', 'results', 'sweep-latest.json'), 'utf8')) as { meta: Record<string, unknown>; rows: SweepRow[] };
+    const fresh = summarizeSweep(file.rows, { source: 'results/sweep-latest.json', meta: file.meta });
+    expect(JSON.parse(JSON.stringify(fresh))).toEqual(s); // run `npm run gen:sweep-summary` after a new sweep
   });
 });

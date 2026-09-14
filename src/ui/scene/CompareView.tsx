@@ -30,8 +30,8 @@ export function CompareView() {
   const beliefRec = s.traces[brain]?.[s.cursor];
   const belief = beliefRec?.belief;
   const levels = useMemo(() => levelsOf(s.plan), [s.plan]);
-  const [maxLevel, setMaxLevel] = useState<number>(() => defaultMaxLevel(s.plan, s.ignition));
-  useEffect(() => { setMaxLevel(defaultMaxLevel(s.plan, s.ignition)); }, [s.plan, s.ignition]);
+  const [maxLevel, setMaxLevel] = useState<number>(() => defaultMaxLevel(s.plan));
+  useEffect(() => { setMaxLevel(defaultMaxLevel(s.plan)); }, [s.plan]);
   // Commands are the primary brain's (they drive the world); a hedge is judged against the shown brain's ambiguity.
   const hedge = useMemo(() => (belief && rec ? hedgeInfo(belief, rec.commands) : { hedging: false, drones: [], groups: [] }), [belief, rec]);
   const thick = useMemo(() => new Set(hedge.drones), [hedge]);

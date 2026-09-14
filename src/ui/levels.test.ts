@@ -3,13 +3,12 @@ import { loadPlan, PLAN_NAMES } from '../shared/structures';
 import { defaultMaxLevel, ignitionLevel, levelsOf } from './levels';
 
 describe('level slicer default', () => {
-  it('shows the ignition level on every plan file, with any ignition space', () => {
+  it('is the top level on every plan file, so the ignition level (any space) is always shown', () => {
     for (const name of PLAN_NAMES) {
       const plan = loadPlan(name);
-      const d = defaultMaxLevel(plan);
-      expect(d).toBe(levelsOf(plan)[levelsOf(plan).length - 1]);
-      expect(d).toBeGreaterThanOrEqual(ignitionLevel(plan)!);
-      for (const s of plan.spaces) expect(defaultMaxLevel(plan, s.id)).toBeGreaterThanOrEqual(s.level);
+      const levels = levelsOf(plan);
+      expect(defaultMaxLevel(plan)).toBe(levels[levels.length - 1]);
+      for (const s of plan.spaces) expect(defaultMaxLevel(plan), `${name} ${s.id}`).toBeGreaterThanOrEqual(ignitionLevel(plan, s.id)!);
     }
   });
 
@@ -18,12 +17,15 @@ describe('level slicer default', () => {
     expect(levelsOf(tower)).toEqual([1, 2, 3, 4, 5]);
     expect(ignitionLevel(tower)).toBe(2);
     expect(defaultMaxLevel(tower)).toBe(5);
+    expect(defaultMaxLevel(loadPlan('demo-6'))).toBe(1);
+    expect(defaultMaxLevel(loadPlan('vessel-3x8'))).toBe(3);
   });
 
-  it('tolerates an unknown ignition and an empty plan', () => {
-    const plan = { spaces: [{ id: 'a', level: 3 }, { id: 'b', level: 1 }], ignition: ['zzz'] } as unknown as Parameters<typeof defaultMaxLevel>[0];
+  it('tolerates an unknown ignition, unsorted levels and an empty plan', () => {
+    const plan = { spaces: [{ id: 'a', level: 3 }, { id: 'b', level: 1 }], ignition: ['zzz'] } as unknown as Parameters<typeof ignitionLevel>[0];
     expect(ignitionLevel(plan)).toBeUndefined();
+    expect(levelsOf(plan)).toEqual([1, 3]);
     expect(defaultMaxLevel(plan)).toBe(3);
-    expect(defaultMaxLevel({ spaces: [], ignition: [] })).toBe(1);
+    expect(defaultMaxLevel({ spaces: [] })).toBe(1);
   });
 });

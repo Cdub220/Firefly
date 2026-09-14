@@ -1,8 +1,8 @@
 /**
- * The level slicer ("show levels ≤ N") default. Pure, so the rule is testable: every
- * level is shown, which always includes the ignition level; a plan whose ignition space
- * is unknown or off-grid still gets its top level. Views reset to this when the plan
- * changes.
+ * The level slicer ("show levels ≤ N") default. Pure, so the rule is testable: the top
+ * level, which shows every level and therefore always the ignition level. Views reset to
+ * it when the plan changes. (A default that hid the upper floors would undercut the
+ * "different building" beat, whose point is five levels on screen; see decisions.md.)
  */
 import type { StructurePlan } from '../shared/types';
 
@@ -15,9 +15,8 @@ export function ignitionLevel(plan: Pick<StructurePlan, 'spaces' | 'ignition'>, 
   return plan.spaces.find((s) => s.id === id)?.level;
 }
 
-/** The slicer default: the top level, and never below the ignition level. */
-export function defaultMaxLevel(plan: Pick<StructurePlan, 'spaces' | 'ignition'>, ignition?: string): number {
+/** The slicer default: the top level (1 for a plan with no spaces). */
+export function defaultMaxLevel(plan: Pick<StructurePlan, 'spaces'>): number {
   const levels = levelsOf(plan);
-  const top = levels[levels.length - 1] ?? 1;
-  return Math.max(top, ignitionLevel(plan, ignition) ?? top);
+  return levels[levels.length - 1] ?? 1;
 }

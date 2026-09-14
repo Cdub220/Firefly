@@ -11,7 +11,7 @@ Nothing in `src/` names a ship or a tower. A structure is a JSON file in `data/s
 | passage | 0.20 | 0.15 |
 | floor (level to level) | 0.08 on 16 edges | 0.04 on 16 edges |
 | shaft | 0.30 on 2 edges | 0.35 on 4 edges (one stair chain, L1 to L5) |
-| sensors | one per space | one per space on L1, L2, L3, L5; **none on L4** |
+| sensors | 22 for 24 spaces (L2-B2 and L2-B3 unsensed) | one per space on L1, L2, L3, L5; **none on L4** |
 | ignition | L1-B3 | L2-B2 |
 
 The rates encode two different physics. A steel hull conducts: every deck plate is a heat path, so the vessel's floor rate is twice the tower's and heat leaks upward more or less everywhere. A concrete high-rise insulates between floors (0.04) but has one stairwell where the stack effect drives hot gas straight up (0.35 on a single vertical chain). Same equations in `src/world/physics.ts` and in the brain's rollout; only the numbers differ, and they differ in the file, not in code. The unsensed fourth floor is deliberate: the tower is also the plan where the brain must infer a whole level from its neighbours.
@@ -24,7 +24,7 @@ npx tsx src/loop.ts --plan tower-5x4  --ticks 120 --mode flashover --k 2
 npm run sweep -- --plans tower-5x4 --quick        # rewrites results/sweep-latest.json; git checkout it afterwards
 ```
 
-The tower run (seed 42): ours tracks the fire at L2-B2 from tick 1, holds `L2-A2, L2-B1, L2-B2` at tick 20 as it spreads on the floor, then flashover kills every sensor near the fire and by tick 30 twelve spaces burn with the brain reporting confidence 0.05 and a burning set it knows it cannot defend. Kalman reports `L2-B2` at 0.94 on tick 1 and, once the sensors die, all twenty spaces burning at 0.7 until the run ends 24 ticks after the last flame is out. Neither brain saw a tower before; neither has a setting for one. Full output: `npx tsx src/loop.ts --plan tower-5x4 --ticks 120 --mode flashover --k 2`. The quick sweep on the tower alone (120 cells × 4 brains, 60 ticks, seeds 1-2) is in `results/sweep-tower-quick.txt`; its `WHERE OURS LOSES` section is empty.
+The tower run (seed 42): ours tracks the fire at L2-B2 from tick 1, holds `L2-A2, L2-B1, L2-B2` at tick 20 as it spreads on the floor, then flashover kills every sensor near the fire and by tick 30 twelve spaces burn with the brain reporting confidence 0.05 and a burning set it knows it cannot defend. Kalman reports `L2-B2` at 0.94 on tick 1 and, once the sensors die, all twenty spaces burning from tick 39 (confidence 0.88 then, drifting to 0.69 by the end) until the run ends at tick 120, 29 ticks after the last flame is out at tick 91. Neither brain saw a tower before; neither has a setting for one. Full output: `npx tsx src/loop.ts --plan tower-5x4 --ticks 120 --mode flashover --k 2`. The quick sweep on the tower alone (120 cells × 4 brains, 60 ticks, seeds 1-2) is in `results/sweep-tower-quick.txt`; its `WHERE OURS LOSES` section is empty.
 
 ## The two scorecard rows
 

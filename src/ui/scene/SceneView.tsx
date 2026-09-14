@@ -20,8 +20,8 @@ export function SceneView() {
   const rec = s.trace?.[s.cursor];
   const prev = s.cursor > 0 ? s.trace?.[s.cursor - 1] : undefined;
   const levels = useMemo(() => levelsOf(s.plan), [s.plan]);
-  const [maxLevel, setMaxLevel] = useState<number>(() => defaultMaxLevel(s.plan, s.ignition));
-  useEffect(() => { setMaxLevel(defaultMaxLevel(s.plan, s.ignition)); }, [s.plan, s.ignition]);
+  const [maxLevel, setMaxLevel] = useState<number>(() => defaultMaxLevel(s.plan));
+  useEffect(() => { setMaxLevel(defaultMaxLevel(s.plan)); }, [s.plan]);
 
   const burningNow = rec ? rec.truth.spaces.filter((x) => x.burning).map((x) => x.id) : [];
   const brainNames = s.data?.brainNames ?? [];
