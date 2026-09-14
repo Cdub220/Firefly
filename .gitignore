@@ -9,3 +9,4 @@ coverage/
 
 # Sweep runs: every run writes a timestamped copy; only sweep-latest.json is tracked.
 results/sweep-20*.json
+data/codes/
