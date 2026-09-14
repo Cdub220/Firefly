@@ -14,5 +14,8 @@ export default defineConfig({
     // On CI run the files one at a time: the incident-replay suites (108-space plans) starve the
     // brain's wall-clock assertions (a step under 5 ms) when they share two cores. Locally stay parallel.
     fileParallelism: !process.env['CI'],
+    // Child processes, not worker threads: a test that blocks its worker for tens of seconds
+    // (one 108-space simulation) made the thread pool's RPC time out ("Timeout calling onTaskUpdate") on CI.
+    pool: 'forks',
   },
 });

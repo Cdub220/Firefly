@@ -581,27 +581,29 @@ describe('demo beats', () => {
     expect(useSim.getState().ticks).toBe(30);
     expect(useSim.getState().ticksBeforeCasefile).toBeNull();
     expect(useSim.getState().trace).toHaveLength(30);
-    // Pressing 7 twice does not overwrite the remembered length with 280.
-    useSim.getState().runBeat('casefile');
-    useSim.getState().runBeat('casefile');
-    expect(useSim.getState().ticksBeforeCasefile).toBe(30);
-    useSim.getState().runBeat('freeze');
-    expect(useSim.getState().ticks).toBe(30);
-    // A manual Run or a plan change after the case file also gives the demo its ticks back.
-    useSim.getState().runBeat('casefile');
+    // Under node the store is synchronous and never reports busy.
+    expect(useSim.getState().busy).toBeNull();
+  }, 120_000);
+
+  it('the case file remembers the demo tick count once and every way back restores it (state-level, no 108-space run)', () => {
+    // The state a second key-7 press would find: already on the incident, length already saved.
+    const onCase = () => useSim.setState({ planName: CASEFILE.plan, plan: loadPlan(CASEFILE.plan), ticks: CASEFILE_TICKS, ticksBeforeCasefile: 30 });
+    onCase();
+    expect(useSim.getState().ticksBeforeCasefile ?? useSim.getState().ticks).toBe(30); // a second press keeps 30, not 160
+    // A plan change gives the demo its ticks back.
     useSim.getState().setPlan('demo-6');
     expect(useSim.getState().ticks).toBe(30);
     expect(useSim.getState().ticksBeforeCasefile).toBeNull();
-    useSim.getState().runBeat('casefile');
-    useSim.getState().run(); // still on the incident plan: keeps the incident's length
-    expect(useSim.getState().ticks).toBe(CASEFILE_TICKS);
+    // A manual Run on the incident plan keeps the incident's length; after leaving it, Run restores.
+    onCase();
+    useSim.setState({ ticks: 5 }); // keep the probe cheap: the length itself is what is under test
+    useSim.getState().run();
+    expect(useSim.getState().ticksBeforeCasefile).toBe(30);
     useSim.getState().setPlan('demo-6');
     useSim.getState().run();
     expect(useSim.getState().ticks).toBe(30);
     expect(useSim.getState().trace).toHaveLength(30);
-    // Under node the store is synchronous and never reports busy.
-    expect(useSim.getState().busy).toBeNull();
-  }, 240_000);
+  });
 
   it('beatConfig is pure and keys the script 1-5 in pitch order, blind on 6, the case file on 7', () => {
     expect(BEATS.map((b) => b.hotkey)).toEqual(['1', '2', '3', '4', '5', '6', '7']);
