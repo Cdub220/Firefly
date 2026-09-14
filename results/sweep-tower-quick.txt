@@ -1,0 +1,323 @@
+
+> firefly@0.0.1 sweep
+> tsx src/eval/sweep.ts --plans tower-5x4 --quick
+
+sweep  plans=tower-5x4  modes=freeze,blind,saturate,flashover,mixed  k=1,2,3  targets=ignition,neighbor,far,random  onset=5  seeds=1,2  ticks=60  cells=120 x 4 brains
+  12/120 cells
+  24/120 cells
+  36/120 cells
+  48/120 cells
+  60/120 cells
+  72/120 cells
+  84/120 cells
+  96/120 cells
+  108/120 cells
+  120/120 cells
+
+plan         mode       k   target    brain          falseCert  fc@P.9  coverage  wrongDisp   err C              ttr  ms/tick
+tower-5x4    freeze     1   ignition  ours                  0%      0%       89%         0%     4.3        0.0 (2/2)     1.45
+tower-5x4    freeze     1   ignition  kalman               76%     75%      100%        76%    16.8       22.0 (2/2)     0.30
+tower-5x4    freeze     1   ignition  kalman-gated         83%     88%      100%        88%    48.7       36.0 (1/2)     0.23
+tower-5x4    freeze     1   ignition  kalman-source         0%     10%       35%         0%    16.8        0.0 (2/2)     0.61
+
+tower-5x4    freeze     1   neighbor  ours                  0%      0%       88%         0%     4.2        0.0 (2/2)     1.16
+tower-5x4    freeze     1   neighbor  kalman               79%     75%       86%        76%    24.6       22.0 (2/2)     0.25
+tower-5x4    freeze     1   neighbor  kalman-gated         83%     85%      100%        85%    44.1       36.0 (1/2)     0.20
+tower-5x4    freeze     1   neighbor  kalman-source         0%     38%       29%        30%    25.0        0.0 (2/2)     0.61
+
+tower-5x4    freeze     1   far       ours                  0%      0%       92%         0%     3.6        0.0 (2/2)     0.89
+tower-5x4    freeze     1   far       kalman               81%     67%       59%        71%    28.2        8.0 (1/2)     0.22
+tower-5x4    freeze     1   far       kalman-gated         88%     88%       91%        88%    53.8      never (0/2)     0.18
+tower-5x4    freeze     1   far       kalman-source         0%     16%       40%        23%    43.4        0.0 (2/2)     0.57
+
+tower-5x4    freeze     1   random    ours                  0%      0%       92%         0%     2.9        0.0 (2/2)     0.78
+tower-5x4    freeze     1   random    kalman               78%     73%       79%        75%    18.6       22.0 (2/2)     0.25
+tower-5x4    freeze     1   random    kalman-gated         85%     88%       91%        88%    54.6       36.0 (1/2)     0.19
+tower-5x4    freeze     1   random    kalman-source         0%     28%       38%        25%    20.1        0.0 (2/2)     0.59
+
+tower-5x4    freeze     2   ignition  ours                  0%      0%       89%         0%     4.3        0.0 (2/2)     0.64
+tower-5x4    freeze     2   ignition  kalman               76%     75%      100%        76%    16.8       22.0 (2/2)     0.22
+tower-5x4    freeze     2   ignition  kalman-gated         83%     88%      100%        88%    48.7       36.0 (1/2)     0.19
+tower-5x4    freeze     2   ignition  kalman-source         0%     10%       35%         0%    16.8        0.0 (2/2)     0.56
+
+tower-5x4    freeze     2   neighbor  ours                  0%      0%       88%         0%     4.2        0.0 (2/2)     0.62
+tower-5x4    freeze     2   neighbor  kalman               79%     75%       86%        76%    24.6       22.0 (2/2)     0.22
+tower-5x4    freeze     2   neighbor  kalman-gated         83%     85%      100%        85%    44.1       36.0 (1/2)     0.18
+tower-5x4    freeze     2   neighbor  kalman-source         0%     38%       29%        30%    25.0        0.0 (2/2)     0.56
+
+tower-5x4    freeze     2   far       ours                  0%      0%       92%         0%     3.6        0.0 (2/2)     0.62
+tower-5x4    freeze     2   far       kalman               81%     67%       59%        71%    28.2        8.0 (1/2)     0.22
+tower-5x4    freeze     2   far       kalman-gated         88%     88%       91%        88%    53.8      never (0/2)     0.18
+tower-5x4    freeze     2   far       kalman-source         0%     16%       40%        23%    43.4        0.0 (2/2)     0.56
+
+tower-5x4    freeze     2   random    ours                  0%      0%       91%         0%     3.7        0.0 (2/2)     0.81
+tower-5x4    freeze     2   random    kalman               87%     72%       47%        73%    35.5        8.0 (1/2)     0.21
+tower-5x4    freeze     2   random    kalman-gated         87%     86%       77%        86%    65.7      never (0/2)     0.16
+tower-5x4    freeze     2   random    kalman-source         0%     38%       38%        37%    37.1        0.0 (2/2)     0.56
+
+tower-5x4    freeze     3   ignition  ours                  0%      0%       89%         0%     4.3        0.0 (2/2)     0.72
+tower-5x4    freeze     3   ignition  kalman               76%     75%      100%        76%    16.8       22.0 (2/2)     0.25
+tower-5x4    freeze     3   ignition  kalman-gated         83%     88%      100%        88%    48.7       36.0 (1/2)     0.19
+tower-5x4    freeze     3   ignition  kalman-source         0%     10%       35%         0%    16.8        0.0 (2/2)     0.60
+
+tower-5x4    freeze     3   neighbor  ours                  0%      0%       88%         0%     4.2        0.0 (2/2)     0.62
+tower-5x4    freeze     3   neighbor  kalman               79%     75%       86%        76%    24.6       22.0 (2/2)     0.22
+tower-5x4    freeze     3   neighbor  kalman-gated         83%     85%      100%        85%    44.1       36.0 (1/2)     0.18
+tower-5x4    freeze     3   neighbor  kalman-source         0%     38%       29%        30%    25.0        0.0 (2/2)     0.55
+
+tower-5x4    freeze     3   far       ours                  0%      0%       92%         0%     3.6        0.0 (2/2)     0.59
+tower-5x4    freeze     3   far       kalman               81%     67%       59%        71%    28.2        8.0 (1/2)     0.22
+tower-5x4    freeze     3   far       kalman-gated         88%     88%       91%        88%    53.8      never (0/2)     0.17
+tower-5x4    freeze     3   far       kalman-source         0%     16%       40%        23%    43.4        0.0 (2/2)     0.56
+
+tower-5x4    freeze     3   random    ours                  0%      1%       90%         0%     4.5        0.0 (2/2)     0.86
+tower-5x4    freeze     3   random    kalman               91%     71%       29%        71%    46.2      never (0/2)     0.22
+tower-5x4    freeze     3   random    kalman-gated         82%     84%       76%        85%    67.4      never (0/2)     0.17
+tower-5x4    freeze     3   random    kalman-source         0%     45%       22%        43%    48.0        0.0 (2/2)     0.56
+
+tower-5x4    blind      1   ignition  ours                  0%      0%       89%         0%     4.4        0.0 (2/2)     0.66
+tower-5x4    blind      1   ignition  kalman               80%     54%       20%        54%    39.5       45.0 (2/2)     0.22
+tower-5x4    blind      1   ignition  kalman-gated         79%     71%       71%        71%    54.2      never (0/2)     0.18
+tower-5x4    blind      1   ignition  kalman-source         0%     60%        0%        49%    40.0      never (0/2)     0.57
+
+tower-5x4    blind      1   neighbor  ours                  0%      0%       88%         0%     4.2        0.0 (2/2)     0.62
+tower-5x4    blind      1   neighbor  kalman               89%     75%       32%        75%    33.1        8.0 (1/2)     0.22
+tower-5x4    blind      1   neighbor  kalman-gated         85%     79%       79%        79%    45.1      never (0/2)     0.18
+tower-5x4    blind      1   neighbor  kalman-source         0%     70%       29%        60%    33.0      never (0/2)     0.56
+
+tower-5x4    blind      1   far       ours                  0%      1%       88%         0%     9.5        0.0 (2/2)     0.63
+tower-5x4    blind      1   far       kalman               81%     67%       59%        71%    28.2        8.0 (1/2)     0.22
+tower-5x4    blind      1   far       kalman-gated         88%     88%       91%        88%    53.8      never (0/2)     0.17
+tower-5x4    blind      1   far       kalman-source         0%     16%       40%        23%    43.5        0.0 (2/2)     0.56
+
+tower-5x4    blind      1   random    ours                  0%      0%       92%         0%     2.9        0.0 (2/2)     0.61
+tower-5x4    blind      1   random    kalman               78%     73%       79%        75%    20.1       22.0 (2/2)     0.22
+tower-5x4    blind      1   random    kalman-gated         85%     86%       87%        87%    55.3      never (0/2)     0.17
+tower-5x4    blind      1   random    kalman-source         0%     36%       38%        33%    21.8        0.0 (2/2)     0.56
+
+tower-5x4    blind      2   ignition  ours                  0%      0%       89%         0%     4.4        0.0 (2/2)     0.64
+tower-5x4    blind      2   ignition  kalman               80%     54%       20%        54%    39.5       45.0 (2/2)     0.22
+tower-5x4    blind      2   ignition  kalman-gated         79%     71%       71%        71%    54.2      never (0/2)     0.18
+tower-5x4    blind      2   ignition  kalman-source         0%     60%        0%        49%    40.0      never (0/2)     0.56
+
+tower-5x4    blind      2   neighbor  ours                  0%      0%       88%         0%     4.2        0.0 (2/2)     0.63
+tower-5x4    blind      2   neighbor  kalman               89%     75%       32%        75%    33.1        8.0 (1/2)     0.22
+tower-5x4    blind      2   neighbor  kalman-gated         85%     79%       79%        79%    45.1      never (0/2)     0.18
+tower-5x4    blind      2   neighbor  kalman-source         0%     70%       29%        60%    33.0      never (0/2)     0.56
+
+tower-5x4    blind      2   far       ours                  0%      1%       88%         0%     9.5        0.0 (2/2)     0.59
+tower-5x4    blind      2   far       kalman               81%     67%       59%        71%    28.2        8.0 (1/2)     0.22
+tower-5x4    blind      2   far       kalman-gated         88%     88%       91%        88%    53.8      never (0/2)     0.17
+tower-5x4    blind      2   far       kalman-source         0%     16%       40%        23%    43.5        0.0 (2/2)     0.56
+
+tower-5x4    blind      2   random    ours                  0%      0%       89%         0%     5.4        0.0 (2/2)     0.65
+tower-5x4    blind      2   random    kalman               87%     72%       47%        73%    37.6        8.0 (1/2)     0.22
+tower-5x4    blind      2   random    kalman-gated         81%     85%       83%        85%    61.0      never (0/2)     0.18
+tower-5x4    blind      2   random    kalman-source         0%     46%       38%        48%    39.5        0.0 (2/2)     0.56
+
+tower-5x4    blind      3   ignition  ours                  0%      0%       89%         0%     4.4        0.0 (2/2)     0.63
+tower-5x4    blind      3   ignition  kalman               80%     54%       20%        54%    39.5       45.0 (2/2)     0.21
+tower-5x4    blind      3   ignition  kalman-gated         79%     71%       71%        71%    54.2      never (0/2)     0.18
+tower-5x4    blind      3   ignition  kalman-source         0%     60%        0%        49%    40.0      never (0/2)     0.56
+
+tower-5x4    blind      3   neighbor  ours                  0%      0%       88%         0%     4.2        0.0 (2/2)     0.63
+tower-5x4    blind      3   neighbor  kalman               89%     75%       32%        75%    33.1        8.0 (1/2)     0.21
+tower-5x4    blind      3   neighbor  kalman-gated         85%     79%       79%        79%    45.1      never (0/2)     0.18
+tower-5x4    blind      3   neighbor  kalman-source         0%     70%       29%        60%    33.0      never (0/2)     0.56
+
+tower-5x4    blind      3   far       ours                  0%      1%       88%         0%     9.5        0.0 (2/2)     0.58
+tower-5x4    blind      3   far       kalman               81%     67%       59%        71%    28.2        8.0 (1/2)     0.22
+tower-5x4    blind      3   far       kalman-gated         88%     88%       91%        88%    53.8      never (0/2)     0.17
+tower-5x4    blind      3   far       kalman-source         0%     16%       40%        23%    43.5        0.0 (2/2)     0.55
+
+tower-5x4    blind      3   random    ours                  0%      2%       89%         0%     5.3        0.0 (2/2)     0.66
+tower-5x4    blind      3   random    kalman               91%     71%       26%        71%    52.4      never (0/2)     0.22
+tower-5x4    blind      3   random    kalman-gated         86%     83%       66%        84%    60.6      never (0/2)     0.17
+tower-5x4    blind      3   random    kalman-source         0%     56%       22%        52%    54.2        0.0 (1/2)     0.55
+
+tower-5x4    saturate   1   ignition  ours                  0%      0%       89%         0%     5.3        0.0 (2/2)     0.64
+tower-5x4    saturate   1   ignition  kalman               76%     73%      100%        76%    24.8       22.0 (2/2)     0.22
+tower-5x4    saturate   1   ignition  kalman-gated         85%     85%      100%        86%    46.6       36.0 (1/2)     0.18
+tower-5x4    saturate   1   ignition  kalman-source         0%     21%       24%        38%    25.5      never (0/2)     0.56
+
+tower-5x4    saturate   1   neighbor  ours                  0%      0%       89%         0%     3.9        0.0 (2/2)     0.63
+tower-5x4    saturate   1   neighbor  kalman               76%     75%      100%        76%    20.4       22.0 (2/2)     0.24
+tower-5x4    saturate   1   neighbor  kalman-gated         84%     88%      100%        88%    52.8       36.0 (1/2)     0.18
+tower-5x4    saturate   1   neighbor  kalman-source         0%     31%       30%        24%    20.5        0.0 (2/2)     0.58
+
+tower-5x4    saturate   1   far       ours                  0%      0%       88%         0%     4.5        0.0 (2/2)     0.62
+tower-5x4    saturate   1   far       kalman               76%     75%      100%        76%    17.5       22.0 (2/2)     0.23
+tower-5x4    saturate   1   far       kalman-gated         83%     88%      100%        88%    55.0       36.0 (1/2)     0.19
+tower-5x4    saturate   1   far       kalman-source         0%      9%       40%         5%    27.3        0.0 (2/2)     0.57
+
+tower-5x4    saturate   1   random    ours                  0%     17%       87%        21%   229.5        0.0 (2/2)     1.50
+tower-5x4    saturate   1   random    kalman               82%     65%       55%        67%   238.5        8.0 (1/2)     0.23
+tower-5x4    saturate   1   random    kalman-gated         71%     80%       98%        80%   142.6       36.0 (1/2)     0.17
+tower-5x4    saturate   1   random    kalman-source         0%     33%       46%        46%   232.6      never (0/2)     0.61
+
+tower-5x4    saturate   2   ignition  ours                  0%      0%       89%         0%     5.3        0.0 (2/2)     0.65
+tower-5x4    saturate   2   ignition  kalman               76%     73%      100%        76%    24.8       22.0 (2/2)     0.22
+tower-5x4    saturate   2   ignition  kalman-gated         85%     85%      100%        86%    46.6       36.0 (1/2)     0.18
+tower-5x4    saturate   2   ignition  kalman-source         0%     21%       24%        38%    25.5      never (0/2)     0.56
+
+tower-5x4    saturate   2   neighbor  ours                  0%      0%       89%         0%     3.9        0.0 (2/2)     0.63
+tower-5x4    saturate   2   neighbor  kalman               76%     75%      100%        76%    20.4       22.0 (2/2)     0.22
+tower-5x4    saturate   2   neighbor  kalman-gated         84%     88%      100%        88%    52.8       36.0 (1/2)     0.18
+tower-5x4    saturate   2   neighbor  kalman-source         0%     31%       30%        24%    20.5        0.0 (2/2)     0.56
+
+tower-5x4    saturate   2   far       ours                  0%      0%       88%         0%     4.5        0.0 (2/2)     0.59
+tower-5x4    saturate   2   far       kalman               76%     75%      100%        76%    17.5       22.0 (2/2)     0.22
+tower-5x4    saturate   2   far       kalman-gated         83%     88%      100%        88%    55.0       36.0 (1/2)     0.18
+tower-5x4    saturate   2   far       kalman-source         0%      9%       40%         5%    27.3        0.0 (2/2)     0.56
+
+tower-5x4    saturate   2   random    ours                  0%     17%       87%        21%   229.5        0.0 (2/2)     0.58
+tower-5x4    saturate   2   random    kalman               82%     65%       55%        67%   238.5        8.0 (1/2)     0.22
+tower-5x4    saturate   2   random    kalman-gated         71%     80%       98%        80%   142.6       36.0 (1/2)     0.16
+tower-5x4    saturate   2   random    kalman-source         0%     33%       46%        46%   232.6      never (0/2)     0.55
+
+tower-5x4    saturate   3   ignition  ours                  0%      0%       89%         0%     5.3        0.0 (2/2)     0.62
+tower-5x4    saturate   3   ignition  kalman               76%     73%      100%        76%    24.8       22.0 (2/2)     0.24
+tower-5x4    saturate   3   ignition  kalman-gated         85%     85%      100%        86%    46.6       36.0 (1/2)     0.19
+tower-5x4    saturate   3   ignition  kalman-source         0%     21%       24%        38%    25.5      never (0/2)     0.56
+
+tower-5x4    saturate   3   neighbor  ours                  0%      0%       89%         0%     3.9        0.0 (2/2)     0.60
+tower-5x4    saturate   3   neighbor  kalman               76%     75%      100%        76%    20.4       22.0 (2/2)     0.22
+tower-5x4    saturate   3   neighbor  kalman-gated         84%     88%      100%        88%    52.8       36.0 (1/2)     0.18
+tower-5x4    saturate   3   neighbor  kalman-source         0%     31%       30%        24%    20.5        0.0 (2/2)     0.56
+
+tower-5x4    saturate   3   far       ours                  0%      0%       88%         0%     4.5        0.0 (2/2)     0.58
+tower-5x4    saturate   3   far       kalman               76%     75%      100%        76%    17.5       22.0 (2/2)     0.22
+tower-5x4    saturate   3   far       kalman-gated         83%     88%      100%        88%    55.0       36.0 (1/2)     0.18
+tower-5x4    saturate   3   far       kalman-source         0%      9%       40%         5%    27.3        0.0 (2/2)     0.55
+
+tower-5x4    saturate   3   random    ours                  0%     17%       87%        21%   229.5        0.0 (2/2)     0.57
+tower-5x4    saturate   3   random    kalman               82%     65%       55%        67%   238.5        8.0 (1/2)     0.23
+tower-5x4    saturate   3   random    kalman-gated         71%     80%       98%        80%   142.6       36.0 (1/2)     0.16
+tower-5x4    saturate   3   random    kalman-source         0%     33%       46%        46%   232.6      never (0/2)     0.55
+
+tower-5x4    flashover  1   ignition  ours                  0%      0%       89%         0%     4.2        0.0 (2/2)     0.61
+tower-5x4    flashover  1   ignition  kalman               76%     75%      100%        76%     8.1       22.0 (2/2)     0.21
+tower-5x4    flashover  1   ignition  kalman-gated         84%     88%      100%        88%    44.9       36.0 (1/2)     0.19
+tower-5x4    flashover  1   ignition  kalman-source         0%     29%       40%        20%    15.5        0.0 (2/2)     0.53
+
+tower-5x4    flashover  1   neighbor  ours                  0%      0%       89%         0%     2.6        0.0 (2/2)     0.60
+tower-5x4    flashover  1   neighbor  kalman               76%     75%      100%        76%     6.2       22.0 (2/2)     0.21
+tower-5x4    flashover  1   neighbor  kalman-gated         82%     88%      100%        88%    47.8       36.0 (1/2)     0.18
+tower-5x4    flashover  1   neighbor  kalman-source         0%     19%       38%        10%     9.0        0.0 (2/2)     0.55
+
+tower-5x4    flashover  1   far       ours                  0%      0%       89%         0%     3.1        0.0 (2/2)     0.58
+tower-5x4    flashover  1   far       kalman               76%     75%      100%        76%     6.3       22.0 (2/2)     0.22
+tower-5x4    flashover  1   far       kalman-gated         83%     88%      100%        88%    47.7       36.0 (1/2)     0.19
+tower-5x4    flashover  1   far       kalman-source         0%     11%       40%         4%     7.2        0.0 (2/2)     0.55
+
+tower-5x4    flashover  1   random    ours                  0%      1%       48%         2%   166.9        0.0 (2/2)     0.63
+tower-5x4    flashover  1   random    kalman               41%     75%      100%        76%    13.8       22.0 (2/2)     0.14
+tower-5x4    flashover  1   random    kalman-gated         37%     88%       99%        88%    83.7       36.0 (1/2)     0.13
+tower-5x4    flashover  1   random    kalman-source         0%     20%       38%        20%   168.4        0.0 (2/2)     0.39
+
+tower-5x4    flashover  2   ignition  ours                  0%      0%       89%         0%     4.2        0.0 (2/2)     0.63
+tower-5x4    flashover  2   ignition  kalman               76%     75%      100%        76%     8.1       22.0 (2/2)     0.21
+tower-5x4    flashover  2   ignition  kalman-gated         84%     88%      100%        88%    44.9       36.0 (1/2)     0.18
+tower-5x4    flashover  2   ignition  kalman-source         0%     29%       40%        20%    15.5        0.0 (2/2)     0.54
+
+tower-5x4    flashover  2   neighbor  ours                  0%      0%       89%         0%     2.6        0.0 (2/2)     0.61
+tower-5x4    flashover  2   neighbor  kalman               76%     75%      100%        76%     6.2       22.0 (2/2)     0.21
+tower-5x4    flashover  2   neighbor  kalman-gated         82%     88%      100%        88%    47.8       36.0 (1/2)     0.18
+tower-5x4    flashover  2   neighbor  kalman-source         0%     19%       38%        10%     9.0        0.0 (2/2)     0.54
+
+tower-5x4    flashover  2   far       ours                  0%      0%       89%         0%     3.1        0.0 (2/2)     0.59
+tower-5x4    flashover  2   far       kalman               76%     75%      100%        76%     6.3       22.0 (2/2)     0.22
+tower-5x4    flashover  2   far       kalman-gated         83%     88%      100%        88%    47.7       36.0 (1/2)     0.19
+tower-5x4    flashover  2   far       kalman-source         0%     11%       40%         4%     7.2        0.0 (2/2)     0.55
+
+tower-5x4    flashover  2   random    ours                  0%      1%       48%         2%   166.9        0.0 (2/2)     0.46
+tower-5x4    flashover  2   random    kalman               41%     75%      100%        76%    13.8       22.0 (2/2)     0.14
+tower-5x4    flashover  2   random    kalman-gated         37%     88%       99%        88%    83.7       36.0 (1/2)     0.12
+tower-5x4    flashover  2   random    kalman-source         0%     20%       38%        20%   168.4        0.0 (2/2)     0.39
+
+tower-5x4    flashover  3   ignition  ours                  0%      0%       89%         0%     4.2        0.0 (2/2)     0.60
+tower-5x4    flashover  3   ignition  kalman               76%     75%      100%        76%     8.1       22.0 (2/2)     0.21
+tower-5x4    flashover  3   ignition  kalman-gated         84%     88%      100%        88%    44.9       36.0 (1/2)     0.19
+tower-5x4    flashover  3   ignition  kalman-source         0%     29%       40%        20%    15.5        0.0 (2/2)     0.54
+
+tower-5x4    flashover  3   neighbor  ours                  0%      0%       89%         0%     2.6        0.0 (2/2)     0.61
+tower-5x4    flashover  3   neighbor  kalman               76%     75%      100%        76%     6.2       22.0 (2/2)     0.22
+tower-5x4    flashover  3   neighbor  kalman-gated         82%     88%      100%        88%    47.8       36.0 (1/2)     0.28
+tower-5x4    flashover  3   neighbor  kalman-source         0%     19%       38%        10%     9.0        0.0 (2/2)     0.62
+
+tower-5x4    flashover  3   far       ours                  0%      0%       89%         0%     3.1        0.0 (2/2)     0.58
+tower-5x4    flashover  3   far       kalman               76%     75%      100%        76%     6.3       22.0 (2/2)     0.22
+tower-5x4    flashover  3   far       kalman-gated         83%     88%      100%        88%    47.7       36.0 (1/2)     0.18
+tower-5x4    flashover  3   far       kalman-source         0%     11%       40%         4%     7.2        0.0 (2/2)     0.55
+
+tower-5x4    flashover  3   random    ours                  0%      1%       48%         2%   166.9        0.0 (2/2)     0.48
+tower-5x4    flashover  3   random    kalman               41%     75%      100%        76%    13.8       22.0 (2/2)     0.14
+tower-5x4    flashover  3   random    kalman-gated         37%     88%       99%        88%    83.7       36.0 (1/2)     0.13
+tower-5x4    flashover  3   random    kalman-source         0%     20%       38%        20%   168.4        0.0 (2/2)     0.39
+
+tower-5x4    mixed      1   ignition  ours                  0%      0%       89%         0%     4.4        0.0 (2/2)     0.62
+tower-5x4    mixed      1   ignition  kalman               83%     73%       80%        74%    12.1       23.0 (2/2)     0.20
+tower-5x4    mixed      1   ignition  kalman-gated         81%     85%       96%        85%    41.5       36.0 (1/2)     0.18
+tower-5x4    mixed      1   ignition  kalman-source         0%     41%        0%        38%    19.0      never (0/2)     0.54
+
+tower-5x4    mixed      1   neighbor  ours                  0%      0%       88%         0%     4.2        0.0 (2/2)     0.59
+tower-5x4    mixed      1   neighbor  kalman               78%     75%       95%        75%    10.2       22.0 (2/2)     0.21
+tower-5x4    mixed      1   neighbor  kalman-gated         83%     79%       96%        79%    30.3       36.0 (1/2)     0.19
+tower-5x4    mixed      1   neighbor  kalman-source         0%     65%       29%        60%    23.4      never (0/2)     0.55
+
+tower-5x4    mixed      1   far       ours                  0%      0%       90%         0%     7.2        0.0 (2/2)     0.59
+tower-5x4    mixed      1   far       kalman               72%     68%       96%        71%     9.4       22.0 (2/2)     0.21
+tower-5x4    mixed      1   far       kalman-gated         85%     88%      100%        88%    37.2       36.0 (1/2)     0.19
+tower-5x4    mixed      1   far       kalman-source         0%     16%       40%        23%    25.4        0.0 (2/2)     0.54
+
+tower-5x4    mixed      1   random    ours                  0%      1%       56%         6%   192.8        0.0 (2/2)     0.50
+tower-5x4    mixed      1   random    kalman               38%     69%      100%        71%    21.2       22.0 (2/2)     0.14
+tower-5x4    mixed      1   random    kalman-gated         37%     87%       99%        87%    81.5       36.0 (1/2)     0.12
+tower-5x4    mixed      1   random    kalman-source         0%     50%       39%        55%   125.2      never (0/2)     0.39
+
+tower-5x4    mixed      2   ignition  ours                  0%      0%       89%         0%     4.4        0.0 (2/2)     0.62
+tower-5x4    mixed      2   ignition  kalman               83%     73%       80%        74%    12.1       23.0 (2/2)     0.21
+tower-5x4    mixed      2   ignition  kalman-gated         81%     85%       96%        85%    41.5       36.0 (1/2)     0.19
+tower-5x4    mixed      2   ignition  kalman-source         0%     41%        0%        38%    19.0      never (0/2)     0.54
+
+tower-5x4    mixed      2   neighbor  ours                  0%      0%       88%         0%     4.2        0.0 (2/2)     0.60
+tower-5x4    mixed      2   neighbor  kalman               78%     75%       95%        75%    10.2       22.0 (2/2)     0.21
+tower-5x4    mixed      2   neighbor  kalman-gated         83%     79%       96%        79%    30.3       36.0 (1/2)     0.20
+tower-5x4    mixed      2   neighbor  kalman-source         0%     65%       29%        60%    23.4      never (0/2)     0.54
+
+tower-5x4    mixed      2   far       ours                  0%      0%       90%         0%     7.2        0.0 (2/2)     0.62
+tower-5x4    mixed      2   far       kalman               72%     68%       96%        71%     9.4       22.0 (2/2)     0.22
+tower-5x4    mixed      2   far       kalman-gated         85%     88%      100%        88%    37.2       36.0 (1/2)     0.19
+tower-5x4    mixed      2   far       kalman-source         0%     16%       40%        23%    25.4        0.0 (2/2)     0.55
+
+tower-5x4    mixed      2   random    ours                  0%      1%       54%        12%   196.7        0.0 (2/2)     0.46
+tower-5x4    mixed      2   random    kalman               40%     65%       93%        69%    27.1       22.0 (2/2)     0.14
+tower-5x4    mixed      2   random    kalman-gated         40%     82%       96%        83%    62.5       36.0 (1/2)     0.12
+tower-5x4    mixed      2   random    kalman-source         0%     71%       31%        75%   149.0      never (0/2)     0.40
+
+tower-5x4    mixed      3   ignition  ours                  0%      0%       89%         0%     4.4        0.0 (2/2)     0.61
+tower-5x4    mixed      3   ignition  kalman               83%     73%       80%        74%    12.1       23.0 (2/2)     0.21
+tower-5x4    mixed      3   ignition  kalman-gated         81%     85%       96%        85%    41.5       36.0 (1/2)     0.19
+tower-5x4    mixed      3   ignition  kalman-source         0%     41%        0%        38%    19.0      never (0/2)     0.54
+
+tower-5x4    mixed      3   neighbor  ours                  0%      0%       88%         0%     4.2        0.0 (2/2)     0.60
+tower-5x4    mixed      3   neighbor  kalman               78%     75%       95%        75%    10.2       22.0 (2/2)     0.21
+tower-5x4    mixed      3   neighbor  kalman-gated         83%     79%       96%        79%    30.3       36.0 (1/2)     0.20
+tower-5x4    mixed      3   neighbor  kalman-source         0%     65%       29%        60%    23.4      never (0/2)     0.54
+
+tower-5x4    mixed      3   far       ours                  0%      0%       90%         0%     7.2        0.0 (2/2)     0.57
+tower-5x4    mixed      3   far       kalman               72%     68%       96%        71%     9.4       22.0 (2/2)     0.21
+tower-5x4    mixed      3   far       kalman-gated         85%     88%      100%        88%    37.2       36.0 (1/2)     0.19
+tower-5x4    mixed      3   far       kalman-source         0%     16%       40%        23%    25.4        0.0 (2/2)     0.55
+
+tower-5x4    mixed      3   random    ours                  0%      1%       54%        12%   196.7        0.0 (2/2)     0.44
+tower-5x4    mixed      3   random    kalman               40%     65%       93%        69%    27.4       22.0 (2/2)     0.14
+tower-5x4    mixed      3   random    kalman-gated         39%     82%       94%        82%    59.2       36.0 (1/2)     0.12
+tower-5x4    mixed      3   random    kalman-source         0%     71%       31%        75%   149.3      never (0/2)     0.39
+
+note: k (freeze/blind budget) only changes the freeze, blind and mixed cells with target=random; with a named target there is one sensor to break, and saturate/flashover ignore k, so those k=1/2/3 rows are identical by construction.
+
+WHERE OURS LOSES
+  (no aggregated cell where ours has higher false certainty or wrong dispatch than the best Kalman baseline: naive, gated or source)
+
+wrote results/sweep-2026-09-14T03-40-07-773Z.json and results/sweep-latest.json  (480 rows, 12.1 s)
