@@ -11,5 +11,8 @@ export default defineConfig({
     // GitHub's 2-vCPU runners are 3-5x slower than a laptop and run test files in parallel;
     // a 0.5 s simulation test there can take 6 s. Timing assertions belong in the test, not the timeout.
     testTimeout: 30_000,
+    // On CI run the files one at a time: the incident-replay suites (108-space plans) starve the
+    // brain's wall-clock assertions (a step under 5 ms) when they share two cores. Locally stay parallel.
+    fileParallelism: !process.env['CI'],
   },
 });
