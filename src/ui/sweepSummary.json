@@ -1,0 +1,159 @@
+{
+ "source": "results/sweep-latest.json",
+ "meta": {
+  "startedAt": "2026-09-13T23:08:37.469Z",
+  "elapsedMs": 367472,
+  "onset": 5,
+  "ticks": 120,
+  "plans": [
+   "demo-6",
+   "vessel-3x8",
+   "tower-5x4"
+  ],
+  "modes": [
+   "freeze",
+   "blind",
+   "saturate",
+   "flashover",
+   "mixed"
+  ],
+  "ks": [
+   1,
+   2,
+   3
+  ],
+  "targets": [
+   "ignition",
+   "neighbor",
+   "far",
+   "random"
+  ],
+  "seeds": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9,
+   10
+  ]
+ },
+ "plans": [
+  "demo-6",
+  "tower-5x4",
+  "vessel-3x8"
+ ],
+ "brains": [
+  "kalman",
+  "kalman-gated",
+  "kalman-source",
+  "ours"
+ ],
+ "cells": {
+  "demo-6": {
+   "ours": {
+    "n": 600,
+    "falseCertainty": 0,
+    "wrongDispatch": 0.14380747126436788,
+    "ambiguityCoverage": 0.9227155172413757,
+    "timeToRecovery": 48.133699633699635,
+    "recovered": 0.91
+   },
+   "kalman": {
+    "n": 600,
+    "falseCertainty": 0.7802298850574791,
+    "wrongDispatch": 0.8133764367816166,
+    "ambiguityCoverage": 0.8995114942528725,
+    "timeToRecovery": 12.790224032586558,
+    "recovered": 0.8183333333333334
+   },
+   "kalman-gated": {
+    "n": 600,
+    "falseCertainty": 0.6348563218390816,
+    "wrongDispatch": 0.8339798850574797,
+    "ambiguityCoverage": 0.9682183908045996,
+    "timeToRecovery": 11.573008849557523,
+    "recovered": 0.7533333333333333
+   },
+   "kalman-source": {
+    "n": 600,
+    "falseCertainty": 0.5217241379310328,
+    "wrongDispatch": 0.5657471264367817,
+    "ambiguityCoverage": 0.6113362068965558,
+    "timeToRecovery": 53.44274809160305,
+    "recovered": 0.43666666666666665
+   }
+  },
+  "vessel-3x8": {
+   "ours": {
+    "n": 600,
+    "falseCertainty": 0,
+    "wrongDispatch": 0.14423850574712666,
+    "ambiguityCoverage": 0.8864224137930976,
+    "timeToRecovery": 79.77131782945736,
+    "recovered": 0.86
+   },
+   "kalman": {
+    "n": 600,
+    "falseCertainty": 0.890574712643675,
+    "wrongDispatch": 0.9569252873563184,
+    "ambiguityCoverage": 0.8752298850574709,
+    "timeToRecovery": 29,
+    "recovered": 0.05
+   },
+   "kalman-gated": {
+    "n": 600,
+    "falseCertainty": 0.8740517241379244,
+    "wrongDispatch": 0.9677873563218358,
+    "ambiguityCoverage": 0.9616379310344848,
+    "timeToRecovery": null,
+    "recovered": 0
+   },
+   "kalman-source": {
+    "n": 600,
+    "falseCertainty": 0.7207902298850563,
+    "wrongDispatch": 0.657126436781607,
+    "ambiguityCoverage": 0.4519827586206874,
+    "timeToRecovery": 63.81944444444444,
+    "recovered": 0.24
+   }
+  },
+  "tower-5x4": {
+   "ours": {
+    "n": 600,
+    "falseCertainty": 0,
+    "wrongDispatch": 0.10847701149425279,
+    "ambiguityCoverage": 0.9039511494252831,
+    "timeToRecovery": 0,
+    "recovered": 1
+   },
+   "kalman": {
+    "n": 600,
+    "falseCertainty": 0.8270545977011471,
+    "wrongDispatch": 0.8636206896551751,
+    "ambiguityCoverage": 0.8356609195402281,
+    "timeToRecovery": 20.71875,
+    "recovered": 0.8533333333333334
+   },
+   "kalman-gated": {
+    "n": 600,
+    "falseCertainty": 0.7588362068965525,
+    "wrongDispatch": 0.9242672413793055,
+    "ambiguityCoverage": 0.9563074712643698,
+    "timeToRecovery": 32.607594936708864,
+    "recovered": 0.395
+   },
+   "kalman-source": {
+    "n": 600,
+    "falseCertainty": 0,
+    "wrongDispatch": 0.5689080459770134,
+    "ambiguityCoverage": 0.40635057471264385,
+    "timeToRecovery": 6.326666666666667,
+    "recovered": 0.75
+   }
+  }
+ }
+}
