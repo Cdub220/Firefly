@@ -4,6 +4,7 @@
  * WRONG FLOOR flash on any space a brain names as burning that is not.
  */
 import { useEffect, useMemo, useState } from 'react';
+import type { TickRecord } from '../../loop';
 import { useSim } from '../store';
 import { ScenarioPanel } from '../panels/ScenarioPanel';
 import { ChaosPanel } from '../panels/ChaosPanel';
@@ -32,13 +33,24 @@ export function HeadToHead() {
 
   // Wrong dispatch: Kalman never hedges, so every miss counts. Ours is spared inside a
   // maybe-group, and if it still trips, it shows.
-  const wrongLeft = useMemo(() => (rec && left ? new Set(wrongDispatchSpaces(rec, left.belief, false)) : new Set<string>()), [rec, left]);
-  const wrongRight = useMemo(() => (rec && right ? new Set(wrongDispatchSpaces(rec, right.belief, true)) : new Set<string>()), [rec, right]);
+  const leftRec = s.compare ? s.compare[LEFT]?.[s.cursor] : rec;
+  const rightRec = s.compare ? s.compare[RIGHT]?.[s.cursor] : rec;
+  const leftBelief = s.compare ? s.compare[LEFT]?.[s.cursor]?.belief : left?.belief;
+  const rightBelief = s.compare ? s.compare[RIGHT]?.[s.cursor]?.belief : right?.belief;
+  const wrongLeft = useMemo(() => (leftRec && leftBelief ? new Set(wrongDispatchSpaces(leftRec, leftBelief, false)) : new Set<string>()), [leftRec, leftBelief]);
+  const wrongRight = useMemo(() => (rightRec && rightBelief ? new Set(wrongDispatchSpaces(rightRec, rightBelief, true)) : new Set<string>()), [rightRec, rightBelief]);
   // The other failure: a fire the brain does not know about. Shown as a tag, not a flash;
   // in the belief scene the space simply stays dark.
-  const missedLeft = useMemo(() => (rec && left ? missedSpaces(rec, left.belief) : []), [rec, left]);
-  const missedRight = useMemo(() => (rec && right ? missedSpaces(rec, right.belief) : []), [rec, right]);
+  const missedLeft = useMemo(() => (leftRec && leftBelief ? missedSpaces(leftRec, leftBelief) : []), [leftRec, leftBelief]);
+  const missedRight = useMemo(() => (rightRec && rightBelief ? missedSpaces(rightRec, rightBelief) : []), [rightRec, rightBelief]);
   const runs = s.compare ?? (s.trace ? { [RIGHT]: s.trace } : {});
+  // Each column shows its own world when a head-to-head run exists (the brain drove those
+  // drones and that fire); otherwise both columns fall back to the shared ours-driven world.
+  const worldRec = (name: string): TickRecord | undefined => (s.compare ? s.compare[name]?.[s.cursor] : rec);
+  const worldPrev = (name: string): TickRecord | undefined => (s.compare ? (s.cursor > 0 ? s.compare[name]?.[s.cursor - 1] : undefined) : prev);
+  // Showdown is on when the corruption on screen is exactly what the button sets.
+  const showdownOn = s.corruption.mode === 'blind' && (s.corruption.onset ?? 5) === 1 && (s.corruption.k ?? 2) === 1
+    && (s.corruption.target?.length === 1 && s.corruption.target[0] === s.ignition);
   const onset = s.trace ? (onsetOf(s.trace) > 0 ? onsetOf(s.trace) : null) : null;
   const group = 'h2h';
   const missing = !s.traces[LEFT];
@@ -52,7 +64,7 @@ export function HeadToHead() {
       <main className="h2h-main">
         <div className="controls h2h-bar" role="group" aria-label="head to head">
           <button type="button" className="primary" onClick={s.runCompare} title="Run once with each brain driving the world, same seed and settings">Run head to head</button>
-          <button type="button" id="h2h-showdown" onClick={s.runShowdown} title="Blind the ignition sensor from the first tick, then run head to head. A later onset lets both brains lock on before the sensor dies, and both worlds contain.">Showdown: blind from t=1</button>
+          <button type="button" id="h2h-showdown" className={showdownOn ? 'on' : ''} aria-pressed={showdownOn} onClick={s.runShowdown} title="Blind the ignition sensor from the first tick, then run head to head. A later onset lets both brains lock on before the sensor dies, and both worlds contain.">Showdown: blind from t=1</button>
           <label htmlFor="h2h-level">show levels ≤
             <input id="h2h-level" type="range" min={levels[0] ?? 1} max={levels[levels.length - 1] ?? 1} value={maxLevel} onChange={(e) => setMaxLevel(Number(e.target.value))} style={{ flex: '0 0 120px', minWidth: 80 }} />
             <span className="tick">{maxLevel}</span>
@@ -65,14 +77,15 @@ export function HeadToHead() {
         {rec && (
           <>
             <section className="h2h-truth">
-              <header><h2>Ground truth</h2><span className="sub">same fire, same broken sensors, for both brains</span></header>
+              <header><h2>Ground truth</h2><span className="sub">same fire, same broken sensors, for both brains</span>{showdownOn && <span className="showdown-tag">SHOWDOWN ON · sensor in {s.ignition} blind from t=1</span>}</header>
               <div className="h2h-canvas small"><Scene plan={s.plan} rec={rec} view="truth" maxLevel={maxLevel} drones={{ prev, playing: s.playing, speed: s.speed }} cameraGroup={group} /></div>
             </section>
             <div className="h2h-grid">
-              {[[LEFT, left, wrongLeft, missedLeft] as const, [RIGHT, right, wrongRight, missedRight] as const].map(([name, r, wrong, missed]) => (
+              {[[LEFT, s.compare ? s.compare[LEFT]?.[s.cursor] : left, wrongLeft, missedLeft] as const, [RIGHT, s.compare ? s.compare[RIGHT]?.[s.cursor] : right, wrongRight, missedRight] as const].map(([name, r, wrong, missed]) => (
                 <section className={`h2h-col ${name}`} key={name}>
                   <header>
                     <h2>{LABEL[name] ?? name}</h2>
+                    <span className="sub">{s.compare ? 'its own world: this brain commands these drones' : 'belief on the ours-driven world'}</span>
                     {r ? (
                       <>
                         <span className={'conf ' + (r.belief.confidence >= 0.9 ? 'hi' : r.belief.confidence < 0.6 ? 'lo' : '')}>
@@ -85,7 +98,7 @@ export function HeadToHead() {
                     ) : <span className="sub">not run</span>}
                   </header>
                   <div className="h2h-canvas">
-                    {r ? <Scene plan={s.plan} rec={rec} view="belief" brain={name} belief={r.belief} maxLevel={maxLevel} cameraGroup={group} wrongFloor={wrong} /> : <div className="scene-empty">no trace for {name}</div>}
+                    {r && worldRec(name) ? <Scene plan={s.plan} rec={worldRec(name)!} view="belief" brain={name} belief={r.belief} maxLevel={maxLevel} cameraGroup={group} wrongFloor={wrong} drones={{ prev: worldPrev(name), playing: s.playing, speed: s.speed }} /> : <div className="scene-empty">no trace for {name}</div>}
                   </div>
                 </section>
               ))}
