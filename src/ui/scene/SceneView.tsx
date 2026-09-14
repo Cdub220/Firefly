@@ -10,6 +10,7 @@ import { Beats } from '../panels/Beats';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { Scene } from './Scene';
 import { droneRows } from '../droneLayout';
+import { defaultMaxLevel, levelsOf } from '../levels';
 import '../split/split.css';
 import '../panels/panels.css';
 import './scene.css';
@@ -18,9 +19,9 @@ export function SceneView() {
   const s = useSim();
   const rec = s.trace?.[s.cursor];
   const prev = s.cursor > 0 ? s.trace?.[s.cursor - 1] : undefined;
-  const levels = useMemo(() => [...new Set(s.plan.spaces.map((x) => x.level))].sort((a, b) => a - b), [s.plan]);
-  const [maxLevel, setMaxLevel] = useState<number>(levels[levels.length - 1] ?? 1);
-  useEffect(() => { setMaxLevel(levels[levels.length - 1] ?? 1); }, [levels]);
+  const levels = useMemo(() => levelsOf(s.plan), [s.plan]);
+  const [maxLevel, setMaxLevel] = useState<number>(() => defaultMaxLevel(s.plan, s.ignition));
+  useEffect(() => { setMaxLevel(defaultMaxLevel(s.plan, s.ignition)); }, [s.plan, s.ignition]);
 
   const burningNow = rec ? rec.truth.spaces.filter((x) => x.burning).map((x) => x.id) : [];
   const brainNames = s.data?.brainNames ?? [];

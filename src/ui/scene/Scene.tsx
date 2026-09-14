@@ -214,9 +214,13 @@ export function Scene({ plan, rec, view = 'truth', brain = 'ours', belief, maxLe
             key={`${e.a}-${e.b}-${i}`}
             points={[[a.x, a.y, a.z], [b.x, b.y, b.z]]}
             color={edgeColor(e, frame)}
-            lineWidth={e.kind === 'floor' || e.kind === 'shaft' ? 2 : 1.2}
+            lineWidth={e.kind === 'shaft' ? 5 : e.kind === 'floor' ? 2 : 1.2}
             transparent
-            opacity={e.kind === 'bulkhead' ? 0.6 : 0.9}
+            opacity={e.kind === 'bulkhead' ? 0.6 : e.kind === 'shaft' ? 0.95 : 0.9}
+            // A shaft runs between box centres and would be hidden inside the boxes it joins;
+            // drawing it over them is what makes the stair chain readable as one bright line.
+            depthTest={e.kind !== 'shaft'}
+            renderOrder={e.kind === 'shaft' ? 2 : 0}
           />
         );
       })}

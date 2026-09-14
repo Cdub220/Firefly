@@ -12,6 +12,7 @@ import { Briefing } from '../panels/Briefing';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { Scene } from './Scene';
 import { hedgeInfo } from './hedge';
+import { defaultMaxLevel, levelsOf } from '../levels';
 import '../split/split.css';
 import '../panels/panels.css';
 import './scene.css';
@@ -28,9 +29,9 @@ export function CompareView() {
   useEffect(() => { if (brains.length && !brains.includes(brain)) setBrain(brains[0]!); }, [brains, brain]);
   const beliefRec = s.traces[brain]?.[s.cursor];
   const belief = beliefRec?.belief;
-  const levels = useMemo(() => [...new Set(s.plan.spaces.map((x) => x.level))].sort((a, b) => a - b), [s.plan]);
-  const [maxLevel, setMaxLevel] = useState<number>(levels[levels.length - 1] ?? 1);
-  useEffect(() => { setMaxLevel(levels[levels.length - 1] ?? 1); }, [levels]);
+  const levels = useMemo(() => levelsOf(s.plan), [s.plan]);
+  const [maxLevel, setMaxLevel] = useState<number>(() => defaultMaxLevel(s.plan, s.ignition));
+  useEffect(() => { setMaxLevel(defaultMaxLevel(s.plan, s.ignition)); }, [s.plan, s.ignition]);
   // Commands are the primary brain's (they drive the world); a hedge is judged against the shown brain's ambiguity.
   const hedge = useMemo(() => (belief && rec ? hedgeInfo(belief, rec.commands) : { hedging: false, drones: [], groups: [] }), [belief, rec]);
   const thick = useMemo(() => new Set(hedge.drones), [hedge]);

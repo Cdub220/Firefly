@@ -38,7 +38,8 @@ export const EDGE_COLORS = {
   passage: '#9ca3af',
   bulkhead: '#374151',
   floor: '#60a5fa',
-  shaft: '#3b82f6',
+  /** Brighter than a floor: the shaft is the path a fire takes upward, and the eye should find it first. */
+  shaft: '#67e8f9',
   closed: '#7f1d1d',
 } as const;
 

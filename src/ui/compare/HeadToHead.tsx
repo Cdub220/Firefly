@@ -16,6 +16,7 @@ import { ContainmentChart } from './ContainmentChart';
 import { Scorecard } from './Scorecard';
 import { DecisionLog } from './DecisionLog';
 import { missedSpaces, onsetOf, wrongDispatchSpaces } from './metrics';
+import { defaultMaxLevel, levelsOf } from '../levels';
 import '../split/split.css';
 import '../panels/panels.css';
 import '../scene/scene.css';
@@ -31,9 +32,9 @@ export function HeadToHead() {
   const prev = s.cursor > 0 ? s.trace?.[s.cursor - 1] : undefined;
   const left = s.traces[LEFT]?.[s.cursor];
   const right = s.traces[RIGHT]?.[s.cursor];
-  const levels = useMemo(() => [...new Set(s.plan.spaces.map((x) => x.level))].sort((a, b) => a - b), [s.plan]);
-  const [maxLevel, setMaxLevel] = useState<number>(levels[levels.length - 1] ?? 1);
-  useEffect(() => { setMaxLevel(levels[levels.length - 1] ?? 1); }, [levels]);
+  const levels = useMemo(() => levelsOf(s.plan), [s.plan]);
+  const [maxLevel, setMaxLevel] = useState<number>(() => defaultMaxLevel(s.plan, s.ignition));
+  useEffect(() => { setMaxLevel(defaultMaxLevel(s.plan, s.ignition)); }, [s.plan, s.ignition]);
 
   // Wrong dispatch: Kalman never hedges, so every miss counts. Ours is spared inside a
   // maybe-group, and if it still trips, it shows.
@@ -118,7 +119,7 @@ export function HeadToHead() {
               </section>
               <section className="h2h-score">
                 <header><h2>Scorecard</h2><span className="sub">both beliefs scored on {s.closedLoop ? 'the ours-driven world' : 'the same open-loop world'}, from corruption onset; better in bold</span></header>
-                <Scorecard traces={s.traces} left={LEFT} right={RIGHT} />
+                <Scorecard traces={s.traces} left={LEFT} right={RIGHT} plan={s.planName} />
               </section>
             </div>
             <div className="h2h-logs">
