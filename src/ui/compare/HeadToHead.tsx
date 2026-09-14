@@ -11,6 +11,7 @@ import { ChaosPanel } from '../panels/ChaosPanel';
 import { Scene } from '../scene/Scene';
 import { ContainmentChart } from './ContainmentChart';
 import { Scorecard } from './Scorecard';
+import { DecisionLog } from './DecisionLog';
 import { missedSpaces, onsetOf, wrongDispatchSpaces } from './metrics';
 import '../split/split.css';
 import '../panels/panels.css';
@@ -112,6 +113,10 @@ export function HeadToHead() {
                 <header><h2>Scorecard</h2><span className="sub">both beliefs scored on {s.closedLoop ? 'the ours-driven world' : 'the same open-loop world'}, from corruption onset; better in bold</span></header>
                 <Scorecard traces={s.traces} left={LEFT} right={RIGHT} />
               </section>
+            </div>
+            <div className="h2h-logs">
+              {s.compare && <DecisionLog title="Kalman baseline · decisions" trace={s.compare[LEFT]} plan={s.plan} cursor={s.cursor} />}
+              <DecisionLog title="Our brain · decisions" trace={s.compare ? s.compare[RIGHT] : s.trace ?? undefined} plan={s.plan} cursor={s.cursor} />
             </div>
           </>
         )}

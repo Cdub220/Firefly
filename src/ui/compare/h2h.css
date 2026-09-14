@@ -35,3 +35,17 @@
 
 .h2h-view .h2h-bar button.on { background: var(--warn, #f59e0b); color: #111; border-color: var(--warn, #f59e0b); font-weight: 600; }
 .h2h-view .showdown-tag { margin-left: 10px; padding: 2px 8px; border-radius: 3px; background: #7f1d1d; color: #fecaca; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.03em; }
+.h2h-view .h2h-logs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
+.h2h-view .h2h-logs:has(> :only-child) { grid-template-columns: 1fr; }
+.h2h-view .h2h-log { border: 1px solid var(--line); border-radius: 4px; background: var(--panel, #12161d); padding: 8px 10px; }
+.h2h-view .h2h-log .log-body { max-height: 260px; overflow: auto; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; line-height: 1.45; }
+.h2h-view .log-line { display: grid; grid-template-columns: 44px 1fr; gap: 8px; padding: 2px 4px; border-left: 2px solid transparent; }
+.h2h-view .log-line.now { background: rgba(245, 158, 11, 0.12); border-left-color: #f59e0b; }
+.h2h-view .log-line .log-t { color: var(--muted); }
+.h2h-view .log-line.belief .log-text { color: #e6eaf0; }
+.h2h-view .log-line.maybe .log-text { color: #f5c26b; }
+.h2h-view .log-line.suspect .log-text { color: #ff8a5c; }
+.h2h-view .log-line.dispatch .log-text { color: #7fd7ff; }
+.h2h-view .log-line.refill .log-text, .h2h-view .log-line.muted { color: var(--muted); }
+.h2h-view .log-line.blackout .log-text { color: #fca5a5; }
+@media (max-width: 1100px) { .h2h-view .h2h-logs { grid-template-columns: 1fr; } }
