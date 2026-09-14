@@ -95,11 +95,13 @@ The estimator is never told which entries of $a$ are nonzero. The Kalman baselin
 Both brains are given the same structure plan and use the same heat model, so the comparison isolates one assumption and nothing else.
 
 \begin{equation}
+\begin{aligned}
   x_i(t{+}1) \;=\; x_i(t)
-  \;+\; \underbrace{\sum_{j \sim i} r_{ij}\bigl(x_j(t) - x_i(t)\bigr)}_{\text{conduction along plan edges}}
-  \;+\; \underbrace{c\bigl(\Tamb - x_i(t)\bigr)}_{\text{loss to ambient}}
-  \;+\; \underbrace{b_i \, g_i\, \rho^{\,n_i} \bigl(\Tflame - x_i(t)\bigr)}_{\text{generation if burning, suppressed by } n_i \text{ tethers}}
+  &\;+\; \underbrace{\sum_{j \sim i} r_{ij}\bigl(x_j(t) - x_i(t)\bigr)}_{\text{conduction along plan edges}}
+  \;+\; \underbrace{c\bigl(\Tamb - x_i(t)\bigr)}_{\text{loss to ambient}} \\[6pt]
+  &\;+\; \underbrace{b_i \, g_i\, \rho^{\,n_i} \bigl(\Tflame - x_i(t)\bigr)}_{\text{generation if burning, suppressed by } n_i \text{ tethers}}
   \;+\; \underbrace{n_i\,\kappa\bigl(\Tamb - x_i(t)\bigr)}_{\text{water cooling}}
+\end{aligned}
 \end{equation}
 
 Here $r_{ij}$ is the per-edge heat-transfer rate read from the structure plan, $b_i \in \{0,1\}$ indicates whether space $i$ is burning, and $n_i \le 2$ is the number of water tethers working space $i$. In the estimator, $n_i$ counts tethers the brain itself sent to space $i$ with a suppress order and that report standing there; with no tethers the last factor and the last term vanish, and the model is the checkpoint-2 model exactly. The conduction term is a weighted graph Laplacian, so the whole model is affine in $x$:

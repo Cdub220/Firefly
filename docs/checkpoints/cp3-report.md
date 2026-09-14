@@ -30,85 +30,21 @@ Repo: https://github.com/Cdub220/Firefly · everything below is on `main`. Compa
 
 ---
 
-## 2. The numbers
+## 2. The numbers, and how to see them yourself
 
-### Open loop: what each brain believes
+Everything is deterministic from a seed and nothing calls a network. Clone `main`, run `npm install` (Node 22), and every command below prints exactly the numbers we quote, to the digit.
 
-Six-room plan, 60 ticks, sensors break at tick 5, five seeds. `npm run evidence`. The clean row is first on purpose.
+**What each brain believes, open loop.** `npm run evidence` prints the six-room table: four brains × four failure modes, clean row first. What you will see: the naive and gated Kalman filters are "confidently wrong" about 65 % of ticks even with honest sensors, because any room above 200 °C is "burning" to them and burned-out rooms stay hot; the source-estimating filter fixes that (14 % clean) and is then fooled as badly as the others once sensors lie (59 % freeze, 73 % blind), or loses the fire outright under flashover (24 % coverage). Ours is at 0 % in every row, covers the fire 92 to 95 %, and its temperature error stays under 11 °C where the baselines go to 40 to 150 °C. Below the table is the same comparison on per-room probability at thresholds 0.5 to 0.95.
 
-| Failure | Brain | Confidently wrong | At P ≥ 0.9 | Covers the fire | Temp error | Brier |
-|---|---|---|---|---|---|---|
-| none | ours | **0%** | 1% | 95% | 0.4 °C | 0.043 |
-| none | Kalman naive | 65% | 63% | 100% | 2.2 °C | 0.130 |
-| none | Kalman gated | 67% | 67% | 100% | 18.7 °C | 0.139 |
-| none | Kalman source | 14% | 5% | 94% | 0.9 °C | 0.028 |
-| freeze | ours | **0%** | 0% | 93% | 4.9 °C | 0.067 |
-| freeze | Kalman naive | 65% | 63% | 100% | 42.3 °C | 0.129 |
-| freeze | Kalman gated | 62% | 66% | 100% | 37.4 °C | 0.136 |
-| freeze | Kalman source | 59% | 25% | 46% | 44.8 °C | 0.139 |
-| blind | ours | **0%** | 1% | 92% | 5.1 °C | 0.069 |
-| blind | Kalman naive | 72% | 35% | 33% | 122.6 °C | 0.184 |
-| blind | Kalman gated | 69% | 58% | 78% | 91.3 °C | 0.149 |
-| blind | Kalman source | 73% | 34% | 33% | 123.3 °C | 0.187 |
-| flashover | ours | **0%** | 0% | 93% | 10.9 °C | 0.078 |
-| flashover | Kalman naive | 64% | 63% | 100% | 12.9 °C | 0.130 |
-| flashover | Kalman gated | 62% | 67% | 100% | 23.2 °C | 0.138 |
-| flashover | Kalman source | 2% | 48% | 24% | 151.9 °C | 0.447 |
+**The full sweep.** `npm run sweep -- --plans demo-6,vessel-3x8,tower-5x4` (about four minutes) prints 5,400 runs aggregated by building, failure mode, corruption budget, and sensor placement, and ends with a WHERE OURS LOSES block. What you will see: the block is empty; there is no cell where ours is worse than the best baseline on false certainty or wrong dispatch. Also visible: ours' false certainty by probability at 0.9 is 7 to 10 % averaged per building, driven by random-placement flashover cells where a burned-out room beside a live fire is held above 0.9. `docs/06-freeze.md` names those cells; this is the pre-registered expectation we did not meet.
 
-How to read it. The naive and gated filters are "confidently wrong" 65 % of the time with honest sensors, because they call any room above 200 °C burning and burned-out rooms stay hot. The source filter fixes that, 14 % on a clean run, and is the best-calibrated brain when nothing lies. Then corruption hits, and it is fooled as badly as the others under freeze and blind; under flashover it stops being confidently wrong only because it loses the fire, covering it a quarter of the time. Ours is the only brain whose numbers do not move when the sensors start lying.
+**The demo run, closed loop.** `npm run showdown` runs the exact case in the video: vessel-3x8, fire in L1-B3, its sensor blind from tick 1, seed 42, 90 ticks, each brain in command of its own copy of the ship with the same drones and the same allocator. What you will see: a side-by-side table where ours burns one compartment and puts it out at tick 34 with no drones lost, and both Kalmans burn 23 to 24 of 24 compartments, lose four drones, and are "out" at tick 85 only because the fuel is gone; then a commander's brief per brain with the play-by-play. The head-to-head tab in `npm run dev` shows the same run live: press **Showdown**, then Play. Our wrong-floor count in that table is higher than the Kalman's because in the first three ticks ours sent scouts and tethers to rooms it could not yet rule out; those are investigations, not mistakes, and they are why it finds the fire by tick 4. Splitting that metric by drone class is on the list.
 
-### The full sweep
+**The decision transcript.** The same run's log, in the brain's own words, is under the scorecard on the head-to-head tab and in `results/showdown-vessel-blind-t1-seed42.md`. The shape of it: ours at tick 1 says it cannot tell which of four rooms is burning and sends a scout; at tick 4 it names L1-B3 at 90 % and sends two tethers; at tick 8 it stops trusting that room's sensor. The Kalman says "no fire detected" for five ticks, then names the neighbours, and never names the room that is burning, because that room reads cold.
 
-Three buildings, five failure modes, three corruption budgets, four placements, ten seeds, 120 ticks, four brains: 5,400 runs. No cell where ours is worse than the best baseline on false certainty or wrong dispatch. Per building, averaged over everything:
+**The negative result.** `npm run ident` prints the seven-room construction, the measurement vectors under both fires (identical to 0.0 °C at every sensor), the sentence that no estimator can distinguish them, what each brain does about it, and the one added sensor that separates them by 548 °C. `docs/05-identifiability.md` is the one-page version.
 
-| Building | Ours: confidently wrong / at P ≥ 0.9 | Best baseline: confidently wrong |
-|---|---|---|
-| demo-6 (6 rooms) | 0% / 7% | 63% |
-| vessel-3x8 (24, 3 decks) | 0% / 10% | 87% |
-| tower-5x4 (20, 5 levels) | 0% / 7% | 76% |
-
-The 7 to 10 % at P ≥ 0.9 comes from random-placement flashover and mixed cells, where a burned-out room beside a live fire is held above 0.9. The freeze record names the worst cells.
-
-### Closed loop: what each belief costs
-
-The demo run. Vessel, fire in L1-B3, its sensor blinded from tick 1, seed 42, 90 ticks, same allocator and drones on every side. From `results/showdown-vessel-blind-t1-seed42.md`:
-
-```
-brain            fireVolume  peakBurning  containedAt  extinguishedAt  spacesBurnedOut  tetherTicks  droneDeaths  wrongFloor
-ours                     33            1            1              34                1           68            0          74
-kalman                 1133           22           35              85               23          147            4          23
-kalman-source          1183           23           35              85               24           54            4          22
-```
-
-Ours' wrong-floor count is higher because in the first three ticks it sent scouts and tethers to rooms it could not yet rule out. Those are investigations, not mistakes, and they are why it found the fire by tick 4. Splitting that metric by drone class is on the list.
-
-The decision transcript, ours, first ticks:
-
-```
-t=1  Cannot tell whether L1-A2, L1-A4, L1-B3 and 1 more are burning or just hot (L1-A2 19%, L1-A4 19%, L1-B3 19%, L2-A3 19%).
-t=1  No trusted reading from L2-B3: sending 1 scout (D1) to L2-B3 to look.
-t=1  L1-A3 on fire (48%): sending 2 water tethers (D3, D4) to L1-A3 to cool it.
-t=2  L1-B3 may be burning (26%): sending 1 water tether (D4) to L1-B3 to cool it.
-t=4  Believes L1-B3 burning (L1-B3 90%; confidence 0.58).
-t=4  L1-B3 on fire (90%): sending 2 water tethers (D3, D4) to L1-B3 to cool it.
-t=8  Distrusts sensor F-L1-B3: the reading contradicts the physics of the building.
-```
-
-And the Kalman's, in full for its first ten ticks:
-
-```
-t=1  No fire detected yet (confidence 0.96).
-t=6  Believes L1-A3, L1-B4 burning (L1-A3 100%, L1-B4 98%; confidence 0.96).
-t=6  L1-A3 on fire (100%): sending 1 water tether (D3) to L1-A3 to cool it.
-t=6  L1-B4 on fire (98%): sending 1 water tether (D4) to L1-B4 to cool it.
-t=10 Believes L1-A3, L1-B2, L1-B4 burning (L1-A3 100%, L1-B2 90%, L1-B4 100%; confidence 0.96).
-```
-
-It never names L1-B3, the room that is burning, because that room reads cold.
-
-### The negative result
-
-`npm run ident`. A central passage with three sensors and two mirror-image wings whose inner rooms have none. A fire in the left inner room and one in the right produce readings that differ by 0.0 °C at every sensor. No estimator can distinguish them; swapping the wings is a symmetry of the plan. Ours lists both wings as ambiguous and covers the true fire 93 % of the time; the naive Kalman covers it 18 % and is falsely certain on 40 % of ticks by the probability definition. Add one sensor in the inner room and the two hypotheses separate by 548 °C. Details and diagram in `docs/05-identifiability.md`.
+**The freeze.** `npm test` includes a test that diffs the estimator and corruption files against commit `457de46` and fails if they differ.
 
 ---
 
