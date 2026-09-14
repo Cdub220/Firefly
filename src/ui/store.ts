@@ -334,7 +334,7 @@ export function beatConfig(
         planName: nextName, ignition: nextIgnition, corruption,
         caption: same
           ? `Only one structure is loaded (${planName}); the same brains and failure mode run again on it. Nothing here is specific to this building.`
-          : `Same system. Different structure (${nextName}, failure mode ${base.mode}). Nothing retrained; the plan is a JSON file.`,
+          : `Same system. Different structure. Nothing retrained. (${nextName}, failure mode ${base.mode}; the structure is a JSON file, the brain is the one that just ran.)`,
       };
     }
   }
