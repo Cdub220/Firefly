@@ -18,6 +18,8 @@ describe('incident calibration (uncontrolled run of the highrise plan at 4 min/t
     expect(m.lastFire).not.toBeNull();
     expect(m.lastFire!).toBeLessThan(1118);
     expect(m.peakFloors).toBeGreaterThanOrEqual(4);
+    expect(m.peakBurning).toBeGreaterThanOrEqual(m.peakFloors); // at least one space per burning floor
+    expect(m.peakBurning).toBeLessThanOrEqual(plan.spaces.length);
     expect(m.fireVolumeMinutes).toBeGreaterThan(0);
   });
 
