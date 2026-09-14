@@ -1,0 +1,250 @@
+{
+ "slug": "one-meridian-plaza",
+ "seed": 42,
+ "minutes": 1118,
+ "tickMinutes": 4,
+ "generatedBy": "npm run incident (src/incident/run.ts)",
+ "truth": {
+  "firstBurning": {
+   "21": 72,
+   "22": 4,
+   "23": 100,
+   "24": 148,
+   "25": 196,
+   "26": 244,
+   "27": 292,
+   "28": 340,
+   "29": 388,
+   "30": 432
+  },
+  "lastFire": 596,
+  "fireVolumeMinutes": 9824
+ },
+ "record": {
+  "knownAt": {
+   "22": 8,
+   "23": 80,
+   "24": 80,
+   "25": 352,
+   "26": 352,
+   "27": 800,
+   "28": 800,
+   "29": 800,
+   "30": 800
+  },
+  "floorsDestroyed": [
+   22,
+   23,
+   24,
+   25,
+   26,
+   27,
+   28,
+   29
+  ],
+  "durationMinutes": 1118
+ },
+ "awareness": [
+  {
+   "brain": "ours",
+   "sensors": "as-built",
+   "namedAt": {
+    "20": 116,
+    "21": 76,
+    "22": 4,
+    "23": 104,
+    "24": 152,
+    "25": 200,
+    "26": 248,
+    "27": 296,
+    "28": 344,
+    "29": 368,
+    "30": 424,
+    "31": 468
+   },
+   "certainAt": null,
+   "falseCertainty": 0,
+   "wrongDispatch": 0.5678571428571428,
+   "ambiguityCoverage": 0.6392857142857142,
+   "estimationError": 74.86489168500202
+  },
+  {
+   "brain": "kalman",
+   "sensors": "as-built",
+   "namedAt": {
+    "20": 100,
+    "21": 64,
+    "22": 4,
+    "23": 72,
+    "24": 128,
+    "25": 160,
+    "26": 196,
+    "27": 232,
+    "28": 272,
+    "29": 316,
+    "30": 360,
+    "31": 388
+   },
+   "certainAt": 4,
+   "falseCertainty": 0.03571428571428571,
+   "wrongDispatch": 0.9821428571428571,
+   "ambiguityCoverage": 0.5285714285714286,
+   "estimationError": 10909829.213497529
+  },
+  {
+   "brain": "commander",
+   "sensors": "as-built",
+   "namedAt": {
+    "22": 8,
+    "23": 80,
+    "24": 80,
+    "25": 352,
+    "26": 352,
+    "27": 800,
+    "28": 800,
+    "29": 800,
+    "30": 800
+   },
+   "certainAt": 8,
+   "falseCertainty": 0.7071428571428572,
+   "wrongDispatch": 0.9214285714285714,
+   "ambiguityCoverage": 0.4928571428571429,
+   "estimationError": 218.09447894097147
+  },
+  {
+   "brain": "ours",
+   "sensors": "instrumented",
+   "namedAt": {
+    "20": 124,
+    "21": 84,
+    "22": 4,
+    "23": 108,
+    "24": 156,
+    "25": 204,
+    "26": 252,
+    "27": 300,
+    "28": 348,
+    "29": 396,
+    "30": 440,
+    "31": 472
+   },
+   "certainAt": null,
+   "falseCertainty": 0,
+   "wrongDispatch": 0.9214285714285714,
+   "ambiguityCoverage": 0.65,
+   "estimationError": 82.31761101388788
+  },
+  {
+   "brain": "kalman",
+   "sensors": "instrumented",
+   "namedAt": {
+    "20": 104,
+    "21": 72,
+    "22": 4,
+    "23": 76,
+    "24": 136,
+    "25": 184,
+    "26": 228,
+    "27": 276,
+    "28": 324,
+    "29": 372,
+    "30": 420,
+    "31": 456
+   },
+   "certainAt": 4,
+   "falseCertainty": 0.09642857142857143,
+   "wrongDispatch": 0.9892857142857143,
+   "ambiguityCoverage": 0.5571428571428572,
+   "estimationError": 8320995.9610770885
+  },
+  {
+   "brain": "commander",
+   "sensors": "instrumented",
+   "namedAt": {
+    "22": 8,
+    "23": 80,
+    "24": 80,
+    "25": 352,
+    "26": 352,
+    "27": 800,
+    "28": 800,
+    "29": 800,
+    "30": 800
+   },
+   "certainAt": 8,
+   "falseCertainty": 0.7071428571428572,
+   "wrongDispatch": 0.9214285714285714,
+   "ambiguityCoverage": 0.48928571428571427,
+   "estimationError": 218.1071334246164
+  }
+ ],
+ "containment": [
+  {
+   "driver": "nobody (uncontrolled)",
+   "fireVolumeMinutes": 9824,
+   "floorsBurned": [
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+   ],
+   "lastFire": 596,
+   "peakBurning": 0,
+   "droneDeaths": 0
+  },
+  {
+   "driver": "ours",
+   "fireVolumeMinutes": 9736,
+   "floorsBurned": [
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+   ],
+   "lastFire": 664,
+   "peakBurning": 29,
+   "droneDeaths": 4
+  },
+  {
+   "driver": "kalman",
+   "fireVolumeMinutes": 396,
+   "floorsBurned": [
+    22
+   ],
+   "lastFire": 204,
+   "peakBurning": 2,
+   "droneDeaths": 0
+  },
+  {
+   "driver": "commander",
+   "fireVolumeMinutes": 9624,
+   "floorsBurned": [
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+   ],
+   "lastFire": 648,
+   "peakBurning": 29,
+   "droneDeaths": 4
+  }
+ ]
+}
