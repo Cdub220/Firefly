@@ -21,7 +21,9 @@
     "hedge": "tsx src/eval/hedge.ts",
     "brief": "tsx src/eval/brief-cli.ts",
     "brief:sweep": "tsx src/eval/brief-sweep.ts",
-    "export:trace": "tsx src/ui/export-trace.ts"
+    "export:trace": "tsx src/ui/export-trace.ts",
+    "ident": "tsx src/eval/identifiability.ts",
+    "showdown": "tsx src/eval/brief-cli.ts --plan vessel-3x8 --mode blind --seed 42 --ticks 90 --onset 1 --k 1"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",

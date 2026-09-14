@@ -1,0 +1,1574 @@
+{
+ "plan": "vessel-3x8",
+ "mode": "blind",
+ "seed": 42,
+ "ticks": 90,
+ "onset": 1,
+ "k": 1,
+ "target": [
+  "L1-B3"
+ ],
+ "brains": [
+  {
+   "name": "ours",
+   "outcome": {
+    "fireVolume": 33,
+    "peakBurning": 1,
+    "spacesBurnedOut": [
+     "L1-B3"
+    ],
+    "containedAt": 1,
+    "extinguishedAt": 34,
+    "dronesUsed": {
+     "hatch": [
+      "D6"
+     ],
+     "retardant": [
+      "D5"
+     ],
+     "scout": [
+      "D1",
+      "D2"
+     ],
+     "tether": [
+      "D3",
+      "D4"
+     ]
+    },
+    "tetherTicks": 68,
+    "retardantSpent": 3.45,
+    "droneDeaths": {},
+    "wrongFloor": 74,
+    "hedges": 1,
+    "events": [
+     {
+      "t": 1,
+      "kind": "ignition",
+      "text": "L1-B3 is burning at the start"
+     },
+     {
+      "t": 1,
+      "kind": "sensor-diverges",
+      "text": "sensor F-L1-B3 reads 24 C in L1-B3 (truth 455)"
+     },
+     {
+      "t": 1,
+      "kind": "dispatch",
+      "text": "D1 (scout) L1-A1 -> L2-B3 observe"
+     },
+     {
+      "t": 1,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A1 -> L1-A3 suppress"
+     },
+     {
+      "t": 1,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-A1 -> L1-A3 suppress"
+     },
+     {
+      "t": 1,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A1 -> L2-A4 coat"
+     },
+     {
+      "t": 1,
+      "kind": "dispatch",
+      "text": "D6 (hatch) L1-A1 -> L2-A3 close-door"
+     },
+     {
+      "t": 1,
+      "kind": "contained",
+      "text": "contained: no new space ignites after this (1 ever burned)"
+     },
+     {
+      "t": 2,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-A2 -> L1-B3 suppress"
+     },
+     {
+      "t": 3,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A3 -> L1-A4 suppress"
+     },
+     {
+      "t": 3,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-A3 -> L1-A4 suppress"
+     },
+     {
+      "t": 3,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A3 -> L1-B3 coat"
+     },
+     {
+      "t": 3,
+      "kind": "dispatch",
+      "text": "D6 (hatch) L1-A3 -> L1-A3 close-door"
+     },
+     {
+      "t": 4,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A4 -> L1-B3 suppress"
+     },
+     {
+      "t": 4,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-A4 -> L1-B3 suppress"
+     },
+     {
+      "t": 4,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A3 -> L1-A3 coat"
+     },
+     {
+      "t": 5,
+      "kind": "dispatch",
+      "text": "D6 (hatch) L1-A3 -> L2-B3 close-door"
+     },
+     {
+      "t": 6,
+      "kind": "dispatch",
+      "text": "D1 (scout) L1-A3 -> L2-B2 observe"
+     },
+     {
+      "t": 6,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A3 -> L2-A4 coat"
+     },
+     {
+      "t": 7,
+      "kind": "sensor-suspect",
+      "text": "brain marks F-L1-B3 suspect"
+     },
+     {
+      "t": 7,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A4 -> L1-A4 coat"
+     },
+     {
+      "t": 8,
+      "kind": "dispatch",
+      "text": "D2 (scout) L1-A1 -> L2-B2 observe"
+     },
+     {
+      "t": 9,
+      "kind": "dispatch",
+      "text": "D6 (hatch) L2-B3 -> L1-A3 close-door"
+     },
+     {
+      "t": 10,
+      "kind": "dispatch",
+      "text": "D1 (scout) L2-B2 -> L2-B2 observe"
+     },
+     {
+      "t": 10,
+      "kind": "dispatch",
+      "text": "D2 (scout) L1-A2 -> L2-B3 observe"
+     },
+     {
+      "t": 10,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A4 -> L1-A3 coat"
+     },
+     {
+      "t": 10,
+      "kind": "dispatch",
+      "text": "D6 (hatch) L1-B3 -> L1-B3 close-door"
+     },
+     {
+      "t": 11,
+      "kind": "dispatch",
+      "text": "D1 (scout) L2-B2 -> L2-B3 observe"
+     },
+     {
+      "t": 11,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A3 -> L1-A1 refill"
+     },
+     {
+      "t": 13,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A1 -> L1-A3 coat"
+     },
+     {
+      "t": 15,
+      "kind": "dispatch",
+      "text": "D2 (scout) L1-B3 -> L2-B2 observe"
+     },
+     {
+      "t": 20,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A3 -> L1-A1 refill"
+     },
+     {
+      "t": 22,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A1 -> L1-A4 coat"
+     },
+     {
+      "t": 23,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A2 -> L1-A3 coat"
+     },
+     {
+      "t": 25,
+      "kind": "dispatch",
+      "text": "D2 (scout) L1-B2 -> L2-B2 observe"
+     },
+     {
+      "t": 25,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A3 -> L2-B4 coat"
+     },
+     {
+      "t": 26,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A4 -> L1-A4 coat"
+     },
+     {
+      "t": 30,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A4 -> L1-A1 refill"
+     },
+     {
+      "t": 33,
+      "kind": "dispatch",
+      "text": "D2 (scout) L2-B2 -> L2-B2 observe"
+     },
+     {
+      "t": 33,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A1 -> L1-A4 coat"
+     },
+     {
+      "t": 34,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A2 -> L1-A2 coat"
+     },
+     {
+      "t": 34,
+      "kind": "burned-out",
+      "text": "L1-B3 burns out"
+     },
+     {
+      "t": 34,
+      "kind": "extinguished",
+      "text": "no space burning"
+     },
+     {
+      "t": 35,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A2 -> L2-B4 coat"
+     },
+     {
+      "t": 36,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A3 -> L2-A4 coat"
+     },
+     {
+      "t": 36,
+      "kind": "dispatch",
+      "text": "D6 (hatch) L1-B3 -> L1-B4 close-door"
+     },
+     {
+      "t": 36,
+      "kind": "hedge",
+      "text": "hedge across {L1-A4,L1-B3,L1-B4,L2-B4}: D3->L1-B3, D4->L1-B3, D6->L1-B4"
+     },
+     {
+      "t": 37,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A4 -> L1-A3 coat"
+     },
+     {
+      "t": 37,
+      "kind": "dispatch",
+      "text": "D6 (hatch) L1-B4 -> L1-B3 close-door"
+     },
+     {
+      "t": 40,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-B3 -> L2-A4 suppress"
+     },
+     {
+      "t": 40,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-B3 -> L2-A4 suppress"
+     },
+     {
+      "t": 40,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A3 -> L1-A4 coat"
+     },
+     {
+      "t": 40,
+      "kind": "dispatch",
+      "text": "D6 (hatch) L1-B3 -> L2-A4 close-door"
+     }
+    ]
+   },
+   "brief": "COMMANDER'S BRIEF: ours\n\nSituation\n  Structure vessel-3x8: 24 spaces on 3 level(s), 22 fixed sensors, resupply at L1-A1.\n  Fire started in L1-B3. Failure mode: blind from tick 1, k=1. Seed 42. 90 ticks (1..90).\n  Drones: D1 scout, D2 scout, D3 tether, D4 tether, D5 retardant, D6 hatch.\n\nPlay by play\n  t=  1  L1-B3 is burning at the start\n  t=  1  sensor F-L1-B3 reads 24 C in L1-B3 (truth 455)\n  t=  1  D1 (scout) L1-A1 -> L2-B3 observe\n  t=  1  D3 (tether) L1-A1 -> L1-A3 suppress\n  t=  1  D4 (tether) L1-A1 -> L1-A3 suppress\n  t=  1  D5 (retardant) L1-A1 -> L2-A4 coat\n  t=  1  D6 (hatch) L1-A1 -> L2-A3 close-door\n  t=  1  contained: no new space ignites after this (1 ever burned)\n  t=  2  D4 (tether) L1-A2 -> L1-B3 suppress\n  t=  3  D3 (tether) L1-A3 -> L1-A4 suppress\n  t=  3  D4 (tether) L1-A3 -> L1-A4 suppress\n  t=  3  D5 (retardant) L1-A3 -> L1-B3 coat\n  t=  3  D6 (hatch) L1-A3 -> L1-A3 close-door\n  t=  4  D3 (tether) L1-A4 -> L1-B3 suppress\n  t=  4  D4 (tether) L1-A4 -> L1-B3 suppress\n  t=  4  D5 (retardant) L1-A3 -> L1-A3 coat\n  t=  5  D6 (hatch) L1-A3 -> L2-B3 close-door\n  t=  6  D1 (scout) L1-A3 -> L2-B2 observe\n  t=  6  D5 (retardant) L1-A3 -> L2-A4 coat\n  t=  7  brain marks F-L1-B3 suspect\n  t=  7  D5 (retardant) L1-A4 -> L1-A4 coat\n  t=  8  D2 (scout) L1-A1 -> L2-B2 observe\n  t=  9  D6 (hatch) L2-B3 -> L1-A3 close-door\n  t= 10  D1 (scout) L2-B2 -> L2-B2 observe\n  t= 10  D2 (scout) L1-A2 -> L2-B3 observe\n  t= 10  D5 (retardant) L1-A4 -> L1-A3 coat\n  t= 10  D6 (hatch) L1-B3 -> L1-B3 close-door\n  t= 11  D1 (scout) L2-B2 -> L2-B3 observe\n  t= 11  D5 (retardant) L1-A3 -> L1-A1 refill\n  t= 13  D5 (retardant) L1-A1 -> L1-A3 coat\n  t= 15  D2 (scout) L1-B3 -> L2-B2 observe\n  t= 20  D5 (retardant) L1-A3 -> L1-A1 refill\n  t= 22  D5 (retardant) L1-A1 -> L1-A4 coat\n  t= 23  D5 (retardant) L1-A2 -> L1-A3 coat\n  t= 25  D2 (scout) L1-B2 -> L2-B2 observe\n  t= 25  D5 (retardant) L1-A3 -> L2-B4 coat\n  t= 26  D5 (retardant) L1-A4 -> L1-A4 coat\n  t= 30  D5 (retardant) L1-A4 -> L1-A1 refill\n  t= 33  D2 (scout) L2-B2 -> L2-B2 observe\n  t= 33  D5 (retardant) L1-A1 -> L1-A4 coat\n  ... 13 more events not shown\n\nOutcome\n  fireVolume 33 space-ticks, peak 1 burning at once, burned out: L1-B3.\n  contained tick 1, extinguished tick 34.\n  drones used: hatch 1 (D6); retardant 1 (D5); scout 2 (D1, D2); tether 2 (D3, D4).\n  water: 68 tether-ticks on suppress; retardant spent 3.45.\n  drone deaths: none.\n  commands to the wrong place: 74; hedges: 1.\n\nThe fire was put out at tick 34 after burning 33 space-ticks; 1 space(s) burned out."
+  },
+  {
+   "name": "kalman",
+   "outcome": {
+    "fireVolume": 1133,
+    "peakBurning": 22,
+    "spacesBurnedOut": [
+     "L1-A1",
+     "L1-A2",
+     "L1-A3",
+     "L1-A4",
+     "L1-B1",
+     "L1-B2",
+     "L1-B3",
+     "L1-B4",
+     "L2-A1",
+     "L2-A2",
+     "L2-A3",
+     "L2-B1",
+     "L2-B2",
+     "L2-B3",
+     "L2-B4",
+     "L3-A1",
+     "L3-A2",
+     "L3-A3",
+     "L3-A4",
+     "L3-B1",
+     "L3-B2",
+     "L3-B3",
+     "L3-B4"
+    ],
+    "containedAt": 35,
+    "extinguishedAt": 85,
+    "dronesUsed": {
+     "retardant": [
+      "D5"
+     ],
+     "tether": [
+      "D3",
+      "D4"
+     ]
+    },
+    "tetherTicks": 147,
+    "retardantSpent": 0.9,
+    "droneDeaths": {
+     "hatch": [
+      "D6"
+     ],
+     "retardant": [
+      "D5"
+     ],
+     "scout": [
+      "D1",
+      "D2"
+     ]
+    },
+    "wrongFloor": 23,
+    "hedges": 0,
+    "events": [
+     {
+      "t": 1,
+      "kind": "ignition",
+      "text": "L1-B3 is burning at the start"
+     },
+     {
+      "t": 1,
+      "kind": "sensor-diverges",
+      "text": "sensor F-L1-B3 reads 24 C in L1-B3 (truth 455)"
+     },
+     {
+      "t": 6,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A1 -> L1-A3 suppress"
+     },
+     {
+      "t": 6,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-A1 -> L1-B4 suppress"
+     },
+     {
+      "t": 6,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A1 -> L1-B3 coat"
+     },
+     {
+      "t": 10,
+      "kind": "ignition",
+      "text": "L1-B4 ignites"
+     },
+     {
+      "t": 12,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A3 -> L1-A4 suppress"
+     },
+     {
+      "t": 12,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A3 -> L2-A4 coat"
+     },
+     {
+      "t": 14,
+      "kind": "ignition",
+      "text": "L1-A3 ignites"
+     },
+     {
+      "t": 16,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-B4 -> L1-A2 suppress"
+     },
+     {
+      "t": 18,
+      "kind": "ignition",
+      "text": "L1-B2 ignites"
+     },
+     {
+      "t": 19,
+      "kind": "ignition",
+      "text": "L1-A4 ignites"
+     },
+     {
+      "t": 19,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-A2 -> L1-A4 suppress"
+     },
+     {
+      "t": 19,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L2-A4 -> L1-A1 refill"
+     },
+     {
+      "t": 20,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-A3 -> L1-A2 suppress"
+     },
+     {
+      "t": 21,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-A2 -> L2-B4 suppress"
+     },
+     {
+      "t": 22,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A4 -> L2-A4 suppress"
+     },
+     {
+      "t": 22,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-A3 -> L2-A4 suppress"
+     },
+     {
+      "t": 23,
+      "kind": "ignition",
+      "text": "L1-A2 ignites"
+     },
+     {
+      "t": 23,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A1 -> L1-B3 coat"
+     },
+     {
+      "t": 24,
+      "kind": "dispatch",
+      "text": "D3 (tether) L2-A4 -> L1-A4 suppress"
+     },
+     {
+      "t": 24,
+      "kind": "dispatch",
+      "text": "D4 (tether) L2-A4 -> L2-B4 suppress"
+     },
+     {
+      "t": 24,
+      "kind": "drone-death",
+      "text": "D5 (retardant) dies in L1-A2 (460 C)"
+     },
+     {
+      "t": 25,
+      "kind": "ignition",
+      "text": "L1-B1 ignites"
+     },
+     {
+      "t": 25,
+      "kind": "ignition",
+      "text": "L2-B3 ignites"
+     },
+     {
+      "t": 25,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A4 -> L2-A4 suppress"
+     },
+     {
+      "t": 27,
+      "kind": "ignition",
+      "text": "L2-A3 ignites"
+     },
+     {
+      "t": 28,
+      "kind": "ignition",
+      "text": "L1-A1 ignites"
+     },
+     {
+      "t": 28,
+      "kind": "ignition",
+      "text": "L2-B2 ignites"
+     },
+     {
+      "t": 28,
+      "kind": "ignition",
+      "text": "L2-B4 ignites"
+     },
+     {
+      "t": 28,
+      "kind": "dispatch",
+      "text": "D4 (tether) L2-B4 -> L2-B2 suppress"
+     },
+     {
+      "t": 29,
+      "kind": "ignition",
+      "text": "L2-A2 ignites"
+     },
+     {
+      "t": 29,
+      "kind": "drone-death",
+      "text": "D1 (scout) dies in L1-A1 (492 C)"
+     },
+     {
+      "t": 29,
+      "kind": "drone-death",
+      "text": "D2 (scout) dies in L1-A1 (492 C)"
+     },
+     {
+      "t": 29,
+      "kind": "drone-death",
+      "text": "D6 (hatch) dies in L1-A1 (492 C)"
+     },
+     {
+      "t": 31,
+      "kind": "ignition",
+      "text": "L2-A1 ignites"
+     },
+     {
+      "t": 31,
+      "kind": "ignition",
+      "text": "L2-B1 ignites"
+     },
+     {
+      "t": 31,
+      "kind": "dispatch",
+      "text": "D4 (tether) L2-B2 -> L3-B3 suppress"
+     },
+     {
+      "t": 34,
+      "kind": "ignition",
+      "text": "L3-A1 ignites"
+     },
+     {
+      "t": 34,
+      "kind": "ignition",
+      "text": "L3-A3 ignites"
+     },
+     {
+      "t": 34,
+      "kind": "ignition",
+      "text": "L3-B4 ignites"
+     },
+     {
+      "t": 34,
+      "kind": "burned-out",
+      "text": "L1-B3 burns out"
+     },
+     {
+      "t": 35,
+      "kind": "ignition",
+      "text": "L3-A2 ignites"
+     },
+     {
+      "t": 35,
+      "kind": "ignition",
+      "text": "L3-A4 ignites"
+     },
+     {
+      "t": 35,
+      "kind": "ignition",
+      "text": "L3-B1 ignites"
+     },
+     {
+      "t": 35,
+      "kind": "ignition",
+      "text": "L3-B2 ignites"
+     },
+     {
+      "t": 35,
+      "kind": "ignition",
+      "text": "L3-B3 ignites"
+     },
+     {
+      "t": 35,
+      "kind": "contained",
+      "text": "contained: no new space ignites after this (23 ever burned)"
+     },
+     {
+      "t": 60,
+      "kind": "burned-out",
+      "text": "L1-B4 burns out"
+     },
+     {
+      "t": 64,
+      "kind": "burned-out",
+      "text": "L1-A3 burns out"
+     },
+     {
+      "t": 68,
+      "kind": "burned-out",
+      "text": "L1-B2 burns out"
+     },
+     {
+      "t": 69,
+      "kind": "burned-out",
+      "text": "L1-A4 burns out"
+     },
+     {
+      "t": 73,
+      "kind": "burned-out",
+      "text": "L1-A2 burns out"
+     },
+     {
+      "t": 75,
+      "kind": "burned-out",
+      "text": "L1-B1 burns out"
+     },
+     {
+      "t": 75,
+      "kind": "burned-out",
+      "text": "L2-B3 burns out"
+     },
+     {
+      "t": 77,
+      "kind": "burned-out",
+      "text": "L2-A3 burns out"
+     },
+     {
+      "t": 78,
+      "kind": "burned-out",
+      "text": "L1-A1 burns out"
+     },
+     {
+      "t": 78,
+      "kind": "burned-out",
+      "text": "L2-B2 burns out"
+     },
+     {
+      "t": 78,
+      "kind": "burned-out",
+      "text": "L2-B4 burns out"
+     },
+     {
+      "t": 79,
+      "kind": "burned-out",
+      "text": "L2-A2 burns out"
+     },
+     {
+      "t": 81,
+      "kind": "burned-out",
+      "text": "L2-A1 burns out"
+     },
+     {
+      "t": 81,
+      "kind": "burned-out",
+      "text": "L2-B1 burns out"
+     },
+     {
+      "t": 84,
+      "kind": "burned-out",
+      "text": "L3-A1 burns out"
+     },
+     {
+      "t": 84,
+      "kind": "burned-out",
+      "text": "L3-A3 burns out"
+     },
+     {
+      "t": 84,
+      "kind": "burned-out",
+      "text": "L3-B4 burns out"
+     },
+     {
+      "t": 85,
+      "kind": "burned-out",
+      "text": "L3-A2 burns out"
+     },
+     {
+      "t": 85,
+      "kind": "burned-out",
+      "text": "L3-A4 burns out"
+     },
+     {
+      "t": 85,
+      "kind": "burned-out",
+      "text": "L3-B1 burns out"
+     },
+     {
+      "t": 85,
+      "kind": "burned-out",
+      "text": "L3-B2 burns out"
+     },
+     {
+      "t": 85,
+      "kind": "burned-out",
+      "text": "L3-B3 burns out"
+     },
+     {
+      "t": 85,
+      "kind": "extinguished",
+      "text": "no space burning"
+     }
+    ]
+   },
+   "brief": "COMMANDER'S BRIEF: kalman\n\nSituation\n  Structure vessel-3x8: 24 spaces on 3 level(s), 22 fixed sensors, resupply at L1-A1.\n  Fire started in L1-B3. Failure mode: blind from tick 1, k=1. Seed 42. 90 ticks (1..90).\n  Drones: D1 scout, D2 scout, D3 tether, D4 tether, D5 retardant, D6 hatch.\n\nPlay by play\n  t=  1  L1-B3 is burning at the start\n  t=  1  sensor F-L1-B3 reads 24 C in L1-B3 (truth 455)\n  t=  6  D3 (tether) L1-A1 -> L1-A3 suppress\n  t=  6  D4 (tether) L1-A1 -> L1-B4 suppress\n  t=  6  D5 (retardant) L1-A1 -> L1-B3 coat\n  t= 10  L1-B4 ignites\n  t= 12  D3 (tether) L1-A3 -> L1-A4 suppress\n  t= 12  D5 (retardant) L1-A3 -> L2-A4 coat\n  t= 14  L1-A3 ignites\n  t= 16  D4 (tether) L1-B4 -> L1-A2 suppress\n  t= 18  L1-B2 ignites\n  t= 19  L1-A4 ignites\n  t= 19  D4 (tether) L1-A2 -> L1-A4 suppress\n  t= 19  D5 (retardant) L2-A4 -> L1-A1 refill\n  t= 20  D4 (tether) L1-A3 -> L1-A2 suppress\n  t= 21  D4 (tether) L1-A2 -> L2-B4 suppress\n  t= 22  D3 (tether) L1-A4 -> L2-A4 suppress\n  t= 22  D4 (tether) L1-A3 -> L2-A4 suppress\n  t= 23  L1-A2 ignites\n  t= 23  D5 (retardant) L1-A1 -> L1-B3 coat\n  t= 24  D3 (tether) L2-A4 -> L1-A4 suppress\n  t= 24  D4 (tether) L2-A4 -> L2-B4 suppress\n  t= 24  D5 (retardant) dies in L1-A2 (460 C)\n  t= 25  L1-B1 ignites\n  t= 25  L2-B3 ignites\n  t= 25  D3 (tether) L1-A4 -> L2-A4 suppress\n  t= 27  L2-A3 ignites\n  t= 28  L1-A1 ignites\n  t= 28  L2-B2 ignites\n  t= 28  L2-B4 ignites\n  t= 28  D4 (tether) L2-B4 -> L2-B2 suppress\n  t= 29  L2-A2 ignites\n  t= 29  D1 (scout) dies in L1-A1 (492 C)\n  t= 29  D2 (scout) dies in L1-A1 (492 C)\n  t= 29  D6 (hatch) dies in L1-A1 (492 C)\n  t= 31  L2-A1 ignites\n  t= 31  L2-B1 ignites\n  t= 31  D4 (tether) L2-B2 -> L3-B3 suppress\n  t= 34  L3-A1 ignites\n  t= 34  L3-A3 ignites\n  ... 31 more events not shown\n\nOutcome\n  fireVolume 1133 space-ticks, peak 22 burning at once, burned out: L1-A1, L1-A2, L1-A3, L1-A4, L1-B1, L1-B2, L1-B3, L1-B4, L2-A1, L2-A2, L2-A3, L2-B1, L2-B2, L2-B3, L2-B4, L3-A1, L3-A2, L3-A3, L3-A4, L3-B1, L3-B2, L3-B3, L3-B4.\n  contained tick 35, extinguished tick 85.\n  drones used: retardant 1 (D5); tether 2 (D3, D4).\n  water: 147 tether-ticks on suppress; retardant spent 0.90.\n  drone deaths: hatch 1 (D6); retardant 1 (D5); scout 2 (D1, D2).\n  commands to the wrong place: 23; hedges: 0.\n\nThe fire was put out at tick 85 after burning 1133 space-ticks; 23 space(s) burned out."
+  },
+  {
+   "name": "kalman-source",
+   "outcome": {
+    "fireVolume": 1183,
+    "peakBurning": 23,
+    "spacesBurnedOut": [
+     "L1-A1",
+     "L1-A2",
+     "L1-A3",
+     "L1-A4",
+     "L1-B1",
+     "L1-B2",
+     "L1-B3",
+     "L1-B4",
+     "L2-A1",
+     "L2-A2",
+     "L2-A3",
+     "L2-A4",
+     "L2-B1",
+     "L2-B2",
+     "L2-B3",
+     "L2-B4",
+     "L3-A1",
+     "L3-A2",
+     "L3-A3",
+     "L3-A4",
+     "L3-B1",
+     "L3-B2",
+     "L3-B3",
+     "L3-B4"
+    ],
+    "containedAt": 35,
+    "extinguishedAt": 85,
+    "dronesUsed": {
+     "retardant": [
+      "D5"
+     ],
+     "tether": [
+      "D3",
+      "D4"
+     ]
+    },
+    "tetherTicks": 54,
+    "retardantSpent": 0,
+    "droneDeaths": {
+     "hatch": [
+      "D6"
+     ],
+     "retardant": [
+      "D5"
+     ],
+     "scout": [
+      "D1",
+      "D2"
+     ]
+    },
+    "wrongFloor": 22,
+    "hedges": 0,
+    "events": [
+     {
+      "t": 1,
+      "kind": "ignition",
+      "text": "L1-B3 is burning at the start"
+     },
+     {
+      "t": 1,
+      "kind": "sensor-diverges",
+      "text": "sensor F-L1-B3 reads 24 C in L1-B3 (truth 455)"
+     },
+     {
+      "t": 1,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A1 -> L1-A3 suppress"
+     },
+     {
+      "t": 1,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-A1 -> L1-B2 suppress"
+     },
+     {
+      "t": 1,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A1 -> L1-B3 coat"
+     },
+     {
+      "t": 10,
+      "kind": "ignition",
+      "text": "L1-B4 ignites"
+     },
+     {
+      "t": 14,
+      "kind": "ignition",
+      "text": "L1-A4 ignites"
+     },
+     {
+      "t": 14,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A3 -> L2-A3 suppress"
+     },
+     {
+      "t": 14,
+      "kind": "dispatch",
+      "text": "D5 (retardant) L1-A3 -> L2-A4 coat"
+     },
+     {
+      "t": 15,
+      "kind": "ignition",
+      "text": "L1-A3 ignites"
+     },
+     {
+      "t": 15,
+      "kind": "dispatch",
+      "text": "D3 (tether) L2-A3 -> L1-A4 suppress"
+     },
+     {
+      "t": 15,
+      "kind": "drone-death",
+      "text": "D5 (retardant) dies in L1-A4 (464 C)"
+     },
+     {
+      "t": 17,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-B2 -> L2-A3 suppress"
+     },
+     {
+      "t": 18,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-A2 -> L2-B4 suppress"
+     },
+     {
+      "t": 19,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A4 -> L2-B4 suppress"
+     },
+     {
+      "t": 19,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-A3 -> L2-A3 suppress"
+     },
+     {
+      "t": 20,
+      "kind": "ignition",
+      "text": "L1-B2 ignites"
+     },
+     {
+      "t": 20,
+      "kind": "dispatch",
+      "text": "D4 (tether) L2-A3 -> L1-A4 suppress"
+     },
+     {
+      "t": 21,
+      "kind": "ignition",
+      "text": "L1-A2 ignites"
+     },
+     {
+      "t": 21,
+      "kind": "dispatch",
+      "text": "D3 (tether) L2-B4 -> L2-A3 suppress"
+     },
+     {
+      "t": 22,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-A4 -> L1-A2 suppress"
+     },
+     {
+      "t": 23,
+      "kind": "dispatch",
+      "text": "D3 (tether) L2-A3 -> L1-A2 suppress"
+     },
+     {
+      "t": 23,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-A3 -> L1-A4 suppress"
+     },
+     {
+      "t": 24,
+      "kind": "ignition",
+      "text": "L2-B4 ignites"
+     },
+     {
+      "t": 24,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-A4 -> L2-B4 suppress"
+     },
+     {
+      "t": 25,
+      "kind": "ignition",
+      "text": "L2-A4 ignites"
+     },
+     {
+      "t": 25,
+      "kind": "ignition",
+      "text": "L2-B3 ignites"
+     },
+     {
+      "t": 25,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A2 -> L1-A4 suppress"
+     },
+     {
+      "t": 26,
+      "kind": "ignition",
+      "text": "L1-B1 ignites"
+     },
+     {
+      "t": 26,
+      "kind": "ignition",
+      "text": "L2-A3 ignites"
+     },
+     {
+      "t": 26,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A3 -> L3-A4 suppress"
+     },
+     {
+      "t": 26,
+      "kind": "dispatch",
+      "text": "D4 (tether) L2-B4 -> L2-A4 suppress"
+     },
+     {
+      "t": 27,
+      "kind": "ignition",
+      "text": "L3-A4 ignites"
+     },
+     {
+      "t": 28,
+      "kind": "ignition",
+      "text": "L1-A1 ignites"
+     },
+     {
+      "t": 28,
+      "kind": "ignition",
+      "text": "L2-A2 ignites"
+     },
+     {
+      "t": 28,
+      "kind": "ignition",
+      "text": "L2-B2 ignites"
+     },
+     {
+      "t": 28,
+      "kind": "dispatch",
+      "text": "D3 (tether) L2-A4 -> L2-A4 suppress"
+     },
+     {
+      "t": 29,
+      "kind": "dispatch",
+      "text": "D3 (tether) L2-A4 -> L3-A4 suppress"
+     },
+     {
+      "t": 29,
+      "kind": "dispatch",
+      "text": "D4 (tether) L2-A4 -> L1-A4 suppress"
+     },
+     {
+      "t": 29,
+      "kind": "drone-death",
+      "text": "D1 (scout) dies in L1-A1 (484 C)"
+     },
+     {
+      "t": 29,
+      "kind": "drone-death",
+      "text": "D2 (scout) dies in L1-A1 (484 C)"
+     },
+     {
+      "t": 29,
+      "kind": "drone-death",
+      "text": "D6 (hatch) dies in L1-A1 (484 C)"
+     },
+     {
+      "t": 30,
+      "kind": "ignition",
+      "text": "L3-B4 ignites"
+     },
+     {
+      "t": 30,
+      "kind": "dispatch",
+      "text": "D3 (tether) L3-A4 -> L2-A4 suppress"
+     },
+     {
+      "t": 30,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-A4 -> L3-B3 suppress"
+     },
+     {
+      "t": 31,
+      "kind": "ignition",
+      "text": "L2-A1 ignites"
+     },
+     {
+      "t": 31,
+      "kind": "ignition",
+      "text": "L2-B1 ignites"
+     },
+     {
+      "t": 31,
+      "kind": "ignition",
+      "text": "L3-A3 ignites"
+     },
+     {
+      "t": 31,
+      "kind": "dispatch",
+      "text": "D3 (tether) L2-A4 -> L3-B3 suppress"
+     },
+     {
+      "t": 31,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-A3 -> L3-B4 suppress"
+     },
+     {
+      "t": 32,
+      "kind": "ignition",
+      "text": "L3-B3 ignites"
+     },
+     {
+      "t": 32,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-A4 -> L2-A4 suppress"
+     },
+     {
+      "t": 33,
+      "kind": "ignition",
+      "text": "L3-A1 ignites"
+     },
+     {
+      "t": 33,
+      "kind": "ignition",
+      "text": "L3-A2 ignites"
+     },
+     {
+      "t": 33,
+      "kind": "dispatch",
+      "text": "D4 (tether) L2-A4 -> L3-A3 suppress"
+     },
+     {
+      "t": 34,
+      "kind": "ignition",
+      "text": "L3-B2 ignites"
+     },
+     {
+      "t": 34,
+      "kind": "burned-out",
+      "text": "L1-B3 burns out"
+     },
+     {
+      "t": 35,
+      "kind": "ignition",
+      "text": "L3-B1 ignites"
+     },
+     {
+      "t": 35,
+      "kind": "dispatch",
+      "text": "D3 (tether) L3-B3 -> L3-B2 suppress"
+     },
+     {
+      "t": 35,
+      "kind": "contained",
+      "text": "contained: no new space ignites after this (24 ever burned)"
+     },
+     {
+      "t": 37,
+      "kind": "dispatch",
+      "text": "D3 (tether) L3-B2 -> L3-A2 suppress"
+     },
+     {
+      "t": 37,
+      "kind": "dispatch",
+      "text": "D4 (tether) L3-A3 -> L2-A4 suppress"
+     },
+     {
+      "t": 39,
+      "kind": "dispatch",
+      "text": "D3 (tether) L3-A2 -> L3-B2 suppress"
+     },
+     {
+      "t": 39,
+      "kind": "dispatch",
+      "text": "D4 (tether) L2-A4 -> L3-A3 suppress"
+     },
+     {
+      "t": 40,
+      "kind": "dispatch",
+      "text": "D3 (tether) L3-B2 -> L3-A2 suppress"
+     },
+     {
+      "t": 41,
+      "kind": "dispatch",
+      "text": "D3 (tether) L3-A2 -> L3-B2 suppress"
+     },
+     {
+      "t": 41,
+      "kind": "dispatch",
+      "text": "D4 (tether) L3-A3 -> L2-A4 suppress"
+     },
+     {
+      "t": 42,
+      "kind": "dispatch",
+      "text": "D3 (tether) L3-B2 -> L3-A2 suppress"
+     },
+     {
+      "t": 42,
+      "kind": "dispatch",
+      "text": "D4 (tether) L2-A3 -> L3-A3 suppress"
+     },
+     {
+      "t": 43,
+      "kind": "dispatch",
+      "text": "D3 (tether) L3-A2 -> L3-A1 suppress"
+     },
+     {
+      "t": 43,
+      "kind": "dispatch",
+      "text": "D4 (tether) L3-A3 -> L3-B3 suppress"
+     },
+     {
+      "t": 44,
+      "kind": "dispatch",
+      "text": "D3 (tether) L3-A1 -> L3-B1 suppress"
+     },
+     {
+      "t": 44,
+      "kind": "dispatch",
+      "text": "D4 (tether) L3-B3 -> L3-B2 suppress"
+     },
+     {
+      "t": 45,
+      "kind": "dispatch",
+      "text": "D3 (tether) L3-B1 -> L3-B3 suppress"
+     },
+     {
+      "t": 45,
+      "kind": "dispatch",
+      "text": "D4 (tether) L3-B2 -> L3-A2 suppress"
+     },
+     {
+      "t": 46,
+      "kind": "dispatch",
+      "text": "D4 (tether) L3-A2 -> L3-A3 suppress"
+     },
+     {
+      "t": 47,
+      "kind": "dispatch",
+      "text": "D3 (tether) L3-B3 -> L3-B2 suppress"
+     },
+     {
+      "t": 47,
+      "kind": "dispatch",
+      "text": "D4 (tether) L3-A3 -> L3-A1 suppress"
+     },
+     {
+      "t": 48,
+      "kind": "dispatch",
+      "text": "D3 (tether) L3-B2 -> L3-B1 suppress"
+     },
+     {
+      "t": 48,
+      "kind": "dispatch",
+      "text": "D4 (tether) L3-A2 -> L3-A2 suppress"
+     },
+     {
+      "t": 49,
+      "kind": "dispatch",
+      "text": "D3 (tether) L3-B1 -> L3-B3 suppress"
+     },
+     {
+      "t": 49,
+      "kind": "dispatch",
+      "text": "D4 (tether) L3-A2 -> L3-A3 suppress"
+     },
+     {
+      "t": 50,
+      "kind": "dispatch",
+      "text": "D4 (tether) L3-A3 -> L3-B2 suppress"
+     },
+     {
+      "t": 51,
+      "kind": "dispatch",
+      "text": "D3 (tether) L3-B3 -> L3-A2 suppress"
+     },
+     {
+      "t": 52,
+      "kind": "dispatch",
+      "text": "D4 (tether) L3-B2 -> L3-A3 suppress"
+     },
+     {
+      "t": 53,
+      "kind": "dispatch",
+      "text": "D3 (tether) L3-A2 -> L3-B3 suppress"
+     },
+     {
+      "t": 53,
+      "kind": "dispatch",
+      "text": "D4 (tether) L3-A2 -> L3-B3 suppress"
+     },
+     {
+      "t": 54,
+      "kind": "dispatch",
+      "text": "D3 (tether) L3-A3 -> L3-A3 suppress"
+     },
+     {
+      "t": 54,
+      "kind": "dispatch",
+      "text": "D4 (tether) L3-A3 -> L3-A3 suppress"
+     },
+     {
+      "t": 55,
+      "kind": "dispatch",
+      "text": "D3 (tether) L3-A3 -> L3-A2 suppress"
+     },
+     {
+      "t": 55,
+      "kind": "dispatch",
+      "text": "D4 (tether) L3-A3 -> L3-A2 suppress"
+     },
+     {
+      "t": 56,
+      "kind": "dispatch",
+      "text": "D3 (tether) L3-A2 -> L3-B3 suppress"
+     },
+     {
+      "t": 56,
+      "kind": "dispatch",
+      "text": "D4 (tether) L3-A2 -> L3-B3 suppress"
+     },
+     {
+      "t": 57,
+      "kind": "dispatch",
+      "text": "D3 (tether) L3-A3 -> L3-B2 suppress"
+     },
+     {
+      "t": 57,
+      "kind": "dispatch",
+      "text": "D4 (tether) L3-A3 -> L3-B2 suppress"
+     },
+     {
+      "t": 60,
+      "kind": "dispatch",
+      "text": "D3 (tether) L3-A2 -> L3-A2 suppress"
+     },
+     {
+      "t": 60,
+      "kind": "dispatch",
+      "text": "D4 (tether) L3-A2 -> L3-A2 suppress"
+     },
+     {
+      "t": 60,
+      "kind": "burned-out",
+      "text": "L1-B4 burns out"
+     },
+     {
+      "t": 62,
+      "kind": "dispatch",
+      "text": "D3 (tether) L3-A2 -> L1-B4 suppress"
+     },
+     {
+      "t": 62,
+      "kind": "dispatch",
+      "text": "D4 (tether) L3-A2 -> L1-B4 suppress"
+     },
+     {
+      "t": 64,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A2 -> L1-A2 suppress"
+     },
+     {
+      "t": 64,
+      "kind": "burned-out",
+      "text": "L1-A4 burns out"
+     },
+     {
+      "t": 65,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A2 -> L1-B4 suppress"
+     },
+     {
+      "t": 65,
+      "kind": "burned-out",
+      "text": "L1-A3 burns out"
+     },
+     {
+      "t": 66,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A3 -> L1-A4 suppress"
+     },
+     {
+      "t": 66,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-A4 -> L1-A4 suppress"
+     },
+     {
+      "t": 67,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A4 -> L1-A3 suppress"
+     },
+     {
+      "t": 67,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-A4 -> L1-B4 suppress"
+     },
+     {
+      "t": 70,
+      "kind": "burned-out",
+      "text": "L1-B2 burns out"
+     },
+     {
+      "t": 71,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A3 -> L1-A2 suppress"
+     },
+     {
+      "t": 71,
+      "kind": "burned-out",
+      "text": "L1-A2 burns out"
+     },
+     {
+      "t": 72,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A2 -> L2-B4 suppress"
+     },
+     {
+      "t": 72,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-B4 -> L2-B4 suppress"
+     },
+     {
+      "t": 73,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A3 -> L1-A3 suppress"
+     },
+     {
+      "t": 73,
+      "kind": "dispatch",
+      "text": "D4 (tether) L2-B4 -> L1-B4 suppress"
+     },
+     {
+      "t": 74,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A3 -> L2-A4 suppress"
+     },
+     {
+      "t": 74,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-B4 -> L2-A4 suppress"
+     },
+     {
+      "t": 74,
+      "kind": "burned-out",
+      "text": "L2-B4 burns out"
+     },
+     {
+      "t": 75,
+      "kind": "burned-out",
+      "text": "L2-A4 burns out"
+     },
+     {
+      "t": 75,
+      "kind": "burned-out",
+      "text": "L2-B3 burns out"
+     },
+     {
+      "t": 76,
+      "kind": "dispatch",
+      "text": "D3 (tether) L2-A4 -> L1-A4 suppress"
+     },
+     {
+      "t": 76,
+      "kind": "dispatch",
+      "text": "D4 (tether) L2-A4 -> L1-A4 suppress"
+     },
+     {
+      "t": 76,
+      "kind": "burned-out",
+      "text": "L1-B1 burns out"
+     },
+     {
+      "t": 76,
+      "kind": "burned-out",
+      "text": "L2-A3 burns out"
+     },
+     {
+      "t": 77,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A4 -> L1-B1 suppress"
+     },
+     {
+      "t": 77,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-A4 -> L1-A3 suppress"
+     },
+     {
+      "t": 77,
+      "kind": "burned-out",
+      "text": "L3-A4 burns out"
+     },
+     {
+      "t": 78,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A3 -> L3-A4 suppress"
+     },
+     {
+      "t": 78,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-A3 -> L3-A4 suppress"
+     },
+     {
+      "t": 78,
+      "kind": "burned-out",
+      "text": "L1-A1 burns out"
+     },
+     {
+      "t": 78,
+      "kind": "burned-out",
+      "text": "L2-A2 burns out"
+     },
+     {
+      "t": 78,
+      "kind": "burned-out",
+      "text": "L2-B2 burns out"
+     },
+     {
+      "t": 79,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A4 -> L1-A3 suppress"
+     },
+     {
+      "t": 79,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-A4 -> L1-B4 suppress"
+     },
+     {
+      "t": 80,
+      "kind": "burned-out",
+      "text": "L3-B4 burns out"
+     },
+     {
+      "t": 81,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A3 -> L3-B4 suppress"
+     },
+     {
+      "t": 81,
+      "kind": "dispatch",
+      "text": "D4 (tether) L1-B4 -> L3-B4 suppress"
+     },
+     {
+      "t": 81,
+      "kind": "burned-out",
+      "text": "L2-A1 burns out"
+     },
+     {
+      "t": 81,
+      "kind": "burned-out",
+      "text": "L2-B1 burns out"
+     },
+     {
+      "t": 81,
+      "kind": "burned-out",
+      "text": "L3-A3 burns out"
+     },
+     {
+      "t": 82,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A4 -> L3-A3 suppress"
+     },
+     {
+      "t": 82,
+      "kind": "dispatch",
+      "text": "D4 (tether) L2-B4 -> L3-A3 suppress"
+     },
+     {
+      "t": 82,
+      "kind": "burned-out",
+      "text": "L3-B3 burns out"
+     },
+     {
+      "t": 83,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A3 -> L3-B3 suppress"
+     },
+     {
+      "t": 83,
+      "kind": "dispatch",
+      "text": "D4 (tether) L2-A4 -> L3-B3 suppress"
+     },
+     {
+      "t": 83,
+      "kind": "burned-out",
+      "text": "L3-A1 burns out"
+     },
+     {
+      "t": 83,
+      "kind": "burned-out",
+      "text": "L3-A2 burns out"
+     },
+     {
+      "t": 84,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-B3 -> L3-A2 suppress"
+     },
+     {
+      "t": 84,
+      "kind": "burned-out",
+      "text": "L3-B2 burns out"
+     },
+     {
+      "t": 85,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-A3 -> L3-B3 suppress"
+     },
+     {
+      "t": 85,
+      "kind": "burned-out",
+      "text": "L3-B1 burns out"
+     },
+     {
+      "t": 85,
+      "kind": "extinguished",
+      "text": "no space burning"
+     },
+     {
+      "t": 86,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-B3 -> L3-B1 suppress"
+     },
+     {
+      "t": 86,
+      "kind": "dispatch",
+      "text": "D4 (tether) L3-B3 -> L3-B1 suppress"
+     },
+     {
+      "t": 88,
+      "kind": "dispatch",
+      "text": "D3 (tether) L1-B1 -> L1-B2 suppress"
+     },
+     {
+      "t": 88,
+      "kind": "dispatch",
+      "text": "D4 (tether) L3-B1 -> L2-B3 suppress"
+     }
+    ]
+   },
+   "brief": "COMMANDER'S BRIEF: kalman-source\n\nSituation\n  Structure vessel-3x8: 24 spaces on 3 level(s), 22 fixed sensors, resupply at L1-A1.\n  Fire started in L1-B3. Failure mode: blind from tick 1, k=1. Seed 42. 90 ticks (1..90).\n  Drones: D1 scout, D2 scout, D3 tether, D4 tether, D5 retardant, D6 hatch.\n\nPlay by play\n  t=  1  L1-B3 is burning at the start\n  t=  1  sensor F-L1-B3 reads 24 C in L1-B3 (truth 455)\n  t=  1  D3 (tether) L1-A1 -> L1-A3 suppress\n  t=  1  D4 (tether) L1-A1 -> L1-B2 suppress\n  t=  1  D5 (retardant) L1-A1 -> L1-B3 coat\n  t= 10  L1-B4 ignites\n  t= 14  L1-A4 ignites\n  t= 14  D3 (tether) L1-A3 -> L2-A3 suppress\n  t= 14  D5 (retardant) L1-A3 -> L2-A4 coat\n  t= 15  L1-A3 ignites\n  t= 15  D3 (tether) L2-A3 -> L1-A4 suppress\n  t= 15  D5 (retardant) dies in L1-A4 (464 C)\n  t= 17  D4 (tether) L1-B2 -> L2-A3 suppress\n  t= 18  D4 (tether) L1-A2 -> L2-B4 suppress\n  t= 19  D3 (tether) L1-A4 -> L2-B4 suppress\n  t= 19  D4 (tether) L1-A3 -> L2-A3 suppress\n  t= 20  L1-B2 ignites\n  t= 20  D4 (tether) L2-A3 -> L1-A4 suppress\n  t= 21  L1-A2 ignites\n  t= 21  D3 (tether) L2-B4 -> L2-A3 suppress\n  t= 22  D4 (tether) L1-A4 -> L1-A2 suppress\n  t= 23  D3 (tether) L2-A3 -> L1-A2 suppress\n  t= 23  D4 (tether) L1-A3 -> L1-A4 suppress\n  t= 24  L2-B4 ignites\n  t= 24  D4 (tether) L1-A4 -> L2-B4 suppress\n  t= 25  L2-A4 ignites\n  t= 25  L2-B3 ignites\n  t= 25  D3 (tether) L1-A2 -> L1-A4 suppress\n  t= 26  L1-B1 ignites\n  t= 26  L2-A3 ignites\n  t= 26  D3 (tether) L1-A3 -> L3-A4 suppress\n  t= 26  D4 (tether) L2-B4 -> L2-A4 suppress\n  t= 27  L3-A4 ignites\n  t= 28  L1-A1 ignites\n  t= 28  L2-A2 ignites\n  t= 28  L2-B2 ignites\n  t= 28  D3 (tether) L2-A4 -> L2-A4 suppress\n  t= 29  D3 (tether) L2-A4 -> L3-A4 suppress\n  t= 29  D4 (tether) L2-A4 -> L1-A4 suppress\n  t= 29  D1 (scout) dies in L1-A1 (484 C)\n  ... 116 more events not shown\n\nOutcome\n  fireVolume 1183 space-ticks, peak 23 burning at once, burned out: L1-A1, L1-A2, L1-A3, L1-A4, L1-B1, L1-B2, L1-B3, L1-B4, L2-A1, L2-A2, L2-A3, L2-A4, L2-B1, L2-B2, L2-B3, L2-B4, L3-A1, L3-A2, L3-A3, L3-A4, L3-B1, L3-B2, L3-B3, L3-B4.\n  contained tick 35, extinguished tick 85.\n  drones used: retardant 1 (D5); tether 2 (D3, D4).\n  water: 54 tether-ticks on suppress; retardant spent 0.00.\n  drone deaths: hatch 1 (D6); retardant 1 (D5); scout 2 (D1, D2).\n  commands to the wrong place: 22; hedges: 0.\n\nThe fire was put out at tick 85 after burning 1183 space-ticks; 24 space(s) burned out."
+  }
+ ]
+}
