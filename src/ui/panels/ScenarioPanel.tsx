@@ -3,7 +3,7 @@
  * the store; nothing here computes physics or belief.
  */
 import { makeRng } from '../../shared/rng';
-import { loadPlan, PLAN_NAMES } from '../../shared/structures';
+import { loadPlan, ALL_PLAN_NAMES } from '../../shared/structures';
 import { useSim } from '../store';
 
 const SPEEDS = [1, 4, 10] as const;
@@ -28,7 +28,7 @@ export function ScenarioPanel() {
       <h2>Scenario</h2>
       <label htmlFor="sc-plan">structure
         <select id="sc-plan" value={s.planName} onChange={(e) => s.setPlan(e.target.value)}>
-          {PLAN_NAMES.map((name) => <option key={name} value={name}>{planSummary(name)}</option>)}
+          {ALL_PLAN_NAMES.map((name) => <option key={name} value={name}>{planSummary(name)}</option>)}
         </select>
       </label>
       <label htmlFor="sc-ignition">fire starts in

@@ -8,7 +8,7 @@
  * c toggles split <-> head to head, r toggles recording mode.
  */
 import { useEffect, useRef, useState } from 'react';
-import { PLAN_NAMES, isPlanName } from '../shared/structures';
+import { ALL_PLAN_NAMES, isPlanName } from '../shared/structures';
 import { SplitView } from './split/SplitView';
 import { SceneView } from './scene/SceneView';
 import { CompareView } from './scene/CompareView';
@@ -116,7 +116,7 @@ export function App() {
         ))}
         <label htmlFor="plan">structure
           <select id="plan" value={planName} onChange={(e) => setPlanName(e.target.value)}>
-            {PLAN_NAMES.map((n) => <option key={n} value={n}>{n}</option>)}
+            {ALL_PLAN_NAMES.map((n) => <option key={n} value={n}>{n}</option>)}
           </select>
         </label>
         {(demo || replayOn) && <ReplayControl />}

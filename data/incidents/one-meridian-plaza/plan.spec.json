@@ -1,0 +1,59 @@
+{
+  "$comment": "Spec for src/world/gen-highrise.ts. Floors 20-31 of a 38-storey office tower (the involved floors 21-30 plus one either side). Nine zones per floor on a 2x5 grid so the split view and the 3D layout draw it: row A is the north (Penn Square) side of the floor plate, west to east; row B is the core along the south wall, west to east (TR-049 p. 3-4 and the 22nd-floor plan, printed p. 28). Rates are the step-3 calibration knobs; the values here are the starting point and carry the report's qualitative ordering: open-plan floors spread fast, rated stair and shaft enclosures leak, slabs conduct little, and windows (autoexposure) are the primary floor-to-floor path. Floor numbers are real; ids are generic.",
+  "name": "highrise-12x9",
+  "ambient": 22,
+  "floors": { "from": 20, "to": 31 },
+  "zones": [
+    { "id": "A1", "label": "west end and north-west offices (15th Street side); NW corner return-air intake" },
+    { "id": "A2", "label": "north offices, centre-west" },
+    { "id": "A3", "label": "north offices, centre-east; the vacant office of origin on 22 is here (nearest the NE return-air intake detector that tripped first)" },
+    { "id": "A4", "label": "east end and north-east offices; NE corner return-air intake" },
+    { "id": "B1", "label": "west stair (#1, standpipe), rated enclosure", "fuel": 0.2 },
+    { "id": "B2", "label": "core west: elevator bank C lobby, corridor, electrical and telephone riser rooms, SW return-air intake", "fuel": 0.6 },
+    { "id": "B3", "label": "center stair (#2, standpipe), rated enclosure", "fuel": 0.2 },
+    { "id": "B4", "label": "core east: elevator banks D and B lobbies, freight elevator, corridor, SE return-air intake", "fuel": 0.6 },
+    { "id": "B5", "label": "east stair (#3, no standpipe), connects to the attached building", "fuel": 0.2 }
+  ],
+  "sameLevelEdges": [
+    { "a": "A1", "b": "A2", "kind": "passage", "rate": 0.2, "note": "open-plan office floor" },
+    { "a": "A2", "b": "A3", "kind": "passage", "rate": 0.2 },
+    { "a": "A3", "b": "A4", "kind": "passage", "rate": 0.2 },
+    { "a": "A1", "b": "B2", "kind": "door", "rate": 0.15, "note": "tenant space to core corridor" },
+    { "a": "A2", "b": "B2", "kind": "door", "rate": 0.15 },
+    { "a": "A3", "b": "B4", "kind": "door", "rate": 0.15 },
+    { "a": "A4", "b": "B4", "kind": "door", "rate": 0.15 },
+    { "a": "B2", "b": "B4", "kind": "passage", "rate": 0.12, "note": "core corridor past the center stair" },
+    { "a": "A1", "b": "B1", "kind": "door", "rate": 0.05, "note": "rated stair door, locked from the stair side" },
+    { "a": "B2", "b": "B3", "kind": "door", "rate": 0.05, "note": "rated stair door" },
+    { "a": "A4", "b": "B5", "kind": "door", "rate": 0.05, "note": "rated stair door" },
+    { "a": "B2", "b": "B1", "kind": "bulkhead", "rate": 0.04, "note": "unprotected pipe and duct penetrations between the utility shafts and the stair enclosure" },
+    { "a": "B4", "b": "B3", "kind": "bulkhead", "rate": 0.04 },
+    { "a": "B4", "b": "B5", "kind": "bulkhead", "rate": 0.04 }
+  ],
+  "verticalEdges": [
+    { "zone": "A1", "kind": "floor", "rate": 0.08, "note": "2 h slab with unprotected penetrations PLUS exterior autoexposure through failed windows; the report's primary floor-to-floor path" },
+    { "zone": "A2", "kind": "floor", "rate": 0.08 },
+    { "zone": "A3", "kind": "floor", "rate": 0.08 },
+    { "zone": "A4", "kind": "floor", "rate": 0.08 },
+    { "zone": "B1", "kind": "shaft", "rate": 0.25, "note": "stair shaft: smoke and heat path (stack effect on a cold night)" },
+    { "zone": "B3", "kind": "shaft", "rate": 0.25 },
+    { "zone": "B5", "kind": "shaft", "rate": 0.25 },
+    { "zone": "B2", "kind": "shaft", "rate": 0.15, "note": "electrical/telephone riser rooms stacked with unprotected floor penetrations; return-air plenum" },
+    { "zone": "B4", "kind": "shaft", "rate": 0.15 }
+  ],
+  "extraEdges": [
+    { "a": "L21-B2", "b": "L22-B2", "kind": "shaft", "rate": 0.3, "note": "open convenience stair between 21 and 22; the fire dropped to 21 through it (TR-049 p. 1, 9)" }
+  ],
+  "floorOverrides": {
+    "30": { "fuel": 0.1, "note": "fully sprinklered: ten heads put out each point of entry; stands in for suppression the world does not model" },
+    "31": { "fuel": 0.1, "note": "fully sprinklered" }
+  },
+  "sensors": {
+    "asBuilt": ["A1", "A2", "A4", "B2", "B4"],
+    "$asBuiltNote": "1981 amendments: detectors at exit access points (A1 by the west stair, A2 by the center stair, A4 by the east stair), the corner return-air intakes (A1, A4, B2, B4) and the elevator lobbies (B2, B4). Open-plan tenant floors were only required to have detectors at the exits, so A3, the zone of origin, has none: the report says coverage was incomplete and the fire was well advanced before a detector tripped (p. 2, 6, 22). Stairs are unsensed.",
+    "instrumented": "all"
+  },
+  "ignition": ["L22-A3"],
+  "resupply": ["L20-B2"],
+  "$resupplyNote": "staging floor 20 (TR-049 p. 9); drones start here"
+}

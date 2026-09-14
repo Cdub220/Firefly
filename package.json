@@ -13,6 +13,7 @@
     "evidence": "tsx src/eval/evidence.ts",
     "sweep": "tsx src/eval/sweep.ts",
     "gen:plans": "tsx src/world/gen-plans.ts",
+    "gen:incident": "tsx src/world/gen-highrise.ts data/incidents/one-meridian-plaza/plan.spec.json data/incidents/one-meridian-plaza",
     "test": "vitest run",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
