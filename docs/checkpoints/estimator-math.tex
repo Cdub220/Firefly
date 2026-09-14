@@ -1,0 +1,413 @@
+% ============================================================
+%  Firefly: the estimator, in math  (checkpoint 3, as frozen)
+%  Single-file LaTeX source. Paste into Overleaf, compile with pdfLaTeX.
+% ============================================================
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{mathtools}
+\usepackage{empheq}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{titlesec}
+\usepackage[colorlinks=true,linkcolor=firered,urlcolor=firered]{hyperref}
+
+\definecolor{firered}{HTML}{B03A2E}
+\definecolor{ash}{HTML}{4A4A4A}
+\definecolor{ember}{HTML}{FDF3EC}
+
+\titleformat{\section}{\large\bfseries\color{firered}}{\thesection.}{0.6em}{}
+\titleformat{\subsection}{\bfseries\color{ash}}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.25em}{0.5em}
+
+\newcommand{\xhat}{\hat{x}}
+\newcommand{\Tamb}{T_{\mathrm{amb}}}
+\newcommand{\Tflame}{T_{\mathrm{flame}}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Tset}{\mathcal{T}}
+\newcommand{\Kset}{\mathcal{K}}
+\newcommand{\onetrue}[1]{\mathbf{1}\!\left[#1\right]}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\newcommand{\degC}{^\circ\mathrm{C}}
+
+\newtcolorbox{keybox}[1][]{
+  enhanced, colback=ember, colframe=firered, boxrule=0.8pt,
+  arc=2pt, left=10pt, right=10pt, top=8pt, bottom=8pt, #1}
+
+\title{\textbf{Firefly: the estimator, in math}}
+\author{Dean Yao and Chase Williamson \\ \small East v.\ West AllStar Hack, Defense track}
+\date{\small Checkpoint 3. What runs in \texttt{src/brain} as \textbf{frozen at commit \texttt{457de46}}, hour 36.\\
+\small Every constant below is the constant in the code. Nothing in \S3--\S9 changes after this.}
+
+\begin{document}
+\maketitle
+
+% ============================================================
+\section*{What is new since checkpoint 2}
+
+\noindent
+The core of the estimator, trust rules, then hypothesis scoring with $k$ excused liars, then a surviving \emph{set} rather than a winner, is unchanged from the checkpoint-2 document. Six things were added or corrected between that document and the freeze. Everything on this page is reflected in the sections that follow; a reader who knows the checkpoint-2 version can stop after this page.
+
+\begin{keybox}
+\begin{enumerate}[leftmargin=1.4em,itemsep=4pt]
+  \item \textbf{Blackout carries the last belief forward (\S8).} With no trusted reading at all, every hypothesis fits zero data equally and the tie-break used to report ``no fire.'' Now the previous belief is carried forward at floor confidence $0.05$, with the estimate advanced one tick by physics. A commander with no data wants the last known fire marked unconfirmed, not a clean sheet.
+  \item \textbf{One tick of unanimity is not certainty (\S7).} A space's probability is capped at $0.9$ until it has been in \emph{every} surviving hypothesis for two consecutive ticks. A forced hot space could drag a wrong neighbour into every survivor for a single tick at $\mathbb{P}=1.00$; this closes that hole.
+  \item \textbf{Drones are moving sensors (\S4).} A drone-borne reading's rise/drop check is against the estimate of the space it is now in, not its own previous reading taken elsewhere; its frozen-streak restarts when it moves; a fixed sensor is not allowed to move.
+  \item \textbf{The brain knows water exists (\S2, \S5).} The rollout includes the world's suppression formula for tethers the brain itself sent: each tether multiplies a burning space's generation by $\rho = 0.3$ and adds cooling $\kappa = 0.1$ per tick. Before this, a fire two tethers were cooling looked like a fire that had gone out; the belief flipped and the tethers followed the flip ($14$, $27$ and $36$ flips per run on the three plans, now $0$).
+  \item \textbf{The baselines were corrected and extended (\S3).} The Kalman's process model had kept a flat $+40\,\degC$ source and no cooling from the hour-5 world; it now uses the world's model. Its probability is its own posterior, not a hand-written label. Two more baselines exist: an innovation-gated filter and a source-estimating filter that separates hot from burning. The gap survives all three.
+  \item \textbf{The allocator (\S10).} Belief now drives drones. It is not part of the frozen object; it consumes the belief through a hook and never changes how the belief is formed.
+\end{enumerate}
+\end{keybox}
+
+\medskip
+\noindent
+\textbf{The frozen object, precisely.} The map from the observation history, plus the brain's own applied-command history (needed only for item 4), to the belief. It never sees truth, the corruption pattern, or the world's state. On the open-loop evaluation family no command is applied, so there it is exactly $\text{Observation} \to \text{Belief}$. Files: \texttt{src/brain/index.ts}, \texttt{consistency.ts}, \texttt{hypotheses.ts}, \texttt{physics.ts}, and \texttt{src/corruption/}. A test diffs them against the hash on every run.
+
+\clearpage
+
+% ============================================================
+\section{The problem, in the brief's own form}
+
+\begin{equation}
+  y \;=\; Hx \;+\; a \;+\; \varepsilon
+\end{equation}
+
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt]
+  \item $x \in \R^{n}$ is the true temperature of every space.
+  \item $H \in \{0,1\}^{m \times n}$ selects the spaces that carry a sensor.
+  \item $\varepsilon$ is ordinary noise.
+  \item $a$ is the corruption vector: zero for honest sensors, \emph{arbitrary} for at most $k$ of them.
+\end{itemize}
+
+The estimator is never told which entries of $a$ are nonzero. The Kalman baselines assume $a = 0$. Ours does not.
+
+% ============================================================
+\section{Shared physics model (both brains)}
+
+Both brains are given the same structure plan and use the same heat model, so the comparison isolates one assumption and nothing else.
+
+\begin{equation}
+  x_i(t{+}1) \;=\; x_i(t)
+  \;+\; \underbrace{\sum_{j \sim i} r_{ij}\bigl(x_j(t) - x_i(t)\bigr)}_{\text{conduction along plan edges}}
+  \;+\; \underbrace{c\bigl(\Tamb - x_i(t)\bigr)}_{\text{loss to ambient}}
+  \;+\; \underbrace{b_i \, g_i\, \rho^{\,n_i} \bigl(\Tflame - x_i(t)\bigr)}_{\text{generation if burning, suppressed by } n_i \text{ tethers}}
+  \;+\; \underbrace{n_i\,\kappa\bigl(\Tamb - x_i(t)\bigr)}_{\text{water cooling}}
+\end{equation}
+
+Here $r_{ij}$ is the per-edge heat-transfer rate read from the structure plan, $b_i \in \{0,1\}$ indicates whether space $i$ is burning, and $n_i \le 2$ is the number of water tethers working space $i$. In the estimator, $n_i$ counts tethers the brain itself sent to space $i$ with a suppress order and that report standing there; with no tethers the last factor and the last term vanish, and the model is the checkpoint-2 model exactly. The conduction term is a weighted graph Laplacian, so the whole model is affine in $x$:
+
+\begin{equation}
+  x(t{+}1) \;=\; A\,x(t) \;+\; u(b, n), \qquad
+  A \;=\; I + L + \text{(diagonal loss, generation and cooling terms)}
+\end{equation}
+
+with $A$ built entirely from the plan's edges. \textbf{The structure is data; the estimator is not.}
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Symbol} & \textbf{Value} & \textbf{Meaning} \\
+\midrule
+$r_{ij}$ & $0.15$ door, $0.2$ passage, $0.05$ bulkhead, \ldots & per-edge transfer rate, from the plan \\
+$c$      & $0.02$          & loss to ambient \\
+$\Tflame$& $900\,\degC$    & flame temperature \\
+$g_i$    & $0.25$ ($1.5\times$ in a fuel-hazard space) & generation rate \\
+$\rho$   & $0.3$ per tether & generation multiplier under suppression \\
+$\kappa$ & $0.1$ per tether & extra cooling under suppression \\
+$k$      & $1$ by default  & maximum simultaneously lying sensors \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ============================================================
+\section{The baselines}
+
+Three of them, so the comparison isolates what our estimator actually buys. All three know the structure's heat physics exactly. What none of them knows is that readings can lie.
+
+\subsection*{Shared process model}
+
+Because the model of \S2 is affine in $x$, it is a legitimate linear Kalman process model:
+
+\begin{equation}
+  x \;\leftarrow\; A_t\,x + u_t,
+  \qquad
+  A_t \;=\; I + L - c\,I - \operatorname{diag}(b_i\,g_i),
+  \qquad
+  u_t \;=\; c\,\Tamb + b_i\,g_i\,\Tflame
+\end{equation}
+
+with $L$ the weighted graph Laplacian from the plan's edges and $b_i = \onetrue{\hat{x}_i > 200\,\degC}$. Covariance propagates as $P \leftarrow A_t P A_t^{\!\top} + Q$, and the update is the standard gain over the rows of $H$, with $Q = 25I$, $R = 4I$, $P_0 = 100I$.
+
+\begin{keybox}
+\textbf{A correction from hour 17.} Until then the baseline used a flat $+40\,\degC$ per tick source and no cooling at all, a model the world had stopped using at hour 5. A baseline with the wrong physics is a straw man. Every number in the freeze record is against the corrected model.
+\end{keybox}
+
+\subsection*{(a) Naive}
+
+Every reading enters the update. None is doubted.
+
+\begin{equation}
+  b_i = \onetrue{\hat{x}_i > 200\,\degC},
+  \qquad
+  \mathrm{conf} = \frac{1}{n}\sum_{i=1}^{n}\left(1 - \min\!\left(1,\; \frac{\sqrt{P_{ii}}}{50}\right)\right),
+  \qquad
+  \mathbb{P}_i = \Phi\!\left(\frac{\hat{x}_i - 200}{\sqrt{P_{ii}}}\right)
+\end{equation}
+
+The probability is the filter's own posterior, not a hard label. Its confidence comes from $P$, which shrinks as readings arrive regardless of whether those readings agree with each other, so once converged it reports roughly $0.97$ whether or not it is right.
+
+\subsection*{(b) Gated: what a practitioner deploys}
+
+The same filter with innovation gating. Reading $k$ is dropped from the update when its normalized innovation squared fails a $\chi^2$ test with one degree of freedom:
+
+\begin{equation}
+  \mathrm{NIS}_k \;=\; \frac{\nu_k^{2}}{S_{kk}} \;>\; 9 \quad (\approx 3\sigma),
+  \qquad \nu = y - H\hat{x}, \quad S = HPH^{\!\top} + R
+\end{equation}
+
+A sensor rejected on three consecutive ticks is accepted again, because a genuine step change (ignition is a $400\,\degC$ innovation) must not be rejected forever. Rejected sensors are reported as suspect. The gate catches a blinded sensor at once, catches a frozen one only intermittently, and never doubts the fire a plausible stale value describes; it also rejects honest readings when the model is slightly off, so it is a worse thermometer on clean runs.
+
+\subsection*{(c) Source-augmented: separating hot from burning}
+
+Both filters above call a space burning when its temperature is above $200\,\degC$. That rule is wrong on $65\%$ of ticks of a \emph{clean} run, and $88\%$ on the three-deck plan, because a burned-out space or a space heated through a bulkhead is hot without burning. The textbook fix is to put the unknown heat source in the state:
+
+\begin{equation}
+  \begin{bmatrix} x \\ q \end{bmatrix}
+  \;\leftarrow\;
+  \underbrace{\begin{bmatrix} A_0 & I \\ 0 & I \end{bmatrix}}_{F}
+  \begin{bmatrix} x \\ q \end{bmatrix}
+  \;+\;
+  \begin{bmatrix} c\,\Tamb \\ 0 \end{bmatrix},
+  \qquad A_0 = I + L - c\,I \;\;\text{(no generation term)}
+\end{equation}
+
+with $q$ a random walk ($Q_q = 4$). A space is called burning when its estimated source is significantly positive:
+
+\begin{equation}
+  b_i \;=\; \onetrue{\; q_i / \sigma_{q_i} > 3 \;\text{ and }\; q_i > 10\,\degC/\text{tick}\;},
+  \qquad
+  \mathbb{P}_i \;=\; \Phi\!\left(\frac{q_i - 10}{\sigma_{q_i}}\right)
+\end{equation}
+
+\begin{keybox}
+\textbf{Why this baseline exists.} It separates hot from burning the way a linear filter can, with no fuel guess and no hand-written fire logic. Its clean-run false certainty is $14\%$ on the six-space plan and $0\%$ on the tower. It is as fooled as the naive filter under freeze and blind ($59\%$, $73\%$), and under flashover it loses the fire rather than lying about it (coverage $24\%$). What it still cannot do is doubt a reading, and that is the difference we are claiming.
+\end{keybox}
+
+% ============================================================
+\section{Ours, step one: decide which readings to trust}
+
+Every reading is tested against the physics and against its neighbours before it is allowed to influence anything. Reading $i$ is set aside as \emph{suspect} if any of the following holds.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.35}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.62\linewidth}@{}}
+\toprule
+\textbf{Test} & \textbf{Condition} \\
+\midrule
+stale      & timestamp lags the current tick by more than $2$ \\
+frozen     & $|\Delta y_i| < 0.05\,\degC$ for $6$ ticks while the median neighbour moved more than $15\,\degC$; the window counts only readings taken in the sensor's current space \\
+impossible & rose or fell faster than the model of \S2 allows from last tick's estimate of the space the sensor is \emph{now} in (the drop bound already allows two tethers' worth of cooling) \\
+cold       & $y_i < \Tamb + 10\,\degC$ while trusted neighbours read above $250\,\degC$ \\
+pathless   & $y_i > 200\,\degC$ with nothing within two edges above $60\,\degC$ (3-tick grace at the start) \\
+moved      & a \emph{fixed} sensor that reports from a different space than the plan places it is suspect outright; a drone-borne sensor's first reading in a new space is exempt from the rise/drop test only \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Readings that survive form the trusted set $\Tset$. Suspect readings are excluded from scoring and surfaced to the operator rather than silently dropped.
+
+% ============================================================
+\section{Ours, step two: score hypotheses, tolerating $k$ liars}
+
+A \emph{hypothesis} $B \subseteq \{1,\dots,n\}$ is a candidate set of burning spaces. At most $64$ are carried per tick, grown from the previous belief and seeded from hot readings, hot estimates, and the warmest reading more than $30\,\degC$ above ambient. Each candidate is rolled forward three ticks from the estimate three ticks ago using the model of \S2, including the tethers the brain has working each space, giving predicted temperatures $\xhat_B$. Write the signed residual at sensor $i$ as
+
+\begin{equation}
+  e_i(B) \;=\; \xhat_{B,i} - y_i .
+\end{equation}
+
+Let $D(B) = \{\, i \in \Tset : e_i(B) > 0 \,\}$ be the \emph{downward misses}, the sensors reading colder than the hypothesis predicts. Order the trusted readings by $|e_i(B)|$ descending and let $D_k(B)$ be the first at most $k$ of them that lie in $D(B)$, always leaving at least one reading. The score is the mean over what is left:
+
+\begin{empheq}[box=\fbox]{equation}
+  s(B) \;=\; \frac{1}{\bigl|\Tset \setminus D_k(B)\bigr|}
+  \sum_{i \,\in\, \Tset \setminus D_k(B)} \bigl| e_i(B) \bigr|
+\end{empheq}
+
+The drop is greedy on the largest droppable residual, not a search over subsets. Ties are broken by the same score with no drops allowed, so that among hypotheses which fit equally well once liars are excused, the one needing fewest excuses wins:
+
+\begin{equation}
+  s_{\mathrm{full}}(B) \;=\; \frac{1}{|\Tset|} \sum_{i \in \Tset} \bigl| e_i(B) \bigr|,
+  \qquad
+  \text{order candidates by } \bigl(s(B),\; s_{\mathrm{full}}(B),\; |B|\bigr).
+\end{equation}
+
+\begin{keybox}
+\textbf{Why only downward.} Every failure mode in the model (freeze, blind, saturate, flashover) pushes a reading down or away from the truth, never up. A sensor reading \emph{hotter} than a hypothesis allows is therefore never excusable, so the ``no fire'' hypothesis cannot discard the one sensor that actually sees the fire. This is the sparse-corruption tolerance the brief asks for: the estimate may disagree with $k$ sensors \emph{without knowing which $k$}.
+
+\smallskip
+\textbf{Stated as an assumption.} One-sided corruption is an assumption about the failure model, not a fact about fire. A thermocouple that fails high, or an adversary, breaks the asymmetry and costs the method this step.
+
+\smallskip
+\textbf{Why suppression must be in the rollout.} Without $\rho$ and $\kappa$, a burning space under two tethers is predicted to climb toward $900\,\degC$ while its reading falls toward $300$; ``not burning'' then fits better, the space leaves the set, the tethers leave, and it reignites. With them, ``burning and being cooled'' is the hypothesis that fits.
+\end{keybox}
+
+% ============================================================
+\section{Ours, step three: keep the survivors, not one winner}
+
+\begin{align}
+  s^{*} &\;=\; \min_{B} s(B)
+  &&\text{best achievable score} \\[3pt]
+  \tau  &\;=\; \max\bigl(8\,\degC,\; 0.15\, s^{*}\bigr)
+  &&\text{tolerance band} \\[3pt]
+  \Kset &\;=\; \bigl\{\, B \;:\; s(B) \le s^{*} + \tau \,\bigr\}
+  &&\text{surviving hypotheses} \\[6pt]
+  \textsc{burning}   &\;=\; \bigcap_{B \in \Kset} B
+  &&\text{in \emph{every} survivor} \\[3pt]
+  \textsc{ambiguous} &\;=\; \Bigl(\bigcup_{B \in \Kset} B\Bigr) \setminus \Bigl(\bigcap_{B \in \Kset} B\Bigr)
+  &&\text{in \emph{some} survivors but not all}
+\end{align}
+
+If the survivors agree on nothing, the best hypothesis is reported as \textsc{burning} rather than the empty set: naming no fire while one burns is the one unacceptable failure, and the alternatives stay visible as \textsc{ambiguous}. A space whose trusted reading has exceeded $250\,\degC$ for three consecutive ticks is forced into every candidate, for as long as its assumed fuel lasts.
+
+% ============================================================
+\section{Graded belief}
+
+Survivors are weighted as a Boltzmann distribution with the tolerance band as the temperature, so a hypothesis sitting at the edge of tolerance weighs $e^{-1}$ of the best:
+
+\begin{equation}
+  w_B \;=\; \exp\!\left(-\,\frac{s(B) - s^{*}}{\tau}\right)
+\end{equation}
+
+\begin{empheq}[box=\fbox]{equation}
+  \tilde{p}_i
+  \;=\;
+  \frac{\displaystyle\sum_{B \in \Kset,\; i \in B} w_B}{\displaystyle\sum_{B \in \Kset} w_B}
+  \;\times\; 0.8^{\,\sigma_i},
+  \qquad
+  \mathbb{P}_i \;=\;
+  \begin{cases}
+    \min(\tilde{p}_i,\, 0.9), & \text{space } i \text{ in every survivor for fewer than 2 consecutive ticks} \\[3pt]
+    \tilde{p}_i, & \text{otherwise}
+  \end{cases}
+\end{empheq}
+
+clamped to $[0,1]$, where $\sigma_i$ is the number of suspect sensors \emph{in space $i$}. The penalty is per space, not global. A space in no surviving hypothesis gets $0$. The two-tick rule is new: one tick of unanimity is not certainty.
+
+% ============================================================
+\section{Earned confidence, and blackout}
+
+\begin{equation}
+  \mathrm{conf}_{\mathrm{raw}}
+  \;=\;
+  \underbrace{\frac{1}{|\Kset|}}_{\text{one over \# explanations}}
+  \;\times\;
+  \underbrace{0.8^{\,\sigma}}_{\text{sensors ignored}}
+  \;\times\;
+  \underbrace{\min\!\left(1,\; \frac{6}{s^{*}}\right)}_{\text{quality of fit}}
+\end{equation}
+
+where $\sigma$ is the \emph{total} number of suspect sensors. This is subject to a cap, a floor, and a stability requirement:
+
+\begin{equation}
+  \mathrm{conf} \;=\;
+  \begin{cases}
+    0.05, & |\Tset| = 0 \quad \text{(blackout: no reading trusted)} \\[4pt]
+    \max\bigl(0.05,\; \min(\mathrm{conf}_{\mathrm{raw}},\, 0.7)\bigr),
+      & \text{not yet stable for 5 ticks} \\[4pt]
+    \max\bigl(0.05,\; \mathrm{conf}_{\mathrm{raw}}\bigr), & \text{otherwise}
+  \end{cases}
+\end{equation}
+
+A tick counts toward \emph{stable} only when exactly one hypothesis survives, the burning set is unchanged from last tick, and the fit is inside the allowance ($s^{*} \le 6\,\degC$).
+
+\begin{keybox}
+\textbf{Blackout, new.} When $|\Tset| = 0$ the scoring step is skipped entirely. The previous belief (burning set, ambiguous groups, probabilities) is carried forward unchanged at confidence $0.05$, the estimate is advanced one tick by the model of \S2, and the suspect list is updated. Before this change every hypothesis fit zero data equally and the tie-break reported ``no fire.''
+
+\smallskip
+\textbf{The honest cost.} This is why ours is never confidently wrong by the scalar definition, and it is also why it takes $30$ to $56$ ticks to reach high confidence in the sweep. The caution is the price. By the per-space definition ($\mathbb{P}_i \ge 0.9$ on a space that is not burning) it is $0$--$1\%$ on named targets and up to $49\%$ in the worst random-placement cell, where a burned-out space next to a live fire is held above $0.9$; the freeze record reports this as a failed pre-registered expectation.
+\end{keybox}
+
+% ============================================================
+\section{The slide version}
+
+\begin{keybox}
+\centering
+\begin{minipage}{0.94\linewidth}
+\[
+  y = Hx + a + \varepsilon
+\]
+\[
+  \textbf{Kalman:}\quad \text{assume } a = 0, \;\text{average everything}
+\]
+\begin{gather*}
+  \textbf{Ours:}\quad
+  s(B) = \operatorname{mean}\bigl|\xhat_B - y\bigr|
+  \;\text{ dropping} \le k \text{ downward misses} \\[2pt]
+  \text{report } \bigl\{\, B \;:\; s(B) \le s^{*} + \tau \,\bigr\}
+\end{gather*}
+\vspace{2pt}
+\centering\small
+Same physics, same readings, same seeds, same drones. The difference is whether readings are allowed to lie,
+and whether the answer is a point or a set.
+\end{minipage}
+\end{keybox}
+
+% ============================================================
+\section{The allocator (not frozen)}
+
+The belief is handed to an allocator through a hook; the allocator never changes how the belief is formed. For each alive drone $d$ and candidate space $s$ (spaces in \textsc{burning}, in any ambiguous group, or adjacent to either), with $\mathbb{P}_s$ the per-space probability:
+
+\begin{align}
+  \mathrm{containment}(s, d) &=
+  \begin{cases}
+    \mathbb{P}_s\,(1 + 0.5\,\mathrm{occ}_s + h_s) & \text{tether} \\
+    \mathbb{P}[\,s \text{ adjacent to fire, not burning}\,]\; f_s\,(1 + h_s) & \text{retardant} \\
+    \mathbb{P}_s \times \#\{\text{open doors from } s \text{ to unburned}\} & \text{hatch} \\
+    0 & \text{scout, relay}
+  \end{cases} \\[4pt]
+  \mathrm{information}(s) &= 1 - \frac{\max\bigl(|\Kset_{s,\mathrm{hot}}|,\; |\Kset_{s,\mathrm{cold}}|\bigr)}{|\Kset|}
+  \quad \text{(0 if } s \text{ already has a trusted reading)} \\[4pt]
+  \mathrm{score}(d, s) &= w_c\,\mathrm{containment} + w_i\,\mathrm{information} - w_d\,\mathrm{path}(d, s)
+\end{align}
+
+with $\mathrm{occ}_s$ and fuel $f_s$ from the plan, hazard weight $h_s \in \{0, 2, 3\}$, $\Kset_{s,\mathrm{hot}}$ the survivors whose steady state puts $s$ above $200\,\degC$, $w_c = 1$, $w_i = 2$ for scouts and $0.7$ otherwise, $w_d = 0.05$ per edge. Assignment is greedy with diversity: after each pick, $\mathrm{information}(s)$ is multiplied by $0.3$ and $\mathrm{containment}(s)$ by $0.6$ for the remaining drones, which is what splits two scouts across an ambiguous pair instead of piling both onto one. A drone keeps its previous target if that target's score is within $15\%$ of its best new one. Free-flying drones are never sent into a space estimated above $400\,\degC$; tethers may enter up to $800$.
+
+% ============================================================
+\section{Reported metrics}
+
+Computed by \texttt{computeMetrics} and \texttt{computeOutcome}; all windows start at corruption onset.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.12}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.60\linewidth}@{}}
+\toprule
+\textbf{Metric} & \textbf{Definition} \\
+\midrule
+false certainty        & fraction of ticks with $\mathrm{conf} \ge 0.9$ and $\textsc{burning} \ne$ truth \\
+false certainty by $\mathbb{P}$ & fraction of ticks where a space \emph{not} burning in truth was given $\mathbb{P}_i \ge$ threshold, for thresholds $0.5, 0.7, 0.8, 0.9, 0.95$ \\
+estimation error       & mean $|\text{estimate} - \text{truth}|$ over spaces and ticks $\ge$ onset \\
+time to recovery       & ticks from onset to the first of five consecutive exact matches \\
+compute cost           & wall-clock ms per \texttt{brain.step} \\
+wrong dispatch         & fraction of ticks naming a space that is neither burning nor ambiguous \\
+ambiguity coverage     & fraction of ticks where $\text{truth} \subseteq \textsc{burning} \cup \textsc{ambiguous}$ \\
+Brier score            & mean over spaces and ticks of $\bigl(\mathbb{P}_i - \text{truth}\bigr)^{2}$ \\
+hedge rate             & fraction of ticks where two drones were sent to different spaces inside one ambiguous group \\
+\midrule
+fire volume            & space-ticks burning over a closed-loop run \\
+contained at           & first tick after which no new space ever ignites \\
+extinguished at        & first tick with no space burning \\
+tether-ticks           & drone-ticks a tether spent suppressing (the water bill) \\
+wrong floor            & commands to a space neither burning nor adjacent to fire, in truth \\
+drone deaths           & per class \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\end{document}
