@@ -111,3 +111,7 @@ Node 22, no network: nothing in the demo or the evaluation depends on a live API
 - R. E. Kalman, "A New Approach to Linear Filtering and Prediction Problems," 1960: the baselines; the graph Laplacian process model and the augmented-state source filter are textbook applications.
 - mulberry32 (T. Ettinger), the seeded 32-bit PRNG behind `makeRng`, forked per subsystem so seed-matched comparisons hold.
 - Libraries (`package.json`): React 19.2, @react-three/fiber and drei, three, zustand, Tailwind 4, Vite 6, vitest 3, tsx, TypeScript 5.8, ESLint 9 with typescript-eslint.
+
+## 11. Incident replay (Chase, after CP5)
+
+A documented real high-rise fire — One Meridian Plaza, Philadelphia, 1991 (USFA-TR-049) — encoded as a plan file, calibrated to the report's early milestones at 4 minutes per tick, and run through the frozen estimator, the Kalman baseline and a "1991 commander" baseline that believes exactly what the record says the command post was told. Full page: `docs/10-incident-replay.md`; numbers from `npm run incident`; Case file page, beat 7. Two results a judge should hear from us first: every estimator with sensors knew the fire floor at minute 4, before the first engine arrived at 8; and, closed loop, our honest-but-flickering belief made the allocator dither the tethers so the drones did no better than nobody, while the over-confident Kalman's stable belief held them on the fire floor and contained it. The lesson is for the allocator (target hysteresis), not the estimator, and it was left as found.
