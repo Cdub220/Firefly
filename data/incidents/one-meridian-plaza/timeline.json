@@ -1,0 +1,105 @@
+{
+  "slug": "one-meridian-plaza",
+  "name": "One Meridian Plaza highrise office fire",
+  "place": "1414 South Penn Square, Philadelphia, Pennsylvania",
+  "date": "1991-02-23",
+  "source": "USFA-TR-049 (see sources.md); page numbers are the report's printed pages",
+  "t0": {
+    "clock": "1991-02-23T20:23:00-05:00",
+    "meaning": "first smoke detector activation on the 22nd floor; the report says the fire was already well advanced (room of origin flashed over) by then, so minute 0 is DETECTION, not ignition. Ignition time is unknown (rags left unattended over the weekend).",
+    "page": 7
+  },
+  "tickMinutes": 1,
+  "building": {
+    "storeys": 38,
+    "occupiableFloors": 36,
+    "mechanicalFloors": [12, 38],
+    "belowGradeLevels": 3,
+    "footprintFt": [243, 92],
+    "grossSqFtPerFloor": 22400,
+    "netSqFtPerFloor": 17000,
+    "coreFt": [124, 38],
+    "coreSide": "south",
+    "stairs": [
+      { "id": "west", "number": 1, "standpipe": true, "note": "in the core, west end; door on 22 locked at arrival" },
+      { "id": "center", "number": 2, "standpipe": true, "note": "in the core; Engine 11 went up this stair" },
+      { "id": "east", "number": 3, "standpipe": false, "note": "east end, connects to the attached Girard Trust Building" }
+    ],
+    "elevatorBanks": [
+      { "id": "A", "floors": [2, 11] },
+      { "id": "B", "floors": [12, 21], "note": "two shafts, six passenger cars; one freight car serves 22-38" },
+      { "id": "C", "floors": [21, 29], "note": "served the fire floors" },
+      { "id": "D", "floors": [29, 37] }
+    ],
+    "returnAirShafts": "one at each of the four corners, no fire dampers",
+    "convenienceStair": { "from": 22, "to": 21, "note": "open interior stair; fire dropped to 21 through it" },
+    "electricalRoom": { "floor": 22, "note": "both commercial feeds in one enclosure; fire here caused the total power failure" },
+    "sprinkleredFloors": { "full": [30, 31, 34, 35], "partial": [11, 15, 37], "belowGrade": true },
+    "detectors": "smoke detectors at exit access points, return-air intakes at the four corners, elevator lobbies and corridors (1981 amendments); open-plan floors only at the exits; manual pull stations at each stair on every floor",
+    "standpipe": {
+      "risers": ["west", "center"],
+      "prvFloors": [13, 25],
+      "outletPsiNearFire": [55, 57],
+      "nozzlePsiNearFire": [40, 45],
+      "requiredNozzlePsi": 100,
+      "page": 10
+    },
+    "fuel": "files and papers (securities trading, management consulting); one floor with heavy computer/electronic load",
+    "pages": [3, 4, 5, 6, 7, 13]
+  },
+  "ignition": { "floor": 22, "where": "vacant office, linseed-oil-soaked rags", "detectorHint": "the activated detector is believed to be at the northeast return-air shaft intake", "page": 7 },
+  "events": [
+    { "minute": 0, "clock": "20:23", "kind": "detection", "text": "Smoke detector on 22 activates; alarm sounds; elevators recall. Room of origin already flashed over.", "page": 7 },
+    { "minute": 0, "clock": "20:23", "kind": "building-staff", "text": "Building engineer overrides recall and rides to 22; heavy smoke and heat; trapped in the car; recalled by the lobby guard. Alarm company phones the lobby, is told it is being checked; nobody calls the fire department.", "page": 7 },
+    { "minute": 4, "clock": "20:27", "kind": "911", "text": "Passer-by 9-1-1 call in progress; alarm monitoring service reports the fire. First alarm dispatched: 4 engines, 2 ladders, 2 battalion chiefs.", "page": 8, "note": "summary page 1 says 'reported at approximately 2040'" },
+    { "minute": 8, "clock": "20:31", "kind": "arrival", "text": "Engine 43 on scene: heavy smoke, fire from one window at mid-height. Security guard tells the battalion chief: 22nd floor.", "page": 8 },
+    { "minute": 8, "clock": "20:31", "kind": "commander-knows", "text": "Incident commander knows the fire floor (22) from the guard and one window.", "page": 8 },
+    { "minute": 10, "clock": "20:33", "kind": "alarm", "text": "Second alarm.", "page": 8 },
+    { "minute": 10, "clock": "20:33", "kind": "operations", "text": "Attack team takes the low-rise elevators to 11 and walks up; lobby command post.", "page": 8 },
+    { "minute": 20, "clock": "~20:43", "kind": "systems", "text": "Total electrical power failure (fire penetrates the 22nd-floor electrical room; both feeds short; generator fails). No lights, no elevators for the rest of the incident.", "page": 8, "estimated": true, "note": "'shortly after the attack team reached the 11th floor'; time not given" },
+    { "minute": 30, "clock": "~20:53", "kind": "operations", "text": "Crews at the locked, blistering West stair door on 22; handline from the 21st-floor outlet through the wire-glass window; door forced after several minutes; cannot advance (heat, <60 psi).", "page": 9, "estimated": true },
+    { "minute": 35, "clock": "~20:58", "kind": "operations", "text": "Entry on 21; fire visible above through the open convenience stair; occupant hose dry; standpipe line too weak. Tactical command post on 21, staging on 20.", "page": 9, "estimated": true },
+    { "minute": 35, "clock": "~20:58", "kind": "spread", "text": "Fire dropping to 21 through the convenience stair (present at arrival).", "page": 1, "floors": [21], "estimated": true },
+    { "minute": 40, "clock": "~21:03", "kind": "spread", "text": "Fire visible from several windows on 22; flames lap the facade; 23 subject to autoexposure. Additional alarms.", "page": 9, "floors": [22], "estimated": true },
+    { "minute": 80, "clock": "~21:40", "kind": "spread", "text": "Within the next hour the fire spreads to 23 and 24, primarily by autoexposure; crews cannot enter these floors. Five-alarm assignment.", "page": 10, "floors": [23, 24], "estimated": true, "note": "the report gives 'during the next hour' after the initial attack; 21:40 is the midpoint of that hour" },
+    { "minute": 82, "clock": "21:30-22:00", "kind": "casualty", "text": "Engine 11 (3) sent up the Center stair to vent at the roof; leave the stair disoriented, radio '30th floor', 'captain is down'.", "page": 10, "estimated": true },
+    { "minute": 112, "clock": "22:00-22:30", "kind": "operations", "text": "Search for Engine 11 begins; helicopter roof team; an eight-member search team nearly lost in the 38th-floor mechanical room.", "page": 10, "estimated": true },
+    { "minute": 294, "clock": "01:17", "kind": "operations", "text": "Helicopter searchlight finds a broken window at the SE corner of 28.", "page": 11 },
+    { "minute": 352, "clock": "02:15", "kind": "casualty", "text": "The three Engine 11 members found dead just inside the broken window on 28 (smoke inhalation; 28 not burning, heavy smoke).", "page": 11 },
+    { "minute": 352, "clock": "02:15", "kind": "spread", "text": "Fire burning on 24 and 25 and extending to 26.", "page": 11, "floors": [24, 25, 26] },
+    { "minute": 352, "clock": "02:15", "kind": "water", "text": "First 5-inch supply line up the West stair operational at the 24th-floor level, 'approximately six hours into the fire'.", "page": 11 },
+    { "minute": 358, "clock": "02:21", "kind": "alarm", "text": "12th alarm; second 5-inch line in the Center stair.", "page": 11 },
+    { "minute": 512, "clock": "04:55", "kind": "water", "text": "Third 5-inch line ordered up the East stair.", "page": 11 },
+    { "minute": 577, "clock": "06:00", "kind": "water", "text": "East stair line abandoned at 17. During the 5-inch work a sprinkler contractor adjusts the PRVs; normal handline streams at last, but several floors are involved.", "page": 11 },
+    { "minute": 637, "clock": "07:00", "kind": "withdrawal", "text": "After almost 11 hours, interior firefighting halted (collapse risk); evacuation ordered. 22-24 appear under control, 25 and 26 burning and spreading upward, heavy smoke on most upper floors.", "page": 11, "floors": [25, 26] },
+    { "minute": 667, "clock": "07:30", "kind": "withdrawal", "text": "Evacuation complete; only exterior master streams from neighbouring buildings from now on.", "page": 12 },
+    { "minute": 800, "clock": "unknown (07:30-15:01)", "kind": "spread", "text": "Fire reaches 27, 28, 29 and penetrates 30 at several points (floor assembly and autoexposure); 10 sprinkler heads on 30 operate and stop it. Time not stated by the report.", "page": 12, "floors": [27, 28, 29, 30], "estimated": true },
+    { "minute": 1118, "clock": "15:01", "kind": "control", "text": "Fire declared under control (February 24).", "page": 12 }
+  ],
+  "outcome": {
+    "floorsDestroyed": [22, 23, 24, 25, 26, 27, 28, 29],
+    "floorsDamaged": [21, 30],
+    "stoppedBy": "10 sprinkler heads on the fully sprinklered 30th floor, supplied by fire department pumpers",
+    "firefighterDeaths": 3,
+    "firefighterInjuries": 24,
+    "durationMinutes": 1118,
+    "alarms": 12,
+    "engineCompanies": 51,
+    "ladderCompanies": 15,
+    "specialUnits": 11,
+    "personnel": 316,
+    "directLossUSD": 100000000,
+    "pages": [1, 2, 12, 13]
+  },
+  "commanderInformation": {
+    "note": "What the incident commander could know and when, for the human baseline.",
+    "channels": [
+      "alarm panel: one smoke detector zone on 22 (single-stroke coded bells; no floor annunciation beyond the code)",
+      "building staff: guard says 22 at arrival (minute 8)",
+      "exterior observation: windows showing fire (one at minute 8, several by ~minute 40, floors 23-24 by ~minute 80)",
+      "crew reports from the stairs and floors 20-21 (tactical command post on 21)",
+      "helicopter (from ~minute 112)",
+      "no elevators, no lights, no building power after ~minute 20"
+    ]
+  }
+}

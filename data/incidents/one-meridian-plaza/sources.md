@@ -1,0 +1,50 @@
+# One Meridian Plaza, Philadelphia · February 23–24, 1991 · sources
+
+Primary source, and the only one the numbers in `timeline.json` come from unless marked otherwise:
+
+**[TR-049]** U.S. Fire Administration, *Highrise Office Building Fire, One Meridian Plaza, Philadelphia, Pennsylvania (February 23, 1991)*, Technical Report Series USFA-TR-049, TriData Corporation for FEMA/USFA. Public domain (US government work). Copy used: https://www.fireengineering.com/wp-content/uploads/2023/11/usfa-tr-049-one-meridian-plaza-fire.pdf (94 PDF pages; **page numbers below are the printed page numbers**, printed page = PDF page − 7). Also on usfa.fema.gov and ResearchGate.
+
+Secondary (cross-checks only, no numbers taken from them that TR-049 does not give):
+- NFPA, T. J. Klem, *Preliminary Investigative Report: One Meridian Plaza* (May 1991) and *NFPA Journal* Sept/Oct 1991 pp. 64–67, 89 (cited in TR-049 p. 26; not read).
+- Wikipedia, "One Meridian Plaza": height 492 ft, 38 storeys, completed 1972–73, architect Vincent Kling & Associates, 756,000 sq ft, granite curtain wall; fire "approximately 8:23 p.m.", under control 3:01 p.m. next day, 12 alarms, 51 engines / 15 ladders / 11 special units / 300+ firefighters; consistent with TR-049.
+- NFSA, "Thirty Years in the Making – One Meridian Plaza Fire" (2021): sprinklers on 30, 31, 34, 35 only; ten heads stopped the fire on 30; consistent with TR-049 p. 7, 12.
+- `data/codes/LOER.pdf` (DeKalb County Fire Rescue, L.O.E.R. Guide, section 1 High-rise Fires, updated 8/12/25; local copy only, git-ignored): the procedure reference for the human-commander baseline (lobby control, staging two floors below the fire, standpipe operations). Philadelphia's own 1991 procedure is TR-049 Appendix C (printed pp. 30–33, "Highrise Emergency Procedures", Operation Procedure 33).
+
+## What TR-049 gives, by page
+
+Building (p. 3–7)
+- 38 storeys: 3 below-grade levels, 36 occupiable floors, mechanical floors 12 and 38, two rooftop helipads. Rectangular, ~243 ft × 92 ft, ~22,400 gross sq ft and ~17,000 net usable sq ft per floor. Steel frame, concrete on metal deck, spray fireproofing; granite curtain wall with glass windows on the perimeter girders/spandrels. Completed 1973. Type 1B-equivalent (3 h columns, 2 h floors, 1 h corridors/tenant separations, 2 h shafts). (p. 3)
+- Central core ~38 ft × 124 ft against the **south** exterior wall: two stairways, four elevator banks, two HVAC supply shafts, bathroom chases, telephone and electrical risers. (p. 3)
+- Three enclosed stairways serving all floors: **West (#1)** and **Center (#2)** in the core, both with standpipe risers, shifting position a few times up the building; **East (#3)** at the east end, connecting to the attached 34-storey Girard Trust Building, no standpipe. Unprotected pipe/duct penetrations between utility shafts, floors (above-ceiling plenum) and stair enclosures; no fire dampers. (p. 3–4, 6)
+- Elevators: Bank A floors 2–11; Bank B (two shafts, 7 cars) floors 12–21 plus one freight car serving 22–38; Bank C 21–29; Bank D 29–37. Upper banks are express (no openings to lower floors). Only Bank C and the freight car served the fire floors; shafts did not spread combustion products significantly. Smoke detector in every elevator lobby, recalls cars. (p. 4)
+- HVAC: four air handlers, two on 38 (upper floors, east/west halves), two on 12 (lower floors); supply shafts in the core, **return-air shafts at the four building corners**; no fire dampers found at floor penetrations; fans off at night/weekends. (p. 4)
+- Electrical and telephone risers in stacked rooms with unprotected floor penetrations; both commercial feeds in one enclosure at the **22nd-floor electrical room**; 340 kW gas generator on 12 with a history of load-test failures. (p. 5)
+- Detection (1981 code amendments): smoke detectors at the point of access to exits, at return-air shaft intakes (each corner), in elevator lobbies and corridors; on single-tenant open-plan floors only at the exits. Coded manual pull stations at each of the three stairs on every floor; single-stroke bells; central-station monitoring; PA system added ~1989. (p. 6, 22)
+- Standpipes: occupant hose (1½ in, 100 ft) two per floor from domestic water; fire-department 6 in risers in the West and Center stairs, converted to wet in 1988 with two 750 gpm electric pumps (basement: floors B–12; 12th floor: floors 13–38). Pressure-restricting devices on mezzanine, 2 and 26–30; **pressure-reducing valves on floors 13–25**, set so outlets near the fire (18–20) gave 55–57 psi, i.e. 40–45 psi at the nozzle on 150–200 ft of 1¾ in hose (needs 100 psi). (p. 6–7, 9–10 and footnote 4)
+- Sprinklers: below grade; **all of floors 30, 31, 34, 35**; parts of 11 and 15; part of 37 on domestic water. (p. 7)
+- Fuel: files and papers (securities trading, management consulting); one floor with heavy computer/electronic load; floors 22–29 burned out completely except a small area at the east end of 24. (p. 13)
+
+The fire (p. 1–2, 7–12)
+- Origin: vacant 22nd-floor office, pile of linseed-oil-soaked rags left by a refinishing contractor. Detection was late because partitions and the suspended ceiling held the smoke until the room flashed over; the ceiling then failed and fire spread through the return-air plenum. (p. 2, 22)
+- 2023: smoke detector on 22 activates (believed to be the one at the **northeast** return-air shaft intake); alarm sounds, elevators recall. Building engineer overrides recall, rides to 22, meets heavy smoke and heat, is trapped in the car and recalled by the lobby guard; the alarm company phones the lobby and is told the alarm is being investigated; nobody calls the fire department. (p. 7–8)
+- 2027: a passer-by's 9-1-1 call is in progress when the alarm company reports the fire; first alarm dispatched (4 engines, 2 ladders, 2 battalion chiefs). (p. 8) The summary page says "reported at approximately 2040" (p. 1); the narrative's 2027 is used here.
+- 2031: Engine 43 arrives, heavy smoke, fire from one window at mid-height; a guard says 22nd floor. 2033: second alarm. Attack team takes the low-rise elevators to 11 and walks. (p. 8)
+- Shortly after the team reaches 11: total power failure (fire penetrates the 22nd-floor electrical room; both feeds short; generator fails). No lighting, no elevators, for the whole incident. (p. 8)
+- Initial attack: West stair door on 22 locked and blistering; 1¾ in line from the 21st-floor outlet through the wire-glass window while the door is forced; cannot enter 22 (heat, pressure). Entry on 21, fire visible above through the open convenience stair; occupant hose gives no water; standpipe line too weak. Tactical command post on 21, staging on 20. (p. 9)
+- Fire shows from several windows on 22; flames lap the facade; **"during the next hour the fire spread to the 23rd and 24th floors primarily through autoexposure"**; five-alarm assignment. (p. 9–10)
+- Between 2130 and 2200: Engine 11 (captain + 2) sent up the Center stair to vent at the roof; they leave the stair disoriented on "30", radio "captain is down"; searches from 2200–2230; an eight-member search team nearly lost in the 38th-floor mechanical room, rescued by the helicopter roof team. (p. 10, footnote 5)
+- 0117: helicopter searchlight finds a broken window at the SE corner of 28. 0215: the three bodies found just inside it on 28 (smoke inhalation; 28 not burning but heavy smoke). **At 0215 the fire is burning on 24 and 25 and extending to 26.** (p. 11)
+- 0215: first 5 in supply line up the West stair operational at the 24th-floor level ("approximately six hours into the fire"). 0221: 12th alarm, second 5 in line in the Center stair. 0455: third line in the East stair, abandoned at 17 at 0600. Meanwhile a sprinkler contractor adjusts the PRVs and normal handline streams finally become available — too late, several floors involved. (p. 11)
+- 0700 Feb 24: after almost 11 hours, interior operations halted (structural engineer, cracks in stair enclosures, sagging beams, collapse risk); building evacuated by 0730. At that time 22–24 appeared under control, 25 and 26 burning and spreading upward, heavy smoke on most upper floors. Afterwards only exterior master streams from neighbouring buildings. (p. 11–13)
+- Fire reaches 30 (time not stated) at several points through the floor assembly and by autoexposure; **10 sprinkler heads** operate, each stops its penetration; 30 lightly damaged. **1501 Feb 24: under control.** (p. 12)
+- Resources: 12 alarms, 51 engine companies, 15 ladder companies, 11 special units, ~316 personnel, 11 battalion chiefs + 15 chief officers; lobby command post, staging/medical/rehab on 20, cellular phones lobby↔20. (p. 13–14)
+- Outcome: 3 firefighter deaths, 24 injured; floors 22–29 destroyed (8 floors; 21 damaged by fire dropping through the convenience stair); ~$100 M direct loss. (p. 1–2)
+
+Spread mechanisms named by the report (for the plan file's edges)
+1. Exterior autoexposure through failed windows, floor to floor — "a primary means of fire spread" (p. 2, 9–10, 12, 24).
+2. Unprotected penetrations in floor assemblies and shaft walls; return-air plenum above ceilings; no dampers (p. 2, 3–5, 24).
+3. Failure of floor/ceiling assemblies under prolonged fire (p. 2, 13).
+4. Convenience (open) stair 22→21 downward (p. 1, 9).
+5. Stairs and utility shafts as smoke paths (stack effect, cold night); elevator shafts not significant (p. 4, 12).
+
+Drawings: Appendix A, printed pp. 27–28 — north elevation with burned floors, fire origin, sprinklered floors and where the firefighters were found; **22nd-floor plan** with the core along the south wall (west to east: West Stair, Elevators Bank C 21–29, Electrical Room, open stair down to 21, Center Stair, Elevators Bank D 29–37, Elevators Bank B 12–21 with the freight car, East Stair attached to the Girard Building), perimeter offices along the north (Penn Square) side, 15th Street to the west, standpipes and smoke-detector positions marked. Rendered copies: `img/tr049-p27-elevation.png`, `img/tr049-p28-floor22.png`.
