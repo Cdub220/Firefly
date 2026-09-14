@@ -74,6 +74,7 @@ describe('parseDemoTrace rejects what it cannot replay, without throwing', () =>
     expect(why({ version: 1, beats: [{ ...b, planName: 3 }] })).toMatch(/clean.*planName/);
     // A recording from a build with other plan files, or a space this plan lacks, is refused up front (never a throw mid-click).
     expect(why({ version: 1, beats: [{ ...b, planName: 'nope' }] })).toMatch(/plan "nope" is not in this build/);
+    for (const name of ['__proto__', 'constructor', 'toString', 'hasOwnProperty']) expect(why({ version: 1, beats: [{ ...b, planName: name }] })).toMatch(/is not in this build/);
     expect(why({ version: 1, beats: [{ ...b, ignition: 'ZZZ' }] })).toMatch(/ignition "ZZZ" is not a space of/);
     expect(why({ version: 1, beats: [{ ...b, ticks: 'x' }] })).toMatch(/clean.*seed and ticks/);
     expect(why({ version: 1, beats: [{ ...b, corruption: {} }] })).toMatch(/clean.*corruption.mode/);

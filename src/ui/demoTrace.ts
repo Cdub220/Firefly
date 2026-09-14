@@ -5,7 +5,7 @@
  * This file is the shape and its parser only: no store, no fs.
  */
 import type { TickRecord } from '../loop';
-import { isPlanName, loadPlan } from '../shared/structures';
+import { isPlanName, loadPlan, PLAN_NAMES } from '../shared/structures';
 import type { CorruptionConfig } from '../shared/types';
 
 export const DEMO_TRACE_VERSION = 1;
@@ -81,7 +81,8 @@ export function parseDemoTrace(json: unknown): ParsedDemoTrace {
     seen.add(beat);
     if (typeof b['planName'] !== 'string' || typeof b['ignition'] !== 'string') return { ok: false, why: `${where} (${beat}): planName and ignition must be strings` };
     // A recording from a build with other plan files cannot be shown by this one.
-    if (!isPlanName(b['planName'])) return { ok: false, why: `${where} (${beat}): plan "${b['planName']}" is not in this build` };
+    // PLAN_NAMES.includes, not isPlanName: the latter uses `in` and lets "__proto__" through.
+    if (!(PLAN_NAMES as readonly string[]).includes(b['planName']) || !isPlanName(b['planName'])) return { ok: false, why: `${where} (${beat}): plan "${b['planName']}" is not in this build` };
     if (!loadPlan(b['planName']).spaces.some((s) => s.id === b['ignition'])) return { ok: false, why: `${where} (${beat}): ignition "${b['ignition']}" is not a space of ${b['planName']}` };
     if (typeof b['seed'] !== 'number' || typeof b['ticks'] !== 'number' || !Number.isFinite(b['seed']) || !Number.isFinite(b['ticks'])) return { ok: false, why: `${where} (${beat}): seed and ticks must be numbers` };
     const corruption = b['corruption'];

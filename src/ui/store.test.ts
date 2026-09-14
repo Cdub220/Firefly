@@ -591,7 +591,8 @@ describe('demo beats', () => {
   });
 
   it('a loaded replay makes beats show the recording instead of simulating; manual runs still simulate', () => {
-    const recorded = buildDemoTrace({ seed: 7, ticks: 6, beats: ['freeze', 'compare'] });
+    // Recorded on another plan than the store's (demo-6), so the recorded caption differs from the live one.
+    const recorded = buildDemoTrace({ seed: 7, ticks: 6, startPlan: 'vessel-3x8', beats: ['freeze', 'compare'] });
     // Mark the recording so the test can tell it from a live run.
     recorded.beats[0]!.traces['ours']![0]!.belief.confidence = 0.123456;
     expect(useSim.getState().loadReplay(JSON.parse(JSON.stringify(recorded)))).toBeNull();
@@ -607,7 +608,8 @@ describe('demo beats', () => {
     expect(s.closedLoop).toBe(false);
     // The caption is the recorded one (it names the recorded ignition, not the store's).
     expect(s.caption).toBe(recorded.beats[0]!.caption);
-    expect(s.caption).toContain(recorded.beats[0]!.ignition);
+    expect(s.caption).toContain('L1-B3');
+    expect(s.caption).not.toContain('S3'); // not the live store's ignition
     useSim.getState().runBeat('compare');
     s = useSim.getState();
     expect(s.view).toBe('h2h');
