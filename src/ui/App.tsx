@@ -63,6 +63,7 @@ export function App() {
   const setDemo = useSim((s) => s.setDemo);
   const caption = useSim((s) => s.caption);
   const replayOn = useSim((s) => s.replay !== null);
+  const busy = useSim((s) => s.busy);
   const run = useSim((s) => s.run);
   const hasData = useSim((s) => s.data != null);
   const planName = useSim((s) => s.planName);
@@ -124,6 +125,7 @@ export function App() {
         <button id="demo" type="button" className="toggle" aria-pressed={demo} title="Recording mode: bigger words, fewer of them (key r)" onClick={() => setDemo(!demo)}>{demo ? 'Exit recording mode' : 'Recording mode'}</button>
       </div>
       {view !== 'split' && caption && <p className={'fx caption top-caption' + (demo ? ' demo' : '')} aria-live="polite">{caption}</p>}
+      {busy && <div className="fx-busy" role="status" aria-live="assertive"><span className="fx-busy-dot" />{busy}</div>}
       <ErrorBoundary key={view} label={VIEWS.find((v) => v.key === view)?.label ?? view}>
         {view === 'split' ? <SplitView /> : view === 'scene' ? <SceneView /> : view === 'compare' ? <CompareView /> : view === 'casefile' ? <CaseFile /> : <HeadToHead />}
       </ErrorBoundary>

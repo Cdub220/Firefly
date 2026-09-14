@@ -17,6 +17,10 @@
 /* A beat's caption above the non-split views. */
 .fx.top-caption { min-height: 0; padding-block: 10px; padding-inline: 20px; margin: 0; border-bottom: 1px solid var(--line); }
 .fx.top-caption.demo { font-size: 19px; line-height: 1.4; }
+/* A long simulation on the main thread: say so before it starts, so a still page reads as working, not broken. */
+.fx-busy { position: fixed; top: 56px; left: 50%; transform: translateX(-50%); z-index: 50; display: inline-flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 6px; background: var(--panel); border: 1px solid var(--uncertain); color: var(--ink); font: 500 13px var(--sans); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45); }
+.fx-busy-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--uncertain); animation: fx-busy-pulse 0.9s ease-in-out infinite alternate; }
+@keyframes fx-busy-pulse { from { opacity: 1; transform: scale(1); } to { opacity: 0.35; transform: scale(0.7); } }
 /* Error boundary: a message and a retry, not a white page. */
 .fx-crash { margin: 16px 20px; padding: 14px 16px; border: 1px solid var(--wrong); border-radius: 6px; background: var(--panel); color: var(--ink); font: 13px var(--sans); display: flex; flex-direction: column; gap: 8px; }
 .fx-crash pre { margin: 0; font: 12px var(--mono); color: var(--wrong); white-space: pre-wrap; }

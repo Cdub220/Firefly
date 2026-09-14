@@ -54,7 +54,13 @@ export const BEATS: ReadonlyArray<{ key: Beat; label: string; hotkey: string }> 
 ];
 /** The incident replay (docs/10-incident-replay-plan.md): the plan, the run length and the brains it is shown with. */
 export const CASEFILE = { plan: 'highrise-12x9', minutes: incidentTimeline.outcome.durationMinutes, tickMinutes: incidentTimeline.tickMinutes, name: incidentTimeline.name } as const;
-export const CASEFILE_TICKS = Math.ceil(CASEFILE.minutes / CASEFILE.tickMinutes);
+/**
+ * How far the page simulates: the calibrated fire is out at minute 596 (results.json
+ * lastFire), so 640 minutes covers every sim event; the record's strip still runs to
+ * 1118. 160 ticks × three brains on 108 spaces is ~5 s on the main thread instead of ~9.
+ */
+export const CASEFILE_RUN_MINUTES = 640;
+export const CASEFILE_TICKS = Math.ceil(CASEFILE_RUN_MINUTES / CASEFILE.tickMinutes);
 export const INCIDENT_FACTORIES: Record<string, BrainFactory> = { ours: createBrain, kalman: createKalmanBrain, commander: createCommander(incidentTimeline.commanderKnowledge, CASEFILE.tickMinutes) };
 /**
  * Which plan files the script opens and closes on. Data, not logic: the beats work on
@@ -128,8 +134,10 @@ export type SimState = {
   beat: Beat | null;
   /** Which page is showing. State, not App-local, so a beat (and the `c` key) can switch it. */
   view: View;
-  /** The demo's tick count while the case file beat has replaced it with the incident's; restored by the next beat. */
+  /** The demo's tick count while the case file beat has replaced it with the incident's; restored by the next beat, run or plan change. */
   ticksBeforeCasefile: number | null;
+  /** A sentence while a long simulation runs on the main thread (the page paints it before the run starts); null otherwise. */
+  busy: string | null;
   /**
    * Backup for the stage: a recorded demo trace (results/demo-trace.json, `npm run
    * export:trace`). While loaded, runBeat() replays the recorded run for that beat instead
@@ -427,6 +435,27 @@ export const useSim = create<SimState>((set, get) => {
   /** Any manual change means the last beat's caption no longer describes what is shown. */
   const clearBeat = (): { beat: null; caption: '' } => ({ beat: null, caption: '' });
   /**
+   * Long runs block the main thread. In a browser, publish `busy` first and start the
+   * run on the next macrotask so the page can paint the notice; under node (tests, the
+   * CLI) run synchronously so callers can read the state right after the call.
+   */
+  const withBusy = (label: string | null, work: () => void): void => {
+    if (typeof window === 'undefined' || label === null) { work(); return; }
+    set({ busy: label });
+    setTimeout(() => { try { work(); } finally { set({ busy: null }); } }, 30);
+  };
+  /** A sentence for the notice, sized to the plan: the incident plan is ~20x the pitch plans. */
+  const busyLabel = (what: string, closedLoop: boolean): string | null => {
+    const big = get().plan.spaces.length > 40;
+    if (!big && !closedLoop) return null; // sub-second: no notice
+    return big ? `${what} on the ${get().plan.spaces.length}-space building — ${closedLoop ? 'about a minute' : 'a few seconds'}…` : `${what}…`;
+  };
+  /** Leaving the case file's run length behind when the demo continues without a beat. */
+  const restoreTicks = (): void => {
+    const saved = get().ticksBeforeCasefile;
+    if (saved !== null && get().planName !== CASEFILE.plan) set({ ticks: saved, ticksBeforeCasefile: null });
+  };
+  /**
    * Finish the head-to-head beat's caption from what the curves actually show. With the
    * usual onset both brains lock on before the sensor dies and both worlds contain; the
    * caption must not promise a gap that is not there.
@@ -467,14 +496,74 @@ export const useSim = create<SimState>((set, get) => {
     beat: null,
     view: fromUrl().view,
     ticksBeforeCasefile: null,
+    busy: null,
     replay: null,
 
     run: () => {
       // A manual run is not a beat: the caption would describe a scenario no longer shown.
       if (get().beat !== null || get().caption !== '') set(clearBeat());
-      execute();
+      restoreTicks();
+      withBusy(busyLabel('Running', get().dispatch), () => execute());
     },
-    runBeat: (beat) => {
+    runBeat: (beat) => withBusy(beat === 'casefile' ? `Replaying the incident: ${CASEFILE_TICKS} ticks, three brains, ${get().plan.spaces.length > 40 ? '' : 'about '}five seconds…` : beat === 'compare' ? busyLabel('Running head to head', true) : null, () => runBeatNow(beat)),
+    runCompare: () => withBusy(busyLabel('Running head to head', true), () => runCompareNow()),
+    runShowdown: () => withBusy(busyLabel('Running the showdown', true), () => {
+      set({ corruption: { mode: 'blind', k: 1, onset: 1, target: [get().ignition] } });
+      runCompareNow();
+    }),
+    setView: (view) => set({ view }),
+    loadReplay: (json) => {
+      const parsed = parseDemoTrace(json);
+      if (!parsed.ok) return parsed.why;
+      set({ replay: parsed.trace });
+      return null;
+    },
+    clearReplay: () => set({ replay: null }),
+
+    setPlan: (name) => {
+      if (name === get().planName) return;
+      const plan = loadPlan(name);
+      // A corruption target from the old plan is meaningless here; aim at the new ignition space.
+      const corruption = sanitizeCorruption({ ...get().corruption, target: [...plan.ignition] }, plan);
+      const ignition = sanitizeIgnition(undefined, plan);
+      set({ plan, planName: name, ignition, corruption, traces: {}, data: null, trace: null, compare: null, closedLoop: false, cursor: 0, playing: false, error: null, ...clearBeat() });
+      restoreTicks();
+    },
+    setPlanName: (name) => get().setPlan(name),
+    setSeed: (seed) => { if (Number.isFinite(seed)) set({ seed: Math.round(seed), ...clearBeat() }); },
+    setIgnition: (ignition) => set({ ignition, ...clearBeat() }),
+    setTicks: (ticks) => { if (Number.isFinite(ticks)) set({ ticks: Math.max(1, Math.round(ticks)), ...clearBeat() }); },
+    setCorruption: (patch) => set({ corruption: applyCorruptionPatch(get().corruption, patch), ...clearBeat() }),
+    setBrains: (brains) => set({ brains, ...clearBeat() }),
+    setDispatch: (on) => set({ dispatch: on, ...clearBeat() }),
+    setDemo: (on) => set({ demo: on }),
+
+    play: () => {
+      const { cursor, trace } = get();
+      const n = trace?.length ?? 0;
+      if (n === 0) return;
+      set({ playing: true, cursor: cursor >= n - 1 ? 0 : cursor });
+    },
+    pause: () => set({ playing: false }),
+    toggle: () => (get().playing ? get().pause() : get().play()),
+    step: (delta) => {
+      const { cursor, trace } = get();
+      const n = trace?.length ?? 0;
+      if (n === 0) return;
+      const next = Math.max(0, Math.min(n - 1, cursor + delta));
+      set({ cursor: next, playing: get().playing && next < n - 1 });
+    },
+    stepBy: (delta) => get().step(delta),
+    tick: () => get().step(1),
+    setCursor: (i) => {
+      if (!Number.isFinite(i)) return;
+      const n = get().trace?.length ?? 0;
+      set({ cursor: Math.max(0, Math.min(n - 1, Math.round(i))) });
+    },
+    setSpeed: (speed) => { if (Number.isFinite(speed) && speed > 0) set({ speed }); },
+  };
+
+  function runBeatNow(beat: Beat): void {
       const { planName, plan, ignition, corruption, seed, view, replay } = get();
       const cfg = beatConfig(beat, { planName, plan, ignition, corruption, seed });
       // The head to head and the case file live on their own pages; every other beat reads best on the split view.
@@ -514,69 +603,11 @@ export const useSim = create<SimState>((set, get) => {
       // A beat is always open loop: its caption describes the fire spreading while the
       // brains watch, and a persisted dispatch toggle must not quietly change that.
       execute({ dispatch: false });
-    },
-    setView: (view) => set({ view }),
-    loadReplay: (json) => {
-      const parsed = parseDemoTrace(json);
-      if (!parsed.ok) return parsed.why;
-      set({ replay: parsed.trace });
-      return null;
-    },
-    clearReplay: () => set({ replay: null }),
-    runCompare: () => {
-      if (get().brains !== 'both') set({ brains: 'both' });
-      if (get().beat !== null || get().caption !== '') set(clearBeat());
-      executeCompare();
-    },
-    runShowdown: () => {
-      set({ corruption: { mode: 'blind', k: 1, onset: 1, target: [get().ignition] } });
-      get().runCompare();
-    },
+  }
 
-    setPlan: (name) => {
-      if (name === get().planName) return;
-      const plan = loadPlan(name);
-      // A corruption target from the old plan is meaningless here; aim at the new ignition space.
-      const corruption = sanitizeCorruption({ ...get().corruption, target: [...plan.ignition] }, plan);
-      const ignition = sanitizeIgnition(undefined, plan);
-      set({ plan, planName: name, ignition, corruption, traces: {}, data: null, trace: null, compare: null, closedLoop: false, cursor: 0, playing: false, error: null, ...clearBeat() });
-    },
-    setPlanName: (name) => get().setPlan(name),
-    setSeed: (seed) => { if (Number.isFinite(seed)) set({ seed: Math.round(seed), ...clearBeat() }); },
-    setIgnition: (ignition) => set({ ignition, ...clearBeat() }),
-    setTicks: (ticks) => { if (Number.isFinite(ticks)) set({ ticks: Math.max(1, Math.round(ticks)), ...clearBeat() }); },
-    setCorruption: (patch) => set({ corruption: applyCorruptionPatch(get().corruption, patch), ...clearBeat() }),
-    setBrains: (brains) => set({ brains, ...clearBeat() }),
-    setDispatch: (on) => set({ dispatch: on, ...clearBeat() }),
-    setDemo: (on) => set({ demo: on }),
-
-    play: () => {
-      const { cursor, trace } = get();
-      const n = trace?.length ?? 0;
-      if (n === 0) return;
-      set({ playing: true, cursor: cursor >= n - 1 ? 0 : cursor });
-    },
-    pause: () => set({ playing: false }),
-    toggle: () => (get().playing ? get().pause() : get().play()),
-    step: (delta) => {
-      const { cursor, trace } = get();
-      const n = trace?.length ?? 0;
-      if (n === 0) return;
-      const next = Math.max(0, Math.min(n - 1, cursor + delta));
-      set({ cursor: next, playing: get().playing && next < n - 1 });
-    },
-    stepBy: (delta) => get().step(delta),
-    tick: () => get().step(1),
-    setCursor: (i) => {
-      if (!Number.isFinite(i)) return;
-      const n = get().trace?.length ?? 0;
-      set({ cursor: Math.max(0, Math.min(n - 1, Math.round(i))) });
-    },
-    setSpeed: (speed) => { if (Number.isFinite(speed) && speed > 0) set({ speed }); },
-  };
+  function runCompareNow(): void {
+    if (get().brains !== 'both') set({ brains: 'both' });
+    if (get().beat !== null || get().caption !== '') set(clearBeat());
+    executeCompare();
+  }
 });
-
-/** The primary brain's record at the cursor, or undefined before a run. */
-export const useCurrent = (): TickRecord | undefined => useSim((s) => s.traces[s.primary]?.[s.cursor]);
-/** A named brain's record at the cursor, or undefined if that brain did not run. */
-export const useCurrentFor = (name: string): TickRecord | undefined => useSim((s) => s.traces[name]?.[s.cursor]);

@@ -14,6 +14,7 @@ function reset(): void {
     seed: 42, ticks: 30, brains: 'both', dispatch: false, ignition: 'S3',
     corruption: { mode: 'freeze', k: 1, onset: 5, target: ['S3'] },
     traces: {}, data: null, trace: null, cursor: 0, playing: false, speed: 4, error: null, compare: null,
+    view: 'split', ticksBeforeCasefile: null, busy: null,
   });
 }
 
@@ -413,7 +414,7 @@ describe('persistence', () => {
 // ---- Dean: demo beats, recording mode, URL presets, run validation ----
 
 const fresh = () => {
-  useSim.setState({ planName: 'demo-6', plan: demo, ignition: 'S3', brains: 'both', dispatch: false, traces: {}, seed: 42, ticks: 30, corruption: { mode: 'freeze', k: 1, onset: 5, target: ['S3'] }, data: null, trace: null, error: null, cursor: 0, playing: false, caption: '', beat: null, demo: false, compare: null });
+  useSim.setState({ planName: 'demo-6', plan: demo, ignition: 'S3', brains: 'both', dispatch: false, traces: {}, seed: 42, ticks: 30, corruption: { mode: 'freeze', k: 1, onset: 5, target: ['S3'] }, data: null, trace: null, error: null, cursor: 0, playing: false, caption: '', beat: null, demo: false, compare: null, view: 'split', ticksBeforeCasefile: null, busy: null });
 };
 
 describe('helpers', () => {
@@ -556,7 +557,7 @@ describe('demo beats', () => {
         expect(Math.abs(r.temp - truth.temp)).toBeGreaterThan(30);
       }
     }
-  }, 30_000); // six beats on the two large plans, one of them two closed-loop runs
+  }, 120_000); // six beats on the two large plans, one of them two closed-loop runs; CI runners are 3-5x slower than a laptop
 
   it('the case file beat replays the incident: its plan, flashover from the first tick, the commander alongside, on its own page', () => {
     useSim.getState().runBeat('casefile');
@@ -586,7 +587,21 @@ describe('demo beats', () => {
     expect(useSim.getState().ticksBeforeCasefile).toBe(30);
     useSim.getState().runBeat('freeze');
     expect(useSim.getState().ticks).toBe(30);
-  }, 120_000);
+    // A manual Run or a plan change after the case file also gives the demo its ticks back.
+    useSim.getState().runBeat('casefile');
+    useSim.getState().setPlan('demo-6');
+    expect(useSim.getState().ticks).toBe(30);
+    expect(useSim.getState().ticksBeforeCasefile).toBeNull();
+    useSim.getState().runBeat('casefile');
+    useSim.getState().run(); // still on the incident plan: keeps the incident's length
+    expect(useSim.getState().ticks).toBe(CASEFILE_TICKS);
+    useSim.getState().setPlan('demo-6');
+    useSim.getState().run();
+    expect(useSim.getState().ticks).toBe(30);
+    expect(useSim.getState().trace).toHaveLength(30);
+    // Under node the store is synchronous and never reports busy.
+    expect(useSim.getState().busy).toBeNull();
+  }, 240_000);
 
   it('beatConfig is pure and keys the script 1-5 in pitch order, blind on 6, the case file on 7', () => {
     expect(BEATS.map((b) => b.hotkey)).toEqual(['1', '2', '3', '4', '5', '6', '7']);
