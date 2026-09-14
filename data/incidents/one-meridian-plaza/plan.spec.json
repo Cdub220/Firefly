@@ -1,5 +1,6 @@
 {
-  "$comment": "Spec for src/world/gen-highrise.ts. Floors 20-31 of a 38-storey office tower (the involved floors 21-30 plus one either side). Nine zones per floor on a 2x5 grid so the split view and the 3D layout draw it: row A is the north (Penn Square) side of the floor plate, west to east; row B is the core along the south wall, west to east (TR-049 p. 3-4 and the 22nd-floor plan, printed p. 28). Rates are the step-3 calibration knobs; the values here are the starting point and carry the report's qualitative ordering: open-plan floors spread fast, rated stair and shaft enclosures leak, slabs conduct little, and windows (autoexposure) are the primary floor-to-floor path. Floor numbers are real; ids are generic.",
+  "$comment": "Spec for src/world/gen-highrise.ts. Floors 20-31 of a 38-storey office tower (the involved floors 21-30 plus one either side). Nine zones per floor on a 2x5 grid so the split view and the 3D layout draw it: row A is the north (Penn Square) side of the floor plate, west to east; row B is the core along the south wall, west to east (TR-049 p. 3-4 and the 22nd-floor plan, printed p. 28). Rates were CALIBRATED (step 3 of docs/10-incident-replay-plan.md, src/incident/calibration.ts) so that an uncontrolled world-only run at ONE TICK = 4 MINUTES meets the report's early milestones: floor 22 fully involved by 45 min (sim 44), 23 by 100 (sim 100), 24 by ~150 (sim 148), 25-26 before 352/420 (sim 196/244), 30 reached before 1118 (sim 432; the uncontrolled fire is faster than the fought one after firefighting got water at 352), 31 never, 20 never. The rates keep the report's qualitative ordering: open-plan floors spread fast, rated stair and shaft enclosures leak, slabs conduct little, and windows (autoexposure) are the floor-to-floor path. Known residual: heat transfer is symmetric, so the model spreads down to 21 as readily as up (the real fire only dropped to 21 through the open stair); floor 20 is given fuel below the ignition minimum as the plan's bottom edge. Floor numbers are real; ids are generic.",
+  "$calibration": { "tickMinutes": 4, "seed": 42, "searchedOn": "2026-09-14", "grid": "tick {4,5,8} x passage {0.35,0.45,0.6} x door {0.2,0.3} x floor {0.04,0.08,0.12,0.18} x stair {0.1,0.25} x core {0.08,0.16}; best score 16 (sum of minutes outside each milestone window, early milestones weighted 2x)" },
   "name": "highrise-12x9",
   "ambient": 22,
   "floors": { "from": 20, "to": 31 },
@@ -15,13 +16,13 @@
     { "id": "B5", "label": "east stair (#3, no standpipe), connects to the attached building", "fuel": 0.2 }
   ],
   "sameLevelEdges": [
-    { "a": "A1", "b": "A2", "kind": "passage", "rate": 0.2, "note": "open-plan office floor" },
-    { "a": "A2", "b": "A3", "kind": "passage", "rate": 0.2 },
-    { "a": "A3", "b": "A4", "kind": "passage", "rate": 0.2 },
-    { "a": "A1", "b": "B2", "kind": "door", "rate": 0.15, "note": "tenant space to core corridor" },
-    { "a": "A2", "b": "B2", "kind": "door", "rate": 0.15 },
-    { "a": "A3", "b": "B4", "kind": "door", "rate": 0.15 },
-    { "a": "A4", "b": "B4", "kind": "door", "rate": 0.15 },
+    { "a": "A1", "b": "A2", "kind": "passage", "rate": 0.6, "note": "open-plan office floor: no partitions worth the name once the ceiling fails" },
+    { "a": "A2", "b": "A3", "kind": "passage", "rate": 0.6 },
+    { "a": "A3", "b": "A4", "kind": "passage", "rate": 0.6 },
+    { "a": "A1", "b": "B2", "kind": "door", "rate": 0.2, "note": "tenant space to core corridor" },
+    { "a": "A2", "b": "B2", "kind": "door", "rate": 0.2 },
+    { "a": "A3", "b": "B4", "kind": "door", "rate": 0.2 },
+    { "a": "A4", "b": "B4", "kind": "door", "rate": 0.2 },
     { "a": "B2", "b": "B4", "kind": "passage", "rate": 0.12, "note": "core corridor past the center stair" },
     { "a": "A1", "b": "B1", "kind": "door", "rate": 0.05, "note": "rated stair door, locked from the stair side" },
     { "a": "B2", "b": "B3", "kind": "door", "rate": 0.05, "note": "rated stair door" },
@@ -31,22 +32,23 @@
     { "a": "B4", "b": "B5", "kind": "bulkhead", "rate": 0.04 }
   ],
   "verticalEdges": [
-    { "zone": "A1", "kind": "floor", "rate": 0.08, "note": "2 h slab with unprotected penetrations PLUS exterior autoexposure through failed windows; the report's primary floor-to-floor path" },
-    { "zone": "A2", "kind": "floor", "rate": 0.08 },
-    { "zone": "A3", "kind": "floor", "rate": 0.08 },
-    { "zone": "A4", "kind": "floor", "rate": 0.08 },
-    { "zone": "B1", "kind": "shaft", "rate": 0.25, "note": "stair shaft: smoke and heat path (stack effect on a cold night)" },
-    { "zone": "B3", "kind": "shaft", "rate": 0.25 },
-    { "zone": "B5", "kind": "shaft", "rate": 0.25 },
-    { "zone": "B2", "kind": "shaft", "rate": 0.15, "note": "electrical/telephone riser rooms stacked with unprotected floor penetrations; return-air plenum" },
-    { "zone": "B4", "kind": "shaft", "rate": 0.15 }
+    { "zone": "A1", "kind": "floor", "rate": 0.04, "note": "2 h slab with unprotected penetrations PLUS exterior autoexposure through failed windows; the report's primary floor-to-floor path (symmetric in this model)" },
+    { "zone": "A2", "kind": "floor", "rate": 0.04 },
+    { "zone": "A3", "kind": "floor", "rate": 0.04 },
+    { "zone": "A4", "kind": "floor", "rate": 0.04 },
+    { "zone": "B1", "kind": "shaft", "rate": 0.1, "note": "stair shaft: smoke and heat path (stack effect on a cold night); a rated enclosure, so less than the riser rooms" },
+    { "zone": "B3", "kind": "shaft", "rate": 0.1 },
+    { "zone": "B5", "kind": "shaft", "rate": 0.1 },
+    { "zone": "B2", "kind": "shaft", "rate": 0.16, "note": "electrical/telephone riser rooms stacked with unprotected floor penetrations; return-air plenum" },
+    { "zone": "B4", "kind": "shaft", "rate": 0.16 }
   ],
   "extraEdges": [
     { "a": "L21-B2", "b": "L22-B2", "kind": "shaft", "rate": 0.3, "note": "open convenience stair between 21 and 22; the fire dropped to 21 through it (TR-049 p. 1, 9)" }
   ],
   "floorOverrides": {
-    "30": { "fuel": 0.1, "note": "fully sprinklered: ten heads put out each point of entry; stands in for suppression the world does not model" },
-    "31": { "fuel": 0.1, "note": "fully sprinklered" }
+    "20": { "fuel": 0.15, "note": "the plan's bottom edge: below the ignition minimum (0.2) so the model's symmetric downward transfer stops here; the real staging floor, which never burned" },
+    "30": { "fuel": 0.25, "note": "fully sprinklered: the fire penetrated at several points and ten heads put each one out; just enough fuel to ignite briefly, standing in for suppression the world does not model" },
+    "31": { "fuel": 0.1, "note": "fully sprinklered; cannot ignite" }
   },
   "sensors": {
     "asBuilt": ["A1", "A2", "A4", "B2", "B4"],

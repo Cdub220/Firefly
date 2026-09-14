@@ -43,7 +43,11 @@ describe('gen-highrise', () => {
 
   it('carries the report-specific paths and overrides: the open stair 21-22 and the sprinklered floors', () => {
     expect(asBuilt.edges.some((e) => e.a === spaceId(21, 'B2') && e.b === spaceId(22, 'B2') && e.kind === 'shaft' && e.rate === 0.3)).toBe(true);
-    for (const f of [30, 31]) for (const z of spec.zones) expect(asBuilt.spaces.find((s) => s.id === spaceId(f, z.id))!.fuel).toBe(0.1);
+    for (const z of spec.zones) {
+      expect(asBuilt.spaces.find((s) => s.id === spaceId(20, z.id))!.fuel).toBe(0.15); // bottom edge, cannot ignite
+      expect(asBuilt.spaces.find((s) => s.id === spaceId(30, z.id))!.fuel).toBe(0.25); // sprinklered, ignites briefly
+      expect(asBuilt.spaces.find((s) => s.id === spaceId(31, z.id))!.fuel).toBe(0.1); // sprinklered, cannot ignite
+    }
     expect(asBuilt.spaces.find((s) => s.id === spaceId(22, 'A3'))!.fuel).toBeUndefined(); // default 1
     expect(asBuilt.ignition).toEqual(['L22-A3']);
     expect(asBuilt.resupply).toEqual(['L20-B2']);
