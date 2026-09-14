@@ -1,8 +1,8 @@
 {
  "source": "results/sweep-latest.json",
  "meta": {
-  "startedAt": "2026-09-13T23:08:37.469Z",
-  "elapsedMs": 367472,
+  "startedAt": "2026-09-14T18:55:55.172Z",
+  "elapsedMs": 349001,
   "onset": 5,
   "ticks": 120,
   "plans": [
@@ -98,7 +98,7 @@
    },
    "kalman": {
     "n": 600,
-    "falseCertainty": 0.890574712643675,
+    "falseCertainty": 0.8910632183908014,
     "wrongDispatch": 0.9569252873563184,
     "ambiguityCoverage": 0.8752298850574709,
     "timeToRecovery": 29,
@@ -106,18 +106,18 @@
    },
    "kalman-gated": {
     "n": 600,
-    "falseCertainty": 0.8740517241379244,
+    "falseCertainty": 0.8763793103448214,
     "wrongDispatch": 0.9677873563218358,
-    "ambiguityCoverage": 0.9616379310344848,
+    "ambiguityCoverage": 0.9619540229885079,
     "timeToRecovery": null,
     "recovered": 0
    },
    "kalman-source": {
     "n": 600,
-    "falseCertainty": 0.7207902298850563,
-    "wrongDispatch": 0.657126436781607,
+    "falseCertainty": 0.7195402298850571,
+    "wrongDispatch": 0.6563218390804574,
     "ambiguityCoverage": 0.4519827586206874,
-    "timeToRecovery": 63.81944444444444,
+    "timeToRecovery": 63.52777777777778,
     "recovered": 0.24
    }
   },
@@ -132,25 +132,25 @@
    },
    "kalman": {
     "n": 600,
-    "falseCertainty": 0.8270545977011471,
-    "wrongDispatch": 0.8636206896551751,
+    "falseCertainty": 0.8265660919540206,
+    "wrongDispatch": 0.8616810344827616,
     "ambiguityCoverage": 0.8356609195402281,
     "timeToRecovery": 20.71875,
     "recovered": 0.8533333333333334
    },
    "kalman-gated": {
     "n": 600,
-    "falseCertainty": 0.7588362068965525,
-    "wrongDispatch": 0.9242672413793055,
-    "ambiguityCoverage": 0.9563074712643698,
-    "timeToRecovery": 32.607594936708864,
-    "recovered": 0.395
+    "falseCertainty": 0.7899712643678151,
+    "wrongDispatch": 0.9147270114942465,
+    "ambiguityCoverage": 0.956925287356325,
+    "timeToRecovery": 32,
+    "recovered": 0.405
    },
    "kalman-source": {
     "n": 600,
     "falseCertainty": 0,
-    "wrongDispatch": 0.5689080459770134,
-    "ambiguityCoverage": 0.40635057471264385,
+    "wrongDispatch": 0.5688936781609218,
+    "ambiguityCoverage": 0.406293103448276,
     "timeToRecovery": 6.326666666666667,
     "recovered": 0.75
    }

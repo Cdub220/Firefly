@@ -35,7 +35,7 @@ Means over the full sweep (`results/sweep-latest.json`: 5 modes × k 1-3 × 4 ta
 | vessel-3x8 | ours | 0.0% | 14.4% | 88.6% | 79.8 (86% recovered) |
 | vessel-3x8 | kalman | 89.1% | 95.7% | 87.5% | 29.0 (5% recovered) |
 | tower-5x4 | ours | 0.0% | 10.8% | 90.4% | 0 (100%: never needed to recover) |
-| tower-5x4 | kalman | 82.7% | 86.4% | 83.6% | 20.7 (85% recovered) |
+| tower-5x4 | kalman | 82.7% | 86.2% | 83.6% | 20.7 (85% recovered) |
 
 The estimator was frozen on Sunday midnight (`docs/06-freeze.md`) before either of these tables was made, with the same code path for both files. That is the claim: the plan is data, the brain is one function of it.
 

@@ -76,20 +76,20 @@
     "21": 64,
     "22": 4,
     "23": 72,
-    "24": 128,
-    "25": 160,
-    "26": 196,
-    "27": 232,
-    "28": 272,
-    "29": 316,
-    "30": 360,
-    "31": 388
+    "24": 124,
+    "25": 156,
+    "26": 192,
+    "27": 228,
+    "28": 268,
+    "29": 308,
+    "30": 352,
+    "31": 380
    },
    "certainAt": 4,
-   "falseCertainty": 0.03571428571428571,
+   "falseCertainty": 0.21428571428571427,
    "wrongDispatch": 0.9821428571428571,
-   "ambiguityCoverage": 0.5285714285714286,
-   "estimationError": 10909829.213497529
+   "ambiguityCoverage": 0.9892857142857143,
+   "estimationError": 371.65552982541004
   },
   {
    "brain": "commander",
@@ -152,10 +152,10 @@
     "31": 456
    },
    "certainAt": 4,
-   "falseCertainty": 0.09642857142857143,
+   "falseCertainty": 0.36428571428571427,
    "wrongDispatch": 0.9892857142857143,
-   "ambiguityCoverage": 0.5571428571428572,
-   "estimationError": 8320995.9610770885
+   "ambiguityCoverage": 1,
+   "estimationError": 324.40548268836545
   },
   {
    "brain": "commander",
@@ -200,22 +200,13 @@
   },
   {
    "driver": "ours",
-   "fireVolumeMinutes": 9736,
+   "fireVolumeMinutes": 396,
    "floorsBurned": [
-    21,
-    22,
-    23,
-    24,
-    25,
-    26,
-    27,
-    28,
-    29,
-    30
+    22
    ],
-   "lastFire": 664,
-   "peakBurning": 29,
-   "droneDeaths": 4
+   "lastFire": 204,
+   "peakBurning": 2,
+   "droneDeaths": 0
   },
   {
    "driver": "kalman",

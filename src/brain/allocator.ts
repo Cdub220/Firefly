@@ -25,6 +25,26 @@ export const W_DISTANCE = 0.05;
 export const DIVERSITY_INFO = 0.3; // a second sensor in the same space is worth less
 export const DIVERSITY_CONTAINMENT = 0.6;
 export const HYSTERESIS = 0.15; // keep the previous target if within 15% of the best
+/**
+ * Target stability for tethers (post-freeze, after the incident replay, docs/decisions.md
+ * Mon hour 47). A tether that is standing in the space it was sent to suppress keeps
+ * suppressing it while the belief's estimate there is at or above STICKY_TEMP, whatever
+ * the belief's burning set says this tick. The 15% score margin cannot do this: when a
+ * low-confidence belief drops a space from its burning set, that space's containment score
+ * falls from p = 1 to a fraction, far past any margin, and the tether is re-aimed. On the
+ * 1991 high-rise the burning set flipped every tick for the first ten ticks and the two
+ * tethers were re-targeted six times while the fire escaped the two rooms they had been
+ * standing in. A hose stays on a hot room until it is cool. The space must still be a
+ * candidate (believed burning, ambiguous, or adjacent to either), so a tether never parks
+ * on a hot room the belief has moved on from entirely.
+ *
+ * Why 200 and not the 250 C ignition point: the world's fire goes out only when the fuel is
+ * gone (no temperature extinguishes it), and one tether holds a burning room near 250 to
+ * 280 C, dipping under 250 on some ticks (the high-rise origin room read 249 C on tick 7,
+ * the tether left, and the room was back at 499 C five ticks later). A room that is NOT
+ * burning falls below 200 C within two ticks of a tether's cooling; a burning one does not.
+ */
+export const STICKY_TEMP = 200; // = HOT_C: under a tether, a room this hot is still burning
 export const REFILL_BELOW = 0.15; // retardant resource below this: go refill
 export const SAFE_TEMP = 400; // non-tether drones never sent above this estimate (they die at 400)
 /**
@@ -187,6 +207,25 @@ export function allocate(
   // Working copies of the per-space values, decayed as spaces are taken (diversity).
   const infoNow = new Map(information);
   const contNow = new Map([...containment].map(([id, c]) => [id, { ...c }]));
+  const takeSpace = (id: SpaceId): void => {
+    infoNow.set(id, (infoNow.get(id) ?? 0) * DIVERSITY_INFO);
+    const c = contNow.get(id);
+    if (c) for (const k of Object.keys(c) as DroneClass[]) c[k] *= DIVERSITY_CONTAINMENT;
+  };
+
+  // Sticky tethers first: a tether standing in the space it is suppressing stays while that
+  // space is still hot and still a candidate (see STICKY_TEMP). Assigned before the greedy
+  // pass so the other drones see the space as taken.
+  const sticky = new Set<string>();
+  for (const d of pending) {
+    const prev = prevById.get(d.id);
+    if (d.class !== 'tether' || !prev || prev.task !== 'suppress' || prev.goTo !== d.at) continue;
+    if (!candidates.includes(d.at) || estimate(d.at) < STICKY_TEMP) continue;
+    out.push({ droneId: d.id, goTo: d.at, task: 'suppress' });
+    sticky.add(d.id);
+    takeSpace(d.at);
+  }
+
   const distByDrone = new Map(pending.map((d) => [d.id, pathLengths(plan, d.at)]));
   const wInfo = (d: Drone): number => (d.class === 'scout' || d.class === 'relay' ? W_INFO_SENSOR : W_INFO_OTHER);
   const score = (d: Drone, id: SpaceId): number => {
@@ -196,7 +235,7 @@ export function allocate(
     return W_CONTAINMENT * (contNow.get(id)?.[d.class] ?? 0) + wInfo(d) * info - W_DISTANCE * dist;
   };
 
-  const remaining = new Set(pending.map((d) => d.id));
+  const remaining = new Set(pending.filter((d) => !sticky.has(d.id)).map((d) => d.id));
   const droneById = new Map(pending.map((d) => [d.id, d]));
   while (remaining.size > 0) {
     // Highest-scoring (drone, space) pair among the unassigned drones. Ties: shorter path,
@@ -240,9 +279,7 @@ export function allocate(
     out.push({ droneId: d.id, goTo: target, task });
     remaining.delete(d.id);
     // Diversity: the taken space is worth less to everyone still unassigned.
-    infoNow.set(target, (infoNow.get(target) ?? 0) * DIVERSITY_INFO);
-    const c = contNow.get(target);
-    if (c) for (const k of Object.keys(c) as DroneClass[]) c[k] *= DIVERSITY_CONTAINMENT;
+    takeSpace(target);
   }
   return out.sort((a, b) => a.droneId.localeCompare(b.droneId));
 }

@@ -39,6 +39,8 @@ H4, H5, and H6 need small additions to the sweep's flags (`--onset`, a two-space
 
 ## 3. The freeze record
 
+**Post-freeze note on the baselines (Mon hour 47).** The Kalman baselines' transition matrices lacked the structure's per-space outgoing-rate clamp (`MAX_OUTGOING_RATE = 0.9`), which the world and the brain's `physics.ts` both apply; on the 108-space incident plan (`docs/10-incident-replay.md`) the filter therefore diverged. Fixed in `src/brain/kalman.ts` (`addTransfer`), the sweep re-run, `results/sweep-latest.json` and `src/ui/sweepSummary.json` regenerated. Ours' 1,800 rows are bit-identical to the freeze-time sweep (the estimator did not change); the baselines' plan means move by at most 3 points on tower-5x4 and vessel-3x8 (whose mid-column shaft spaces exceed 0.9) and not at all on demo-6 (max 0.55); the WHERE OURS LOSES block is unchanged. The table below is the freeze-time table; the freeze-time JSON is `git show 457de46:results/sweep-latest.json`. This is the baseline modelling the same structure the brain models, permitted by §1 and disclosed here and in `docs/decisions.md`.
+
 **Freeze commit:** `457de46847453854b93bdbaa807c0a17a2e844d4` (dean-branch; HEAD after the full sweep below was committed). `src/eval/freeze.test.ts` reads this hash and fails the suite if `src/brain/index.ts`, `consistency.ts`, `hypotheses.ts`, `physics.ts` or anything under `src/corruption/` differs from it.
 
 ### The failure model as frozen

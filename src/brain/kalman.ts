@@ -32,6 +32,9 @@
 import type { Belief, Brain, BrainConfig, Command, Observation, SensorId, SpaceId } from '../shared/types';
 import { add, identity, inverse, matmul, matvec, sub, transpose, zeros, type Mat } from './mat';
 import { COOL, FLAME_TEMP, FUEL_HAZARD_MULT, GEN_RATE } from './physics';
+
+/** The structure's per-space outgoing-rate clamp (copied from src/brain/physics.ts, which is frozen and does not export it). */
+const MAX_OUTGOING_RATE = 0.9;
 import { planCommands } from './commands';
 
 export const BURN_THRESHOLD_C = 200; // x_i above this => believed burning
@@ -54,6 +57,35 @@ export function normalCdf(z: number): number {
   return 0.5 * (1 + (z >= 0 ? erf : -erf));
 }
 
+/**
+ * Add the plan's heat transfer to the temperature rows of a transition matrix: row i gains
+ * rate_e * (x_j - x_i) for each edge e = (i, j). A space's summed outgoing rate is clamped
+ * to MAX_OUTGOING_RATE exactly as the structure sheds heat (src/brain/physics.ts forward(),
+ * mirror of the world's clamp): without it the row for a space whose rates sum past 1 has
+ * spectral radius above 1 and the filter diverges on a dense plan (the 1991 high-rise has
+ * 26 such spaces; the 10^7 C estimation error in docs/10-incident-replay.md before Mon
+ * hour 47). The brain's physics has always applied this clamp; the baseline now models the
+ * same structure it does.
+ */
+function addTransfer(M: Mat, plan: BrainConfig['plan'], idx: Map<SpaceId, number>): void {
+  const byRow = new Map<number, Array<{ j: number; rate: number }>>();
+  for (const e of plan.edges) {
+    const i = idx.get(e.a);
+    const j = idx.get(e.b);
+    if (i === undefined || j === undefined) continue;
+    (byRow.get(i) ?? byRow.set(i, []).get(i)!).push({ j, rate: e.rate });
+    (byRow.get(j) ?? byRow.set(j, []).get(j)!).push({ j: i, rate: e.rate });
+  }
+  for (const [i, edges] of byRow) {
+    const sum = edges.reduce((a, e) => a + e.rate, 0);
+    const scale = sum > MAX_OUTGOING_RATE ? MAX_OUTGOING_RATE / sum : 1;
+    for (const e of edges) {
+      M[i]![i]! -= scale * e.rate;
+      M[i]![e.j]! += scale * e.rate;
+    }
+  }
+}
+
 export function createKalmanBrain(config: BrainConfig, opts: KalmanOptions = {}): Brain {
   const gate = opts.gate === true;
   const spaceIds: SpaceId[] = config.plan.spaces.map((s) => s.id);
@@ -63,15 +95,7 @@ export function createKalmanBrain(config: BrainConfig, opts: KalmanOptions = {})
   // A0 = I + L - COOL*I, constant for the life of the plan; the generation term is added
   // per tick on the diagonal of the spaces the filter believes are burning.
   const A0: Mat = identity(n).map((row) => row.map((v) => v * (1 - COOL)));
-  for (const e of config.plan.edges) {
-    const i = idx.get(e.a);
-    const j = idx.get(e.b);
-    if (i === undefined || j === undefined) continue;
-    A0[i]![i]! -= e.rate;
-    A0[i]![j]! += e.rate;
-    A0[j]![j]! -= e.rate;
-    A0[j]![i]! += e.rate;
-  }
+  addTransfer(A0, config.plan, idx);
   const genRate = config.plan.spaces.map((sp) => (sp.hazard === 'fuel' ? GEN_RATE * FUEL_HAZARD_MULT : GEN_RATE));
   const ambientTerm = COOL * config.plan.ambient;
 
@@ -208,15 +232,7 @@ export function createSourceKalmanBrain(config: BrainConfig): Brain {
     F[i]![i] = 1 - COOL;
     F[i]![n + i] = 1;
   }
-  for (const e of config.plan.edges) {
-    const i = idx.get(e.a);
-    const j = idx.get(e.b);
-    if (i === undefined || j === undefined) continue;
-    F[i]![i]! -= e.rate;
-    F[i]![j]! += e.rate;
-    F[j]![j]! -= e.rate;
-    F[j]![i]! += e.rate;
-  }
+  addTransfer(F, config.plan, idx);
   const Ft = transpose(F);
   const Q: Mat = identity(N).map((row, i) => row.map((v) => v * (i < n ? Q_PROCESS : Q_SOURCE)));
   const ambientTerm = COOL * config.plan.ambient;

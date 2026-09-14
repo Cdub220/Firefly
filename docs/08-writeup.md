@@ -43,14 +43,14 @@ Open loop, demo-6, 60 ticks, 5 seeds, k = 1 (`npm run evidence`); clean run firs
 | flashover | kalman-gated | 62 % | 67 % | 100 % | 23.2 C | 0.138 |
 | flashover | kalman-source | 2 % | 48 % | 24 % | 151.9 C | 0.447 |
 
-The two most informative rows of the frozen sweep (`results/sweep-latest.json`, 10 seeds, 120 ticks):
+The two most informative rows of the sweep (`results/sweep-latest.json`, 10 seeds, 120 ticks; re-run Mon hour 47 after the Kalman baselines gained the structure's outgoing-rate clamp, see `docs/06-freeze.md` §3 — ours' rows are bit-identical to the freeze-time sweep, the baselines' move by at most 3 points on tower-5x4 and vessel-3x8 and not at all on demo-6):
 
 ```
 plan         mode       k   target    brain          falseCert  fc@P.9  coverage  wrongDisp   err C              ttr  ms/tick
-vessel-3x8   freeze     1   ignition  ours                  0%      8%       93%        10%     1.8     83.1 (10/10)     1.70
-vessel-3x8   freeze     1   ignition  kalman               97%     97%      100%        97%    16.1     never (0/10)     0.40
-vessel-3x8   freeze     1   ignition  kalman-gated         94%     97%      100%        97%    65.5     never (0/10)     0.33
-vessel-3x8   freeze     1   ignition  kalman-source        86%     47%       49%        49%    11.7     71.7 (10/10)     0.92
+vessel-3x8   freeze     1   ignition  ours                  0%      8%       93%        10%     1.8     83.1 (10/10)     1.65
+vessel-3x8   freeze     1   ignition  kalman               97%     97%      100%        97%    16.1     never (0/10)     0.38
+vessel-3x8   freeze     1   ignition  kalman-gated         94%     97%      100%        97%    64.8     never (0/10)     0.31
+vessel-3x8   freeze     1   ignition  kalman-source        86%     47%       49%        49%    11.7     71.7 (10/10)     0.89
 
 demo-6       blind      1   ignition  ours                  0%      1%       98%         8%     4.2     29.0 (10/10)     0.08
 demo-6       blind      1   ignition  kalman               79%     62%       75%        62%   103.5     29.0 (10/10)     0.03
@@ -114,4 +114,4 @@ Node 22, no network: nothing in the demo or the evaluation depends on a live API
 
 ## 11. Incident replay (Chase, after CP5)
 
-A documented real high-rise fire — One Meridian Plaza, Philadelphia, 1991 (USFA-TR-049) — encoded as a plan file, calibrated to the report's early milestones at 4 minutes per tick, and run through the frozen estimator, the Kalman baseline and a "1991 commander" baseline that believes exactly what the record says the command post was told. Full page: `docs/10-incident-replay.md`; numbers from `npm run incident`; Case file page, beat 7. Two results a judge should hear from us first: every estimator with sensors knew the fire floor at minute 4, before the first engine arrived at 8; and, closed loop, our honest-but-flickering belief made the allocator dither the tethers so the drones did no better than nobody, while the over-confident Kalman's stable belief held them on the fire floor and contained it. The lesson is for the allocator (target hysteresis), not the estimator, and it was left as found.
+A documented real high-rise fire — One Meridian Plaza, Philadelphia, 1991 (USFA-TR-049) — encoded as a plan file, calibrated to the report's early milestones at 4 minutes per tick, and run through the frozen estimator, the Kalman baseline and a "1991 commander" baseline that believes exactly what the record says the command post was told. Full page: `docs/10-incident-replay.md`; numbers from `npm run incident`; Case file page, beat 7. Two results a judge should hear from us first: every estimator with sensors knew the fire floor at minute 4, before the first engine arrived at 8; and, closed loop as first run, our honest-but-flickering belief made the allocator dither the tethers so the drones did no better than nobody, while the over-confident Kalman's stable belief held them on the fire floor and contained it. That finding was recorded as found. It pointed at the allocator, not the estimator, and one allocator rule (a tether stays on a hot room it is suppressing, `STICKY_TEMP` in `src/brain/allocator.ts`) brings the ours-driven run to the same containment as the Kalman-driven one: 396 space-minutes, floor 22 only, no drone lost. The estimator did not change; its belief on this fire is as wide as before.

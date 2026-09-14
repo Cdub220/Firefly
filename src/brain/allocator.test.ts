@@ -97,12 +97,36 @@ describe('allocate', () => {
     const plan2: StructurePlan = { ...plan, spaces: plan.spaces.map((s) => (s.id === 'S4' ? { ...s, occupants: 1 } : s)) };
     const c2 = scoreSpaces(plan2, b, hyps, new Set());
     expect(c2.containment.get('S4')!.tether / c2.containment.get('S2')!.tether).toBeCloseTo(0.75, 10);
-    // 0.75 is outside 15%: it moves. Use occupants 1.6 -> 1.8/2.0 = 0.9, inside.
+    // 0.75 is outside 15%: a tether still EN ROUTE (at S3, ordered to S4) moves. Use
+    // occupants 1.6 -> 1.8/2.0 = 0.9, inside: it stays on its order.
     const plan3: StructurePlan = { ...plan, spaces: plan.spaces.map((s) => (s.id === 'S4' ? { ...s, occupants: 1.6 } : s)) };
-    const stay = allocate(plan3, b, hyps, [drone('D3', 'tether', 'S4')], [{ droneId: 'D3', goTo: 'S4', task: 'suppress' }]);
+    const stay = allocate(plan3, b, hyps, [drone('D3', 'tether', 'S3')], [{ droneId: 'D3', goTo: 'S4', task: 'suppress' }]);
     expect(stay).toEqual([{ droneId: 'D3', goTo: 'S4', task: 'suppress' }]);
-    const move = allocate(plan2, b, hyps, [drone('D3', 'tether', 'S4')], [{ droneId: 'D3', goTo: 'S4', task: 'suppress' }]);
+    const move = allocate(plan2, b, hyps, [drone('D3', 'tether', 'S3')], [{ droneId: 'D3', goTo: 'S4', task: 'suppress' }]);
     expect(move[0]!.goTo).toBe('S2');
+    // A tether that has ARRIVED and is standing in the 500 C room it was sent to suppress
+    // does not leave it for a 25% better one (sticky tether, STICKY_TEMP).
+    const arrived = allocate(plan2, b, hyps, [drone('D3', 'tether', 'S4')], [{ droneId: 'D3', goTo: 'S4', task: 'suppress' }]);
+    expect(arrived).toEqual([{ droneId: 'D3', goTo: 'S4', task: 'suppress' }]);
+  });
+
+  it('sticky tether: standing in a hot candidate space it keeps suppressing when the belief drops that space; leaves once it is cool or no longer a candidate', () => {
+    const at4 = [drone('D3', 'tether', 'S4')];
+    const prev: Command[] = [{ droneId: 'D3', goTo: 'S4', task: 'suppress' }];
+    // Belief flipped: only S2 burning now, S4 merely ambiguous and still 400 C. Stay.
+    const flipped = belief(['S2'], [['S4']], { S2: 500, S4: 400 });
+    expect(allocate(plan, flipped, [new Set<SpaceId>(['S2']), new Set<SpaceId>(['S2', 'S4'])], at4, prev)).toEqual(prev);
+    // S4 adjacent to a believed fire (S5) and hot, not listed at all: stay.
+    const adjacent = belief(['S5'], [], { S5: 500, S4: 300 });
+    expect(allocate(plan, adjacent, [new Set<SpaceId>(['S5'])], at4, prev)).toEqual(prev);
+    // Cool now (under STICKY_TEMP, 200): go to the fire.
+    const cool = belief(['S2'], [['S4']], { S2: 500, S4: 150 });
+    expect(allocate(plan, cool, [new Set<SpaceId>(['S2']), new Set<SpaceId>(['S2', 'S4'])], at4, prev)[0]!.goTo).toBe('S2');
+    // Hot but the belief has moved on entirely (S4 not burning, ambiguous, or adjacent): go to the fire.
+    const gone = belief(['S1'], [], { S1: 500, S4: 400 });
+    expect(allocate(plan, gone, [new Set<SpaceId>(['S1'])], at4, prev)[0]!.goTo).toBe('S1');
+    // No previous order: the rule does not apply.
+    expect(allocate(plan, flipped, [new Set<SpaceId>(['S2']), new Set<SpaceId>(['S2', 'S4'])], at4, [])[0]!.goTo).toBe('S2');
   });
 
   it('safety: a scout is never sent into a space estimated above 400, even the informative one; a tether may go up to 800, not beyond; a drone may act where it stands', () => {
