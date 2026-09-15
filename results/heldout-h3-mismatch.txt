@@ -1,0 +1,94 @@
+### scale 0.1 seed 7
+  demo-6      flashover ours-exact                  0%      3%      96%        7%     4.3  0.063
+  demo-6      flashover ours-mismatch               0%      3%      96%        8%     4.2  0.064
+  demo-6      flashover kalman-mismatch            74%     72%     100%       74%    14.2  0.334
+  demo-6      flashover gated-mismatch             66%     75%     100%       76%    36.5  0.342
+  demo-6      flashover source-mismatch             1%     62%      37%       62%    75.6  0.304
+
+  vessel-3x8  none      ours-exact                  0%     11%      91%        6%     1.3  0.059
+  vessel-3x8  none      ours-mismatch               0%     11%      91%        8%     1.2  0.057
+  vessel-3x8  none      kalman-mismatch            90%     90%     100%       90%     3.4  0.171
+  vessel-3x8  none      gated-mismatch             94%     90%      95%       90%    19.9  0.181
+  vessel-3x8  none      source-mismatch            85%     31%      26%       35%     3.5  0.069
+
+  vessel-3x8  freeze    ours-exact                  0%     12%      89%        7%     2.0  0.064
+  vessel-3x8  freeze    ours-mismatch               0%     12%      91%        7%     2.0  0.064
+  vessel-3x8  freeze    kalman-mismatch            95%     95%     100%       95%    11.5  0.177
+  vessel-3x8  freeze    gated-mismatch             95%     95%      99%       95%    21.2  0.188
+  vessel-3x8  freeze    source-mismatch            87%     30%      22%       30%    14.8  0.111
+
+  vessel-3x8  blind     ours-exact                  0%     12%      89%        7%     2.2  0.064
+  vessel-3x8  blind     ours-mismatch               0%     12%      91%        7%     2.1  0.064
+  vessel-3x8  blind     kalman-mismatch            67%     61%      62%       62%    34.5  0.166
+  vessel-3x8  blind     gated-mismatch             88%     87%      89%       87%    31.4  0.179
+  vessel-3x8  blind     source-mismatch            99%     54%      12%       55%    41.9  0.153
+
+  vessel-3x8  flashover ours-exact                  0%     12%      89%        7%     2.2  0.064
+  vessel-3x8  flashover ours-mismatch               0%     12%      91%        7%     2.1  0.063
+  vessel-3x8  flashover kalman-mismatch            95%     95%     100%       95%     5.1  0.180
+  vessel-3x8  flashover gated-mismatch             95%     95%      99%       95%    20.1  0.189
+  vessel-3x8  flashover source-mismatch            67%     63%      22%       63%    15.2  0.136
+
+### scale 0.3 seed 7
+  demo-6      flashover ours-exact                  0%      3%      96%        7%     4.3  0.063
+  demo-6      flashover ours-mismatch               0%      1%      96%        8%     3.0  0.068
+  demo-6      flashover kalman-mismatch            74%     72%     100%       74%    14.1  0.334
+  demo-6      flashover gated-mismatch             66%     75%     100%       76%    36.3  0.343
+  demo-6      flashover source-mismatch             1%     62%      38%       62%    75.4  0.303
+
+  vessel-3x8  none      ours-exact                  0%     11%      91%        6%     1.3  0.059
+  vessel-3x8  none      ours-mismatch               0%     13%      91%        8%     1.3  0.056
+  vessel-3x8  none      kalman-mismatch            90%     90%     100%       90%     3.7  0.172
+  vessel-3x8  none      gated-mismatch             94%     90%      95%       90%    19.0  0.181
+  vessel-3x8  none      source-mismatch            91%     38%      28%       43%     3.7  0.072
+
+  vessel-3x8  freeze    ours-exact                  0%     12%      89%        7%     2.0  0.064
+  vessel-3x8  freeze    ours-mismatch               0%     12%      91%        7%     2.1  0.062
+  vessel-3x8  freeze    kalman-mismatch            95%     95%     100%       95%    11.6  0.178
+  vessel-3x8  freeze    gated-mismatch             95%     95%      99%       95%    20.8  0.189
+  vessel-3x8  freeze    source-mismatch            92%     36%      24%       37%    15.1  0.113
+
+  vessel-3x8  blind     ours-exact                  0%     12%      89%        7%     2.2  0.064
+  vessel-3x8  blind     ours-mismatch               0%     12%      91%        7%     2.2  0.063
+  vessel-3x8  blind     kalman-mismatch            67%     61%      62%       62%    34.7  0.165
+  vessel-3x8  blind     gated-mismatch             88%     86%      89%       87%    31.2  0.179
+  vessel-3x8  blind     source-mismatch           100%     55%      12%       57%    42.8  0.153
+
+  vessel-3x8  flashover ours-exact                  0%     12%      89%        7%     2.2  0.064
+  vessel-3x8  flashover ours-mismatch               0%     12%      91%        7%     2.2  0.062
+  vessel-3x8  flashover kalman-mismatch            95%     95%     100%       95%     5.3  0.180
+  vessel-3x8  flashover gated-mismatch             95%     95%      99%       95%    19.2  0.189
+  vessel-3x8  flashover source-mismatch            62%     64%      22%       67%    15.5  0.136
+
+### scale 0.5 seed 7
+  demo-6      flashover ours-exact                  0%      3%      96%        7%     4.3  0.063
+  demo-6      flashover ours-mismatch               0%      4%      96%        8%     3.5  0.069
+  demo-6      flashover kalman-mismatch            74%     72%     100%       74%    14.1  0.334
+  demo-6      flashover gated-mismatch             67%     76%     100%       76%    35.5  0.341
+  demo-6      flashover source-mismatch             1%     62%      38%       62%    75.3  0.302
+
+  vessel-3x8  none      ours-exact                  0%     11%      91%        6%     1.3  0.059
+  vessel-3x8  none      ours-mismatch               0%     11%      91%        8%     1.3  0.057
+  vessel-3x8  none      kalman-mismatch            90%     90%     100%       90%     3.7  0.172
+  vessel-3x8  none      gated-mismatch             93%     89%      95%       89%    18.3  0.176
+  vessel-3x8  none      source-mismatch            91%     40%      28%       45%     3.8  0.076
+
+  vessel-3x8  freeze    ours-exact                  0%     12%      89%        7%     2.0  0.064
+  vessel-3x8  freeze    ours-mismatch               0%     12%      91%        7%     2.1  0.064
+  vessel-3x8  freeze    kalman-mismatch            95%     95%     100%       95%    12.1  0.179
+  vessel-3x8  freeze    gated-mismatch             93%     93%      99%       93%    20.1  0.186
+  vessel-3x8  freeze    source-mismatch            95%     38%      24%       45%    15.4  0.116
+
+  vessel-3x8  blind     ours-exact                  0%     12%      89%        7%     2.2  0.064
+  vessel-3x8  blind     ours-mismatch               0%     12%      91%        7%     2.2  0.064
+  vessel-3x8  blind     kalman-mismatch            67%     61%      62%       62%    35.0  0.165
+  vessel-3x8  blind     gated-mismatch             87%     84%      86%       84%    30.7  0.175
+  vessel-3x8  blind     source-mismatch           100%     55%      12%       57%    43.5  0.154
+
+  vessel-3x8  flashover ours-exact                  0%     12%      89%        7%     2.2  0.064
+  vessel-3x8  flashover ours-mismatch               0%     12%      91%        7%     2.2  0.063
+  vessel-3x8  flashover kalman-mismatch            95%     95%     100%       95%     5.5  0.181
+  vessel-3x8  flashover gated-mismatch             93%     93%      99%       93%    18.5  0.186
+  vessel-3x8  flashover source-mismatch            51%     68%      24%       70%    15.9  0.138
+
+H3_DONE

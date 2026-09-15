@@ -1000,3 +1000,133 @@ Diagnosis, one paragraph per distinct case:
 - demo-6, vessel-3x8 and tower-5x4, saturate, target=random, k=1/2/3 (nine cells, three distinct: saturate ignores k, so the k rows are the same run): saturate pins every sensor whose true temperature exceeds 300 C at exactly 300 C, with no k limit, and with a random target that is every hot sensor. From about tick 20 the brain sees six identical 300 C readings that are physically consistent with a structure that has burned out; the forced-space rule (a trusted reading above ignition for three ticks) keeps burned-out spaces, at 800 C in truth with no fuel left, in the burning set until the assumed fuel budget runs out. That is a wrong dispatch on about half the ticks. The source filter says less (coverage 55 %, 49 %, 45 % against ours' 88 %, 89 %, 87 %) and so is wrong less. Ours' false certainty in these cells is 0 %: it is wrong at confidence 0.05, not sure. Diagnosis by probe, demo-6 seed 1: 56 wrong ticks of 120, every one a burned-out space with fuel 0 whose sensor reads 300.
 
 No other aggregated cell has ours above the best baseline on false certainty or wrong dispatch. Ours' scalar false certainty (confidence ≥ 0.9 with a wrong set) is 0 % in every cell of the table. Its false certainty on P(burning) at 0.9 is not zero: the plan-by-mode means are 2 to 15 %, and the worst distinct cells are demo-6 flashover random 49 %, demo-6 mixed random 39 to 44 % and vessel-3x8 flashover random 33 % (the k rows repeat), all with a random target under flashover or mixed, where a burned-out space next to a live fire is held above 0.9 for a stretch of ticks. Reported as is; pre-registered expectation 1 in section 3 of the plan (0 % at P ≥ 0.9) is therefore NOT met on the random-target family, and is met on the named-target families only at the 1 to 9 % level, not 0.
+
+## 4. Held-out results (run Mon hour 48, after the freeze; estimator at 457de46 unchanged)
+
+Every family below was run on seeds 101–120 (H4, H5: 101–110 / 101–105 as pre-registered), which no development run ever used. Files: `results/heldout-h1/sweep-latest.json`, `heldout-h2`, `heldout-h4-onset{1,15,30}`, `heldout-h5`. The Kalman baselines carry the rate clamp of §3's post-freeze note; ours is the frozen estimator. "conf-wrong" is the scalar false certainty (confidence ≥ 0.9 with a wrong burning set); "P≥0.9 wrong" is the fraction of ticks where a not-burning space was given P(burning) ≥ 0.9; "best baseline" is whichever of naive, gated, source has the lowest scalar false certainty in that cell. Tables fold over targets, k and seeds; the per-cell rows are in the JSON and in the sweep's own printout.
+
+```
+npm run sweep -- --plans demo-6,vessel-3x8,tower-5x4 --modes freeze,blind,saturate,flashover,mixed --targets ignition,neighbor,far --k 1 --seeds 101..120 --onset 5 --ticks 120 --out results/heldout-h1
+npm run sweep -- --plans demo-6,vessel-3x8,tower-5x4 --modes freeze,blind,saturate,flashover,mixed --targets random --k 1,2,3 --seeds 101..120 --onset 5 --ticks 120 --out results/heldout-h2
+for O in 1 15 30; do npm run sweep -- --plans demo-6,vessel-3x8 --modes freeze,flashover --targets ignition --k 1 --seeds 101..105 --onset $O --ticks 120 --out results/heldout-h4-onset$O; done
+npm run sweep -- --plans demo-6,vessel-3x8,tower-5x4 --modes freeze,blind --targets pair --k 2 --seeds 101..110 --onset 5 --ticks 120 --out results/heldout-h5
+npm run probe:mismatch -- --scale 0.1 --seed 7 --plans demo-6,vessel-3x8 ; --scale 0.3 ; --scale 0.5
+```
+
+### H1 · named target (3,600 rows, 219 s)
+
+| plan | mode | ours: conf-wrong | P≥0.9 wrong | coverage | wrong dispatch | err °C | recovered | best baseline: conf-wrong | coverage | err °C |
+|---|---|---|---|---|---|---|---|---|---|---|
+| demo-6 | blind | 0% | 2% | 96% | 8% | 2.7 | 100% | 68% (gated) | 89% | 115.2 |
+| demo-6 | flashover | 0% | 2% | 97% | 8% | 2.5 | 100% | 11% (source) | 60% | 37.2 |
+| demo-6 | freeze | 0% | 2% | 96% | 8% | 2.7 | 100% | 73% (gated) | 97% | 103.0 |
+| demo-6 | mixed | 0% | 2% | 96% | 8% | 2.8 | 100% | 16% (source) | 57% | 61.4 |
+| demo-6 | saturate | 0% | 2% | 97% | 8% | 4.2 | 100% | 75% (gated) | 100% | 95.8 |
+| tower-5x4 | blind | 0% | 6% | 96% | 8% | 3.8 | 100% | 0% (source) | 40% | 47.3 |
+| tower-5x4 | flashover | 0% | 5% | 96% | 8% | 2.9 | 100% | 0% (source) | 48% | 9.7 |
+| tower-5x4 | freeze | 0% | 5% | 96% | 8% | 3.1 | 100% | 0% (source) | 45% | 37.5 |
+| tower-5x4 | mixed | 0% | 6% | 96% | 8% | 3.4 | 100% | 0% (source) | 44% | 21.2 |
+| tower-5x4 | saturate | 0% | 6% | 96% | 8% | 3.5 | 100% | 0% (source) | 44% | 28.2 |
+| vessel-3x8 | blind | 0% | 8% | 94% | 8% | 1.7 | 100% | 91% (kalman) | 64% | 32.2 |
+| vessel-3x8 | flashover | 0% | 8% | 94% | 7% | 1.4 | 100% | 51% (source) | 50% | 8.1 |
+| vessel-3x8 | freeze | 0% | 8% | 94% | 7% | 1.4 | 100% | 91% (source) | 49% | 18.5 |
+| vessel-3x8 | mixed | 0% | 8% | 94% | 7% | 1.6 | 100% | 57% (source) | 49% | 13.3 |
+| vessel-3x8 | saturate | 0% | 7% | 93% | 7% | 1.8 | 100% | 92% (source) | 48% | 17.3 |
+
+WHERE OURS LOSES: empty. Ours has the lowest false certainty and the lowest wrong dispatch in every one of the 45 cells. Against the development seeds on the same 45 cells: scalar false certainty 0 % → 0 %, P ≥ 0.9 wrong 5 % → 5 % (worst cell 9 % → 8 %), wrong dispatch 8 % → 8 %, temperature error 2.7 → 2.6 °C. The held-out numbers are the development numbers.
+
+### H2 · random target, k ∈ {1, 2, 3} (3,600 rows, 179 s)
+
+| plan | mode | ours: conf-wrong | P≥0.9 wrong | coverage | wrong dispatch | err °C | recovered | best baseline: conf-wrong | coverage | err °C |
+|---|---|---|---|---|---|---|---|---|---|---|
+| demo-6 | blind | 0% | 3% | 97% | 9% | 2.7 | 100% | 72% (gated) | 90% | 119.6 |
+| demo-6 | flashover | 0% | 50% | 54% | 50% | 180.1 | 0% | 1% (source) | 55% | 1402.8 |
+| demo-6 | freeze | 0% | 3% | 97% | 9% | 2.3 | 100% | 74% (gated) | 93% | 109.4 |
+| demo-6 | mixed | 0% | 38% | 65% | 51% | 203.3 | 0% | 3% (source) | 50% | 446.4 |
+| demo-6 | saturate | 0% | 6% | 88% | 49% | 304.8 | 100% | 51% (source) | 55% | 310.1 |
+| tower-5x4 | blind | 0% | 6% | 95% | 9% | 5.9 | 100% | 0% (source) | 43% | 51.6 |
+| tower-5x4 | flashover | 0% | 24% | 48% | 27% | 239.2 | 100% | 0% (source) | 45% | 867.8 |
+| tower-5x4 | freeze | 0% | 6% | 96% | 8% | 3.2 | 100% | 0% (source) | 46% | 44.1 |
+| tower-5x4 | mixed | 0% | 8% | 48% | 34% | 270.7 | 97% | 0% (source) | 44% | 215.1 |
+| tower-5x4 | saturate | 0% | 14% | 88% | 41% | 288.7 | 100% | 0% (source) | 49% | 294.3 |
+| vessel-3x8 | blind | 0% | 8% | 94% | 9% | 3.7 | 97% | 92% (source) | 48% | 39.8 |
+| vessel-3x8 | flashover | 0% | 33% | 51% | 39% | 174.5 | 10% | 6% (source) | 44% | 914.9 |
+| vessel-3x8 | freeze | 0% | 7% | 94% | 8% | 1.5 | 98% | 89% (source) | 49% | 34.6 |
+| vessel-3x8 | mixed | 0% | 8% | 50% | 38% | 232.0 | 8% | 9% (source) | 42% | 326.8 |
+| vessel-3x8 | saturate | 0% | 8% | 89% | 44% | 298.9 | 5% | 63% (source) | 52% | 301.9 |
+
+```
+WHERE OURS LOSES
+  demo-6 saturate k=1 target=random: wrongDispatch 49% > kalman-source 7% | coverage ours 88% vs 55%, err 304.8 vs 310.1
+  demo-6 saturate k=2 target=random: wrongDispatch 49% > kalman-source 7% | coverage ours 88% vs 55%, err 304.8 vs 310.1
+  demo-6 saturate k=3 target=random: wrongDispatch 49% > kalman-source 7% | coverage ours 88% vs 55%, err 304.8 vs 310.1
+  vessel-3x8 saturate k=1 target=random: wrongDispatch 44% > kalman-source 22% | coverage ours 89% vs 52%, err 298.9 vs 301.9
+  vessel-3x8 saturate k=2 target=random: wrongDispatch 44% > kalman-source 22% | coverage ours 89% vs 52%, err 298.9 vs 301.9
+  vessel-3x8 saturate k=3 target=random: wrongDispatch 44% > kalman-source 22% | coverage ours 89% vs 52%, err 298.9 vs 301.9
+  tower-5x4 saturate k=1 target=random: wrongDispatch 41% > kalman-source 22% | coverage ours 88% vs 49%, err 288.7 vs 294.3
+  tower-5x4 saturate k=2 target=random: wrongDispatch 41% > kalman-source 22% | coverage ours 88% vs 49%, err 288.7 vs 294.3
+  tower-5x4 saturate k=3 target=random: wrongDispatch 41% > kalman-source 22% | coverage ours 88% vs 49%, err 288.7 vs 294.3
+```
+
+The same nine cells as on the development seeds, all saturate with a random target, all on wrong dispatch only, with the same diagnosis (§3: saturate pins every hot sensor at 300 °C, the readings carry no information, and the forced-space rule keeps burned-out spaces in the set until the assumed fuel budget runs out; the source filter claims less and so is wrong less, at half the coverage). Against the development seeds on the same 45 cells: scalar false certainty 0 % → 0 %, P ≥ 0.9 wrong 15 % → 15 % (worst cell 49 % → 50 %, demo-6 flashover random), wrong dispatch 28 % → 28 %, temperature error 151.5 → 147.4 °C. Held-out is not better than development anywhere that matters and not worse either; the worst cell is one point worse. The flashover and mixed rows with a random target are where ours is weakest on this table: coverage 48–65 %, temperature error 175–271 °C, P ≥ 0.9 wrong 24–50 %, and on demo-6 flashover it never recovers the exact burning set within 120 ticks (0 % recovered). The scalar false certainty is still 0 % there: it does not claim to be sure.
+
+### H4 · onset ∈ {1, 15, 30} (80 rows each; onset 5 is H1)
+
+| onset | plan | mode | ours: conf-wrong | P≥0.9 wrong | coverage | wrong dispatch | err °C | recovered | best baseline: conf-wrong | coverage | err °C |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | demo-6 | flashover | 0% | 2% | 97% | 13% | 5.5 | 100% | 2% (source) | 63% | 10.7 |
+| 1 | demo-6 | freeze | 0% | 2% | 97% | 8% | 3.6 | 100% | 61% (source) | 84% | 29.6 |
+| 1 | vessel-3x8 | flashover | 0% | 8% | 94% | 9% | 1.9 | 100% | 46% (source) | 50% | 15.1 |
+| 1 | vessel-3x8 | freeze | 0% | 8% | 94% | 9% | 1.9 | 100% | 88% (source) | 52% | 13.8 |
+| 15 | demo-6 | flashover | 0% | 2% | 99% | 9% | 2.5 | 100% | 1% (source) | 69% | 13.2 |
+| 15 | demo-6 | freeze | 0% | 2% | 99% | 9% | 2.3 | 100% | 65% (source) | 91% | 31.2 |
+| 15 | vessel-3x8 | flashover | 0% | 9% | 94% | 10% | 1.7 | 100% | 52% (source) | 47% | 10.2 |
+| 15 | vessel-3x8 | freeze | 0% | 9% | 94% | 10% | 1.6 | 100% | 96% (source) | 47% | 9.1 |
+| 30 | demo-6 | flashover | 0% | 2% | 100% | 11% | 2.5 | 100% | 4% (source) | 79% | 6.4 |
+| 30 | demo-6 | freeze | 0% | 2% | 100% | 11% | 2.5 | 100% | 76% (gated) | 100% | 116.7 |
+| 30 | vessel-3x8 | flashover | 0% | 10% | 100% | 11% | 1.1 | 100% | 55% (source) | 51% | 4.9 |
+| 30 | vessel-3x8 | freeze | 0% | 10% | 100% | 11% | 1.1 | 100% | 92% (gated) | 100% | 72.4 |
+
+WHERE OURS LOSES: empty at every onset. A sensor that dies before the fire is visible (onset 1) costs ours 1–3 °C of error on demo-6 and nothing on the vessel; the P ≥ 0.9 number rises slightly with later onset on the vessel (8 % → 10 %) because a later onset leaves more burned-out-but-hot spaces to be over-believed. No onset changes the picture.
+
+### H5 · correlated named failures, ignition + hottest neighbour, k = 2 (240 rows, 15 s)
+
+Needed a new target kind, `pair`, in `src/eval/sweep.ts` (eval code; `freeze.test.ts` passes).
+
+| plan | mode | ours: conf-wrong | P≥0.9 wrong | coverage | wrong dispatch | err °C | recovered | best baseline: conf-wrong | coverage | err °C |
+|---|---|---|---|---|---|---|---|---|---|---|
+| demo-6 | blind | 0% | 2% | 94% | 8% | 8.7 | 100% | 61% (gated) | 75% | 178.1 |
+| demo-6 | freeze | 0% | 2% | 95% | 8% | 8.5 | 100% | 72% (gated) | 100% | 111.7 |
+| tower-5x4 | blind | 0% | 5% | 96% | 7% | 4.5 | 100% | 0% (source) | 32% | 62.7 |
+| tower-5x4 | freeze | 0% | 5% | 96% | 7% | 4.5 | 100% | 0% (source) | 43% | 33.6 |
+| vessel-3x8 | blind | 0% | 8% | 93% | 8% | 2.4 | 100% | 95% (gated) | 82% | 79.1 |
+| vessel-3x8 | freeze | 0% | 8% | 93% | 8% | 2.4 | 100% | 96% (source) | 44% | 27.8 |
+
+WHERE OURS LOSES: empty. Two named sensors breaking together costs ours 1–6 °C of error over one (H1) and nothing on false certainty or coverage.
+
+### H3 · model mismatch, seed 7, s ∈ {0.1, 0.3, 0.5}
+
+`npm run probe:mismatch -- --scale s --seed 7 --plans demo-6,vessel-3x8` at s = 0.1, 0.3, 0.5 (output in `results/heldout-h3-mismatch.txt`): the brain's per-edge rates are multiplied by U(1 − s, 1 + s) while the world keeps the true plan. Ours, exact plan vs mismatched plan, per mode:
+
+| s | cell | conf-wrong | P≥0.9 wrong | coverage | wrong dispatch | err °C |
+|---|---|---|---|---|---|---|
+| 0.1 | demo-6 flashover | 0 % → 0 % | 3 → 3 % | 96 → 96 % | 7 → 8 % | 4.3 → 4.2 |
+| 0.1 | vessel freeze / blind / flashover | 0 → 0 % | 12 → 12 % | 89 → 91 % | 7 → 7 % | 2.0–2.2 → 2.0–2.1 |
+| 0.3 | demo-6 flashover | 0 → 0 % | 3 → 1 % | 96 → 96 % | 7 → 8 % | 4.3 → 3.0 |
+| 0.3 | vessel freeze / blind / flashover | 0 → 0 % | 12 → 12 % | 89 → 91 % | 7 → 7 % | 2.0–2.2 → 2.1–2.2 |
+| 0.5 | demo-6 flashover | 0 → 0 % | 3 → 4 % | 96 → 96 % | 7 → 8 % | 4.3 → 3.5 |
+| 0.5 | vessel freeze / blind / flashover | 0 → 0 % | 12 → 12 % | 89 → 91 % | 7 → 7 % | 2.0–2.2 → 2.1–2.2 |
+
+The gated Kalman on the same mismatched plan is at 66–95 % false certainty and 18–37 °C, as on the exact plan. Expectation 3 predicted that at s = 0.5 coverage would drop and error rise while false certainty stayed near zero. False certainty stayed at zero; coverage and error did not move (coverage is two points *higher* under mismatch on the vessel, error within 1.3 °C everywhere). The prediction of degradation was too pessimistic: the hypothesis tolerance grows with the steady-state temperature (max(8, 0.15·s*)) and the trust rules are bounds, not equalities, so a 50 % error in a rate is inside the slack the estimator already allows for. What this does not test: a wrong graph (a missing or extra edge), which is a different failure from a wrong rate.
+
+### H6 · unseen structures
+
+Not run as pre-registered, and it could not be: `npm run gen:plans` takes no seed, and "the two shipped generated plans" it names are vessel-3x8 and tower-5x4, which are already in H1 and H2. The nearest thing to an unseen structure the estimator has been run on is the 108-space 1991 high-rise of `docs/10-incident-replay.md`, generated from a spec the estimator's authors did not write with the estimator in mind; its open-loop result (0 % false certainty, 64 % coverage, a wide low-confidence set for the whole fire) is on that page.
+
+### The pre-registered expectations (§3 of the freeze plan), each against what happened
+
+1. **"Ours reports 0 % false certainty at P ≥ 0.9 on H1, H2, H4, H5." Failed, as it already had on the development seeds.** Scalar false certainty is 0 % in every cell of every family. On P(burning) at 0.9 it is not: 2–8 % per plan-by-mode cell on H1, H4 and H5, and up to 50 % on H2 (demo-6, flashover, random target). Reported, not tuned away; the diagnosis (a burned-out space next to a live fire, hot with a dead sensor, held above 0.9) is in §3 and `docs/07-what-surprised-us.md`.
+2. **"The gated Kalman does not close the gap." Held.** Gating lowers the naive filter's false certainty by 5–12 points per mode on H1 (freeze 91 → 83 %, blind 91 → 81 %, flashover 88 → 79 %) and leaves it at 79–87 %; the gap to ours' 0 % is untouched. Gating is a worse thermometer on every H1 mode (e.g. demo-6 freeze 103 °C for gated).
+3. **"At s = 0.5 coverage drops and error rises, false certainty stays near zero." Half held.** False certainty stayed at 0 %; coverage and error did not degrade at all (table above). Wrong in the safe direction.
+4. **"H2 temperature error stays above 100 °C for ours on every plan." Held.** 139 °C on demo-6, 162 on tower-5x4, 142 on vessel-3x8, folded over modes; the burning set stays honest (0 % scalar false certainty) and the thermometer does not.
+

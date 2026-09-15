@@ -1,6 +1,6 @@
 # 08 · Writeup
 
-The short writeup the final submission requires, in the Defense brief's structure. Every number is sourced from `results/` (`evidence-cp2.json`, `sweep-latest.json`, `identifiability.txt`) and from `docs/05-identifiability.md`, `docs/06-freeze.md` and `docs/07-what-surprised-us.md`. Bracketed TODOs name the command that produces a missing number.
+The short writeup the final submission requires, in the Defense brief's structure. Every number is sourced from `results/` (`evidence-cp2.json`, `sweep-latest.json`, `identifiability.txt`) and from `docs/05-identifiability.md`, `docs/06-freeze.md` and `docs/07-what-surprised-us.md`. Held-out results are in `docs/06-freeze.md` §4.
 
 ## 1. Question
 
@@ -72,7 +72,15 @@ demo-6       blind      1   ignition  kalman-source        79%     60%       75%
   tower-5x4 saturate k=3 target=random: wrongDispatch 41% > kalman-source 23% | coverage ours 87% vs 45%, err 300.9 vs 306.4
 ```
 
-Diagnosis (`docs/06-freeze.md`): saturate with a random target pins every hot sensor at exactly 300 C, the readings stop carrying information, and the forced-space rule keeps burned-out spaces in the set until the assumed fuel budget runs out; the source filter says less (coverage 45 to 55 % against 87 to 89 %) and so is wrong less. Ours' scalar false certainty is 0 % in every cell; on P(burning) at 0.9 it is 2 to 15 % as plan-by-mode means and up to 49 % in the worst cell (demo-6, flashover, random target), which fails pre-registered expectation 1 on the random-target family and is reported as such. Held-out families on fresh seeds: [TODO: `npm run sweep -- --plans demo-6,vessel-3x8,tower-5x4 --targets ignition,neighbor,far --k 1 --seeds 101..120 --ticks 120` and `--targets random --k 1,2,3 --seeds 101..120`; paste the WHERE OURS LOSES block].
+Diagnosis (`docs/06-freeze.md`): saturate with a random target pins every hot sensor at exactly 300 C, the readings stop carrying information, and the forced-space rule keeps burned-out spaces in the set until the assumed fuel budget runs out; the source filter says less (coverage 45 to 55 % against 87 to 89 %) and so is wrong less. Ours' scalar false certainty is 0 % in every cell; on P(burning) at 0.9 it is 2 to 15 % as plan-by-mode means and up to 49 % in the worst cell (demo-6, flashover, random target), which fails pre-registered expectation 1 on the random-target family and is reported as such. Held-out families on fresh seeds (`docs/06-freeze.md` §4, run after the freeze on seeds 101–120, which no development run used; `results/heldout-*/`): the held-out numbers are the development numbers. H1, named target, 45 cells: scalar false certainty 0 % in every cell, P ≥ 0.9 wrong 5 % mean and 8 % worst (development: 5 % and 9 %), wrong dispatch 8 % (8 %), temperature error 2.6 °C (2.7), and WHERE OURS LOSES is empty. H2, random target with k = 1–3, 45 cells: scalar false certainty 0 %, P ≥ 0.9 wrong 15 % mean and 50 % worst on demo-6 flashover (development 15 % and 49 %, so one point worse), wrong dispatch 28 % (28 %), temperature error 147 °C (152), and WHERE OURS LOSES is the same nine saturate cells with the same margins:
+
+```
+  demo-6 saturate k=1..3 target=random: wrongDispatch 49% > kalman-source 7% | coverage ours 88% vs 55%, err 304.8 vs 310.1
+  vessel-3x8 saturate k=1..3 target=random: wrongDispatch 44% > kalman-source 22% | coverage ours 89% vs 52%, err 298.9 vs 301.9
+  tower-5x4 saturate k=1..3 target=random: wrongDispatch 41% > kalman-source 22% | coverage ours 88% vs 49%, err 288.7 vs 294.3
+```
+
+H4 (onset 1, 15, 30) and H5 (ignition and its hottest neighbour broken together, k = 2) add nothing to the losses and change ours by at most 3 °C; H3 (edge rates wrong by up to ±50 %) leaves ours unchanged to 1.3 °C with false certainty at 0 %. Of the four pre-registered expectations, the one that fails is the same one that failed on the development seeds: 0 % false certainty on P(burning) at 0.9, which is 2–8 % on named targets and up to 50 % on a random target under flashover.
 
 ## 5. Negative result
 
@@ -88,7 +96,7 @@ Condensed from `docs/07-what-surprised-us.md`. The Kalman baseline's 65 % false 
 
 ## 8. Next test
 
-The single experiment most likely to change the conclusion is adversarial corruption chosen with knowledge of the estimator: an attacker who reads `src/brain` and picks which k sensors to freeze, at what value and when, to keep every hypothesis within the 8 C tolerance while the true fire moves (the sweep's random target is unlucky, not hostile). The second is a real building's alarm-panel layout as a plan file, with its actual sensor placement and its actual unsensored interiors, run through `npm run ident`'s symmetry check before any estimator is run at all. Both are freeze-legal: new inputs, not new method. [TODO: neither has been run; the adversarial mode needs a new `CorruptionMode` in `src/corruption` and a real layout needs a plan file, then `npm run sweep -- --modes adversarial` and `npm run ident` on it.]
+The single experiment most likely to change the conclusion is adversarial corruption chosen with knowledge of the estimator: an attacker who reads `src/brain` and picks which k sensors to freeze, at what value and when, to keep every hypothesis within the 8 C tolerance while the true fire moves (the sweep's random target is unlucky, not hostile). The second is a real building's alarm-panel layout as a plan file, with its actual sensor placement and its actual unsensored interiors, run through `npm run ident`'s symmetry check before any estimator is run at all. Both are freeze-legal: new inputs, not new method. Neither has been run. The adversarial one is not runnable under the freeze as it stands, because a new corruption mode is a change to `src/corruption`, which is frozen; it would be an eval-side wrapper that rewrites readings before the brain sees them, then `npm run sweep` on it. The real layout needs only a plan file and `npm run ident`. The nearest thing we did run is the 1991 high-rise (section 11), a layout we did not design with the estimator in mind, and it produced the negative result reported there.
 
 ## 9. Reproduce
 

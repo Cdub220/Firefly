@@ -22,8 +22,13 @@ import { loadPlan, PLAN_NAMES } from '../shared/structures';
 import type { CorruptionConfig, CorruptionMode, SpaceId, StructurePlan } from '../shared/types';
 import { computeMetrics, type Metrics } from './metrics';
 
-export type TargetKind = 'ignition' | 'neighbor' | 'far' | 'random';
-export const TARGET_KINDS: readonly TargetKind[] = ['ignition', 'neighbor', 'far', 'random'];
+/**
+ * Which sensor(s) the corruptor breaks. 'pair' (Mon hour 48, eval code for family H5 of
+ * docs/06-freeze.md) names the ignition space AND its hottest neighbour at once, a correlated
+ * named failure; it needs k >= 2 to break both, so run it with --k 2.
+ */
+export type TargetKind = 'ignition' | 'neighbor' | 'far' | 'pair' | 'random';
+export const TARGET_KINDS: readonly TargetKind[] = ['ignition', 'neighbor', 'far', 'pair', 'random'];
 export const SWEEP_MODES: readonly CorruptionMode[] = ['freeze', 'blind', 'saturate', 'flashover', 'mixed'];
 const BRAINS = { ours: createBrain, kalman: createKalmanBrain, 'kalman-gated': createGatedKalmanBrain, 'kalman-source': createSourceKalmanBrain } as const;
 const BRAIN_ORDER: readonly string[] = ['ours', 'kalman', 'kalman-gated', 'kalman-source'];
@@ -109,6 +114,7 @@ export function resolveTarget(plan: StructurePlan, kind: TargetKind, onset: numb
     case 'ignition': return [ignition];
     case 'neighbor': return [hottestNeighborAt(plan, ignition, onset, seed)];
     case 'far': return [farthestSpace(plan, ignition)];
+    case 'pair': return [ignition, hottestNeighborAt(plan, ignition, onset, seed)];
     case 'random': return null;
   }
 }
@@ -237,7 +243,7 @@ export function formatSummary(aggs: Aggregate[]): string {
  * its own victims (target random). With a single named target space there is one sensor
  * to break, and saturate / flashover follow the fire regardless of k.
  */
-export const K_NOTE = 'note: k (freeze/blind budget) only changes the freeze, blind and mixed cells with target=random; with a named target there is one sensor to break, and saturate/flashover ignore k, so those k=1/2/3 rows are identical by construction.';
+export const K_NOTE = 'note: k (freeze/blind budget) only changes the freeze, blind and mixed cells with target=random; with a named target there is one sensor to break (two for target=pair, which needs k >= 2), and saturate/flashover ignore k, so those k=1/2/3 rows are identical by construction.';
 
 export function formatLosses(losses: ReturnType<typeof whereOursLoses>): string {
   const out = ['WHERE OURS LOSES'];
