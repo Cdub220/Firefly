@@ -1,7 +1,7 @@
 /**
- * Headless eval harness. Runs under tsx: `npx tsx src/eval/index.ts --seed 42 --ticks 200`.
- * TODO(Dean): sweep corruption location, correlation structure, k; run Kalman baseline on
- * identical seeds; emit a table.
+ * Single-run metrics CLI: `npx tsx src/eval/index.ts --seed 42 --ticks 200` prints one run's
+ * metrics as JSON. The multi-run harnesses live beside it: sweep.ts (`npm run sweep`),
+ * evidence.ts (`npm run evidence`), mismatch.ts, hedge.ts, brief-cli.ts, identifiability.ts.
  */
 import { DEMO_PLAN, runLoop, onsetOf } from '../loop';
 import { computeMetrics } from './metrics';
