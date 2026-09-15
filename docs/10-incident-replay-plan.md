@@ -4,7 +4,7 @@ Status: PLAN, not started. Written Mon Sept 14 2026 for a later session. Nothing
 
 ## How to start the next session (read this first)
 
-State of the repo when this was written: `main` = `chase-branch` = the CP5 work (all three prompts in `docs/prompts/chase/checkpoint-5.md` built and verifier-PASSed; head to head, demo script on keys 1-5 with recording mode and a replay backup, tower generality with `docs/09-generality.md`). Dean's side on `main`: allocator, decision log, identifiability (`npm run ident`, `docs/05-identifiability.md`), freeze record (`docs/06-freeze.md`), CP3 report, writeup skeleton (`docs/08-writeup.md`). The estimator is frozen; the freeze test diffs the frozen files against recorded hashes, so this work must not touch `src/brain` (allocator hook aside, Dean's call), and Chase must not touch `src/eval`.
+State of the repo when this was written: `main` = `chase-branch` = the CP5 work (head to head, demo script on keys 1-5 with recording mode and a replay backup, tower generality with `docs/09-generality.md`). Dean's side on `main`: allocator, decision log, identifiability (`npm run ident`, `docs/05-identifiability.md`), freeze record (`docs/06-freeze.md`), CP3 report, writeup skeleton (`docs/08-writeup.md`). The estimator is frozen; the freeze test diffs the frozen files against recorded hashes, so this work must not touch `src/brain` (allocator hook aside, Dean's call), and Chase must not touch `src/eval`.
 
 Prompt to open with: **"Read docs/10-incident-replay-plan.md and start step 1."** Then the usual loop from `docs/automation.md`: implement, `npm test && npm run lint && npm run typecheck`, probe, commit, `verifier` subagent, fix, repeat; merge to `main` and push only when asked.
 

@@ -1,6 +1,6 @@
 # What exists at each checkpoint
 
-For Dean, Chase, and coding agents. This is the high-level picture of the product, submission, and demo at each scored moment. The technical work behind each is in `docs/04-who-does-what.md` and the prompts in `docs/prompts/`.
+For Dean, Chase, and coding agents. This is the high-level picture of the product, submission, and demo at each scored moment. The technical work behind each is in `docs/04-who-does-what.md`.
 
 Every checkpoint submission is a 60-second video plus the repo link. Every one is scored on the same rubric as the final: Innovation 30%, Technical 25%, Business Value 25%, Presentation 20%. A judge scores what exists at that hour, not what it will become. A missed checkpoint is a zero. The through-line of every video is the same sentence in a different form: **a wrong confident answer sends drones to the wrong floor; we built the system that says "22 or 30, covering both" instead.**
 

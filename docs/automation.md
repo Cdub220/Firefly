@@ -27,7 +27,7 @@ If a hook seems not to fire after pulling, open `/hooks` once in Claude Code to 
 | `/build <prompt file + number, or task>` | The two-agent loop. Agent 1 implements and stops only when tests and simulation convince it. Agent 2 (the `verifier` subagent) reviews adversarially and stops only when convinced there are no errors. Loops up to three rounds. |
 | `/checkpoint N` | Runs all checks and the checkpoint's result scripts, drafts `docs/checkpoints/cpN.md` with what exists, the 60-second video script, submission notes, and an honest rubric self-score. Tags the commit `cpN`. |
 
-The intended session shape: `/dean` (or `/chase`) to orient, `/build docs/prompts/dean/checkpoint-1.md prompt 1` to do the work, `/checkpoint 1` when it is time to submit.
+The intended session shape: `/dean` (or `/chase`) to orient, `/build <task>` to do the work, `/checkpoint 1` when it is time to submit.
 
 ## Agents (`.claude/agents/`)
 

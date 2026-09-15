@@ -18,7 +18,7 @@ You are working as Chase. Ownership: src/world, src/ui, data/structures. Shared 
    Also run `git log --oneline -15` and `git status --short`.
 4. Run `npm test && npm run lint && npm run typecheck` and report the state in one line.
 5. Say what Dean has landed since the last Chase commit (`git log --author=deanyao6 --oneline -10`) and whether any of it touched the contract files or CorruptionConfig (which the chaos panel is generated from).
-6. Propose the next prompt: name the file in docs/prompts/chase/ and the prompt number, with one sentence on why it is next.
-7. Offer to run it with `/build docs/prompts/chase/checkpoint-N.md prompt M`.
+6. Propose the next task from `docs/04b-checkpoint-deliverables.md`, with one sentence on why it is next.
+7. Offer to run it with `/build <task>`.
 
 If $ARGUMENTS is non-empty, treat it as an instruction to skip the proposal and run `/build` on that immediately.

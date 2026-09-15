@@ -18,7 +18,7 @@ You are working as Dean. Ownership: src/brain, src/corruption, src/eval. Shared 
    Also run `git log --oneline -15` and `git status --short`.
 4. Run `npm test && npm run lint && npm run typecheck` and report the state in one line.
 5. Say what Chase has landed since the last Dean commit (`git log --author=cdub --oneline -10`) and whether any of it touched the contract files.
-6. Propose the next prompt: name the file in docs/prompts/dean/ and the prompt number, with one sentence on why it is next. If the freeze has passed and the proposal would touch frozen files, say so and pick the next non-frozen task.
-7. Offer to run it with `/build docs/prompts/dean/checkpoint-N.md prompt M`.
+6. Propose the next task from `docs/04b-checkpoint-deliverables.md`, with one sentence on why it is next. If the freeze has passed and the proposal would touch frozen files, say so and pick the next non-frozen task.
+7. Offer to run it with `/build <task>`.
 
 If $ARGUMENTS is non-empty, treat it as an instruction to skip the proposal and run `/build` on that immediately.

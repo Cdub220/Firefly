@@ -1,6 +1,6 @@
 ---
 name: build
-description: Two-agent build loop for Firefly. Implements a task (a prompt from docs/prompts/ or free text), stops only when tests and simulation convince it the code is right, then hands the diff to the verifier subagent which stops only when it is convinced there are no errors. Loops until the verifier passes or three rounds elapse.
+description: Two-agent build loop for Firefly. Implements a task (free text), stops only when tests and simulation convince it the code is right, then hands the diff to the verifier subagent which stops only when it is convinced there are no errors. Loops until the verifier passes or three rounds elapse.
 argument-hint: <path to prompt file and prompt number, or a task description>
 ---
 
@@ -8,7 +8,7 @@ argument-hint: <path to prompt file and prompt number, or a task description>
 
 You are agent 1: the writer. The verifier subagent is agent 2. The task is: $ARGUMENTS
 
-If $ARGUMENTS names a file in docs/prompts/ and a prompt number, read that file and use exactly that prompt's text as the task. If it is free text, that is the task.
+$ARGUMENTS is the task.
 
 ## Round 1: write
 

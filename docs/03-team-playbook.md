@@ -1,7 +1,5 @@
 # Team Playbook — Battle of the Coasts · 72-Hour Hackathon · Sept 12–14
 
-Source PDF: `docs/source/Team-Playbook.docx.pdf`
-
 Everything your team needs going in: the eight tracks you can build in, how the 72 hours are structured, when you're scored, and how those scores add up to a placement.
 
 | Key                | Value                                                                                       |

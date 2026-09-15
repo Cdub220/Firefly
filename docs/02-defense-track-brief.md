@@ -2,8 +2,6 @@
 
 East v. West AllStar Hack | September 12 to 14 2026
 
-Source PDF: `docs/source/08-Defense-Challenge-Briefing.docx.pdf`
-
 ## Why this problem matters
 
 A critical system must make decisions from imperfect information. Measurements can be delayed, missing, or systematically wrong. During a disruption, several failures may occur together, and a report that looks plausible in isolation may contradict the rest of the system. A decision-maker needs to know both the estimated state and whether that estimate is actually supported by the surviving observations.

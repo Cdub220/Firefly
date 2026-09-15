@@ -1,6 +1,6 @@
 # Freeze plan · written before the freeze
 
-Written Sun Sept 13, hour 17, on `dean-branch`, before `docs/06-freeze.md` exists. The freeze prompt (`docs/prompts/dean/checkpoint-3.md`, prompt 3) copies sections 1 and 2 of this file into `docs/06-freeze.md` verbatim and adds the hash. Nothing in section 2 has been run at the time of writing; the point is that it is committed unrun, so "cases chosen after the method was fixed" is checkable, not asserted.
+Written Sun Sept 13, hour 17, on `dean-branch`, before `docs/06-freeze.md` exists. The freeze step copies sections 1 and 2 of this file into `docs/06-freeze.md` verbatim and adds the hash. Nothing in section 2 has been run at the time of writing; the point is that it is committed unrun, so "cases chosen after the method was fixed" is checkable, not asserted.
 
 ## 1. What the freeze covers, exactly
 

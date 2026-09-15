@@ -6,8 +6,6 @@ Saturday Sept 12, 12:00 PM ET → Monday Sept 14, 1:00 PM ET · 49 hours · five
 
 > **Schedule note (Sat Sept 12):** the organizers confirmed checkpoints every 12 hours, not 8. See `docs/00-README.md` for the real times. Checkpoint contents below still apply 1:1; only the hours differ.
 
-Source PDF: `docs/source/Firefly-Pitch-and-Checkpoint-Plan.pdf`
-
 ## The pitch
 
 > When a structure catches fire, nobody knows where the fire is. We build the system that figures it out and sends the drones.

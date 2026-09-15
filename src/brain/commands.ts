@@ -5,7 +5,7 @@
  * Belief: index.ts, consistency.ts, hypotheses.ts, physics.ts and src/corruption. Drone
  * commands are not part of that map. index.ts calls planCommands() once per tick with
  * everything an allocator could want, and this file is where the checkpoint-4 allocator
- * plugs in (docs/prompts/dean/checkpoint-4.md prompt 1 fills it in and adds allocator.ts)
+ * plugs in (checkpoint 4 fills it in and adds allocator.ts)
  * without touching a frozen file.
  *
  * Since CP4 prompt 1 it calls allocate() in allocator.ts. The open-loop family the freeze

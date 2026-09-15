@@ -1,7 +1,7 @@
 # Firefly · Checkpoint 2 report
 
 Sun Sept 13, 2026 · hour 24 · Dean Yao and Chase · Defense track
-Repo: https://github.com/Cdub220/Firefly · branch `dean-branch` at the commit that adds this file. Companion pieces: `cp2-cp3-video-script.md`, `estimator-math.pdf`, `thesis.md`.
+Repo: https://github.com/Cdub220/Firefly · branch `dean-branch` at the commit that adds this file. Companion piece: `estimator-math.pdf`.
 
 **TL;DR**
 

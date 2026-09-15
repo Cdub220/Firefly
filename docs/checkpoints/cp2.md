@@ -41,7 +41,7 @@ What changed in our understanding: honesty was the easy part. Ours never claims 
 
 - **Repo:** https://github.com/Cdub220/Firefly · commit `7f07d81` · tag `cp2`
 - **Run it:** `npm install && npm run evidence` (Node 22). `npm run dev` for the split view and the 3D scene.
-- **What changed since checkpoint 1:** the estimator went from "distrust stale sensors" to a physics-referenced hypothesis-set estimator with earned confidence (Dean). Two multi-level structure plans and a deterministic plan generator, a Three.js truth render with plan picker, a config-driven store (Chase). Evidence widened from one case to three modes × five seeds. Pitch deck drafted in `docs/pitch/`.
+- **What changed since checkpoint 1:** the estimator went from "distrust stale sensors" to a physics-referenced hypothesis-set estimator with earned confidence (Dean). Two multi-level structure plans and a deterministic plan generator, a Three.js truth render with plan picker, a config-driven store (Chase). Evidence widened from one case to three modes × five seeds.
 - **Where feedback would help:** (1) Our false-certainty metric is "wrong set at confidence ≥ 0.9". Is calibration error (confidence vs. hit rate) the better operationalisation? (2) Coverage of 91% comes from the brain's set being too small on a few ticks after burnout; should a set estimator be scored on coverage alone, or on coverage × set size?
 - **Known gaps, stated before you find them:**
   - The evidence table is on the six-space plan only. On the 20–24 space plans our brain's belief sometimes collapses to one space at confidence 0.05 while many spaces burn. Reproduce: `npm run sim -- --plan vessel-3x8 --ticks 60`. The sweep at checkpoint 3 will quantify this.

@@ -1,6 +1,6 @@
 ---
 name: verifier
-description: Adversarial reviewer for Firefly. Checks a change against its task, runs the tests and the sim, tries to break it, and stops only when it has convinced itself there are no errors. Read-only on source; may run commands. Use after implementing any prompt from docs/prompts/.
+description: Adversarial reviewer for Firefly. Checks a change against its task, runs the tests and the sim, tries to break it, and stops only when it has convinced itself there are no errors. Read-only on source; may run commands. Use after implementing any task.
 tools: Read, Grep, Glob, Bash
 model: inherit
 ---
